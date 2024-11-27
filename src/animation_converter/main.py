@@ -10,7 +10,13 @@ from colorama import Fore
 from packer import Packer, Size2D
 from PIL import Image, ImageDraw, ImageSequence
 
+def main():
+    return 0
 
+if __name__ == "__main__":
+    sys.exit(main())
+
+'''
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Convert PNG/GIF to C64 PETSCII + charset."
@@ -260,3 +266,4 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+'''
