@@ -13,9 +13,6 @@ jobs:
           - os: ubuntu-latest
             binary_name: 64tass
             platform_name: Linux
-          #- os: windows-latest
-          #  binary_name: 64tass.exe
-          #  platform_name: Windows
           - os: macos-latest
             binary_name: 64tass
             platform_name: Darwin
