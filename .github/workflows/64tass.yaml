@@ -34,10 +34,3 @@ jobs:
           name: 64tass-${{ matrix.platform_name }}
           path: bins/${{ matrix.platform_name }}/${{ matrix.binary_name }}
           retention-days: 90
-
-      - name: Upload all binaries
-        uses: actions/upload-artifact@v4
-        with:
-          name: 64tass-all-platforms
-          path: bins/
-          retention-days: 90
