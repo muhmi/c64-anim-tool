@@ -12,18 +12,22 @@ jobs:
         include:
           - os: ubuntu-latest
             binary_name: 64tass
+            build_cmd: make
           - os: windows-latest
             binary_name: 64tass.exe
+            build_cmd: make
           - os: macos-latest
             binary_name: 64tass
+            build_cmd: make -f Makefile.osx
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Build 64tass
         run: |
+          ls -la
           cd external-sources/64tass
-          make
+          ${{ matrix.build_cmd }}
           mkdir -p ../../bins/${{ runner.os }}
           cp ${{ matrix.binary_name }} ../../bins/${{ runner.os }}/
 
