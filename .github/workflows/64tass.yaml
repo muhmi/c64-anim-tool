@@ -12,34 +12,31 @@ jobs:
         include:
           - os: ubuntu-latest
             binary_name: 64tass
-            build_cmd: make
           - os: windows-latest
             binary_name: 64tass.exe
-            build_cmd: make
           - os: macos-latest
             binary_name: 64tass
-            build_cmd: make -f Makefile.osx
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Build 64tass
+        working-directory: ./external-sources/64tass
         run: |
           ls -la
-          cd external-sources/64tass
-          ${{ matrix.build_cmd }}
+          make
           mkdir -p ../../bins/${{ runner.os }}
           cp ${{ matrix.binary_name }} ../../bins/${{ runner.os }}/
 
       - name: Upload platform binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: 64tass-${{ runner.os }}
           path: bins/${{ runner.os }}/${{ matrix.binary_name }}
           retention-days: 90
 
       - name: Upload all binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: 64tass-all-platforms
           path: bins/
