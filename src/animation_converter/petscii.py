@@ -7,14 +7,8 @@ from typing import List, Tuple
 
 from bitarray import bitarray
 from PIL import Image, ImageDraw, ImageSequence
-
-from utils import (
-    create_folder_if_not_exists,
-    rgb_to_idx,
-    save_images_as_gif,
-    vicPalette,
-    write_bin,
-)
+from utils import (create_folder_if_not_exists, rgb_to_idx, save_images_as_gif,
+                   vicPalette, write_bin)
 
 
 class char_use_location:
@@ -742,5 +736,7 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
 
 def merge_charsets_compress(screens, max_charsets=4):
     screens, charsets = merge_charsets(screens)
-    screens, charsets, _ = compress_charsets(screens, charsets, max_charsets=max_charsets)
+    screens, charsets, _ = compress_charsets(
+        screens, charsets, max_charsets=max_charsets
+    )
     return screens, charsets

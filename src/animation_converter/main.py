@@ -2,14 +2,13 @@ import argparse
 import os
 import sys
 
-import colorama
-from colorama import Fore
-from PIL import Image, ImageDraw, ImageSequence
-
 import color_data_utils
+import colorama
 import petscii
 import utils
+from colorama import Fore
 from packer import Packer, Size2D
+from PIL import Image, ImageDraw, ImageSequence
 
 
 def parse_arguments():

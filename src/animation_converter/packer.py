@@ -4,9 +4,8 @@ from io import StringIO
 from itertools import islice
 from typing import List, NamedTuple
 
-from jinja2 import Environment, FileSystemLoader
-
 import utils
+from jinja2 import Environment, FileSystemLoader
 from petscii import petscii_char, petscii_screen
 from rle_codec import RLECodec
 
