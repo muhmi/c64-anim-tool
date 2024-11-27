@@ -12,28 +12,30 @@ jobs:
         include:
           - os: ubuntu-latest
             binary_name: 64tass
-            copy_bins_cmd: mkdir -p ../../bins/${{ runner.os }} && cp 64tass ../../bins/${{ runner.os }}/
+            platform_name: Linux
           - os: windows-latest
             binary_name: 64tass.exe
-            copy_bins_cmd: mkdir ..\\..\\bins\\${{ runner.os }} 2>NUL & copy 64tass.exe ..\\..\\bins\\${{ runner.os }}\\
+            platform_name: Windows
           - os: macos-latest
             binary_name: 64tass
-            copy_bins_cmd: mkdir -p ../../bins/${{ runner.os }} && cp 64tass ../../bins/${{ runner.os }}/
+            platform_name: Darwin
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Build 64tass
         working-directory: ./external-sources/64tass
+        shell: bash
         run: |
           make
-          ${{ matrix.copy_bins_cmd }}
+          mkdir -p ../../bins/${{ matrix.platform_name }}
+          cp ${{ matrix.binary_name }} ../../bins/${{ matrix.platform_name }}/
 
       - name: Upload platform binary
         uses: actions/upload-artifact@v4
         with:
-          name: 64tass-${{ runner.os }}
-          path: bins/${{ runner.os }}/${{ matrix.binary_name }}
+          name: 64tass-${{ matrix.platform_name }}
+          path: bins/${{ matrix.platform_name }}/${{ matrix.binary_name }}
           retention-days: 90
 
       - name: Upload all binaries
