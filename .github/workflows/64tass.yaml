@@ -1,0 +1,42 @@
+name: Build 64tass
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-64tass:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            binary_name: 64tass
+          - os: windows-latest
+            binary_name: 64tass.exe
+          - os: macos-latest
+            binary_name: 64tass
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build 64tass
+        run: |
+          cd external-sources/64tass
+          make
+          mkdir -p ../../bins/${{ runner.os }}
+          cp ${{ matrix.binary_name }} ../../bins/${{ runner.os }}/
+
+      - name: Upload platform binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: 64tass-${{ runner.os }}
+          path: bins/${{ runner.os }}/${{ matrix.binary_name }}
+          retention-days: 90
+
+      - name: Upload all binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: 64tass-all-platforms
+          path: bins/
+          retention-days: 90
