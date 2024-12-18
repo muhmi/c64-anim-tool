@@ -22,6 +22,7 @@ format-python: ## Autoformat python code
 
 distribute: ## Create standalone exe
 	@pyinstaller --onefile \
+		--name animation-tool \
 		--add-data "src/resources/test-program:src/resources/test-program" \
 		--add-data "bins:bins" \
 		--paths src \
