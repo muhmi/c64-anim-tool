@@ -754,7 +754,7 @@ class Packer:
             "last_used_op_code": last_used_op_code,
         }
 
-        template_dir = os.path.join(os.path.dirname(__file__), "data")
+        template_dir = os.path.join(os.path.dirname(__file__), 'src', 'resources', 'test-program')
         env = Environment(
             loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True
         )
