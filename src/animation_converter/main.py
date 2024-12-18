@@ -1,5 +1,6 @@
 import argparse
 import os
+import subprocess
 import sys
 
 import color_data_utils
@@ -10,13 +11,7 @@ from colorama import Fore
 from packer import Packer, Size2D
 from PIL import Image, ImageDraw, ImageSequence
 
-def main():
-    return 0
 
-if __name__ == "__main__":
-    sys.exit(main())
-
-'''
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Convert PNG/GIF to C64 PETSCII + charset."
@@ -24,7 +19,6 @@ def parse_arguments():
     parser.add_argument(
         "input_files", type=str, nargs="+", help="Input .c, PNG or GIF files."
     )
-    parser.add_argument("output_folder", type=str, help="Output folder path.")
     parser.add_argument(
         "--charset",
         type=str,
@@ -104,13 +98,15 @@ def parse_arguments():
 
 
 def main():
-
+    colorama.init(autoreset=True)
     # colorama
     colorama.init(autoreset=True)
 
     args = parse_arguments()
 
     default_charset = None
+
+    build_folder = get_build_path()
 
     if args.charset:
         if os.path.exists(args.charset) == False:
@@ -123,7 +119,8 @@ def main():
         default_charset = petscii.read_charset(args.charset, skipFirstBytes)
         print(f"{len(default_charset)} characters found.")
 
-    utils.create_folder_if_not_exists(args.output_folder)
+    utils.create_folder_if_not_exists(build_folder)
+    clean_build()
 
     anim_change_index = []
 
@@ -133,7 +130,7 @@ def main():
             Fore.BLUE
             + f"Processing {
                 input_file}, writing output to folder {
-                args.output_folder}"
+                build_folder}"
         )
 
         if default_charset is None and (input_file.endswith(".c")):
@@ -180,7 +177,7 @@ def main():
 
     if default_charset is None:
         print(f"Remove duplicate characters")
-        screens, charsets = petscii.merge_charsets(screens, args.output_folder)
+        screens, charsets = petscii.merge_charsets(screens, build_folder)
 
     for idx, screen in enumerate(screens):
         print(f"  screen {idx}: characters={screen.charset_size()}")
@@ -240,15 +237,15 @@ def main():
     )
 
     print(
-        f"Selected block size {selected_block_size}, blocks: {len(packer.ALL_BLOCKS)}, used blocks: {len(packer.USED_BLOCKS)}, anim: {args.output_folder}, generated {len(anim_stream)} bytes of animation data"
+        f"Selected block size {selected_block_size}, blocks: {len(packer.ALL_BLOCKS)}, used blocks: {len(packer.USED_BLOCKS)}, anim: {build_folder}, generated {len(anim_stream)} bytes of animation data"
     )
 
-    utils.write_bin(f"{args.output_folder}/anim.bin", anim_stream)
+    utils.write_bin(f"{build_folder}/anim.bin", anim_stream)
 
     packer.write_player(
         screens,
         charsets,
-        args.output_folder,
+        build_folder,
         args.anim_slowdown_frames,
         args.use_color,
     )
@@ -258,12 +255,43 @@ def main():
         petscii.write_charset(
             charset,
             f"{
-                args.output_folder}/charset_{idx}.bin",
+                build_folder}/charset_{idx}.bin",
         )
+
+    build()
 
     return 0
 
 
+def get_build_path():
+    return os.path.join(os.path.dirname(__file__), "..", "..", "build")
+
+
+def get_c64tass_path():
+    return os.path.join(
+        os.path.dirname(__file__), "..", "..", "bins", "macos", "64tass"
+    )
+
+
+def clean_build():
+    folder_path = get_build_path()
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+
+def build():
+    # -o test.prg test.asm
+    result = subprocess.run(
+        [get_c64tass_path(), "-o", "test.prg", f"{get_build_path()}/test.asm"],
+        capture_output=True,
+        text=True,
+    )
+    print(f"Return code: {result.returncode}")
+    print(f"Output: {result.stdout}")
+    print(f"Errors: {result.stderr}")
+
+
 if __name__ == "__main__":
     sys.exit(main())
-'''

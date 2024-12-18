@@ -754,7 +754,9 @@ class Packer:
             "last_used_op_code": last_used_op_code,
         }
 
-        template_dir = os.path.join(os.path.dirname(__file__), 'src', 'resources', 'test-program')
+        template_dir = os.path.join(
+            os.path.dirname(__file__), "..", "resources", "test-program"
+        )
         env = Environment(
             loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True
         )
@@ -770,5 +772,4 @@ class Packer:
         with open(f"{output_folder}/test.asm", "w") as f:
             f.write(output)
 
-        utils.copy_file(f"{template_dir}/Makefile", f"{output_folder}")
         utils.copy_file(f"{template_dir}/{test_music}", f"{output_folder}")

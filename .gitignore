@@ -11,6 +11,7 @@ ENV/
 htmlcov/
 dist/
 build/
+test-data/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
@@ -24,3 +25,4 @@ docs/_build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+test.prg
