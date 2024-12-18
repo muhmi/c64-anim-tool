@@ -84,4 +84,9 @@ def get_resource_path(relative_path):
         # Running in normal Python environment
         base_path = Path(__file__).parent.parent.parent
 
+    #test_path = base_path / relative_path
+    #print(f"Path: {test_path}")
+    #print(f"Path exists: {test_path.exists()}")
+    #print(f"Contents: {list(test_path.glob('*'))}")
+
     return base_path / relative_path

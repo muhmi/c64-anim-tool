@@ -5,7 +5,7 @@ a = Analysis(
     ['src/animation_converter/main.py'],
     pathex=['src', 'src/animation_converter'],
     binaries=[],
-    datas=[('src/resources', 'resources'), ('bins', 'bins')],
+    datas=[('src/resources/test-program', 'src/resources/test-program'), ('bins', 'bins')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

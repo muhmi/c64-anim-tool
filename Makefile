@@ -22,7 +22,7 @@ format-python: ## Autoformat python code
 
 distribute: ## Create standalone exe
 	@pyinstaller --onefile \
-		--add-data "src/resources:resources" \
+		--add-data "src/resources/test-program:src/resources/test-program" \
 		--add-data "bins:bins" \
 		--paths src \
 		--paths src/animation_converter \
