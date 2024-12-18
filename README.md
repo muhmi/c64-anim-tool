@@ -4,9 +4,7 @@ Small & crappy animation tool extracted from stereo demo by phonics.
 
 ## Installation
 
-1. Download the latest build:
-   [MacOS](https://github.com/muhmi/c64-anim-tool/actions/artifacts/latest?query=workflow%3A%22Build+Executables%22+branch%3Amain+event%3Apush+animation-tool-ubuntu-latest)
-   [Linux](https://github.com/muhmi/c64-anim-tool/actions/artifacts/latest?query=workflow%3A%22Build+Executables%22+branch%3Amain+event%3Apush+animation-tool-ubuntu-latest)
+1. Download the latest build from Artifacts section of the [latest build](https://github.com/muhmi/c64-anim-tool/actions/workflows/build_executables.yaml)
 3. On macos you need to run `xattr -d com.apple.quarantine ~/Downloads/animation-tool` (in terminal)
 4. Copy the binary somewhere
 
