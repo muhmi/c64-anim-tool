@@ -98,7 +98,6 @@ def parse_arguments():
 
 
 def main():
-    colorama.init(autoreset=True)
     # colorama
     colorama.init(autoreset=True)
 
