@@ -20,4 +20,12 @@ format-python: ## Autoformat python code
 	@isort .
 	@echo "$(COLOR_YELLOW)done.$(COLOR_RESET)"
 
+distribute: ## Create standalone exe
+	@pyinstaller --onefile \
+		--add-data "src/resources:resources" \
+		--add-data "bins:bins" \
+		--paths src \
+		--paths src/animation_converter \
+		src/animation_converter/main.py
+
 .DEFAULT_GOAL := help
