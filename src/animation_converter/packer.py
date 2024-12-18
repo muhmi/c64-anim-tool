@@ -2,6 +2,7 @@ import os
 import sys
 from io import StringIO
 from itertools import islice
+from pathlib import Path
 from typing import List, NamedTuple
 
 import utils
@@ -753,9 +754,8 @@ class Packer:
             "only_per_row_mode": self.ONLY_PER_ROW_MODE,
             "last_used_op_code": last_used_op_code,
         }
-
-        template_dir = os.path.join(
-            os.path.dirname(__file__), "..", "resources", "test-program"
+        template_dir = utils.get_resource_path(
+            os.path.join("src", "resources", "test-program")
         )
         env = Environment(
             loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True

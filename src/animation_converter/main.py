@@ -264,13 +264,11 @@ def main():
 
 
 def get_build_path():
-    return os.path.join(os.path.dirname(__file__), "..", "..", "build")
+    return utils.get_resource_path("build")
 
 
 def get_c64tass_path():
-    return os.path.join(
-        os.path.dirname(__file__), "..", "..", "bins", "macos", "64tass"
-    )
+    return utils.get_resource_path(os.path.join("bins", "macos", "64tass"))
 
 
 def clean_build():

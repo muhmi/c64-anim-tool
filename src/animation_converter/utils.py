@@ -1,6 +1,8 @@
 import math
 import os
 import shutil
+import sys
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageSequence
 
@@ -72,3 +74,14 @@ def copy_file(source_path, destination_folder):
     destination_path = os.path.join(destination_folder, file_name)
     shutil.copy2(source_path, destination_path)
     print(f"File copied successfully from {source_path} to {destination_path}")
+
+
+def get_resource_path(relative_path):
+    if getattr(sys, "frozen", False):
+        # Running in PyInstaller bundle
+        base_path = Path(sys._MEIPASS)
+    else:
+        # Running in normal Python environment
+        base_path = Path(__file__).parent.parent.parent
+
+    return base_path / relative_path
