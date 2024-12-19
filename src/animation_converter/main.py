@@ -7,6 +7,7 @@ import color_data_utils
 import colorama
 import petscii
 import utils
+import gui
 from colorama import Fore
 from packer import Packer, Size2D
 from PIL import Image, ImageDraw, ImageSequence
@@ -291,4 +292,7 @@ def build():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    if len(sys.argv) == 1:
+        gui.create_gui()
+    else:
+        sys.exit(main())
