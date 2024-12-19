@@ -169,7 +169,7 @@ class petscii_screen:
         self.border_color = border_color
         self.charset = []
 
-    def read(self, image, default_charset=None, inverse=False):
+    def read(self, image, default_charset=None, inverse=False, cleanup=1):
 
         bw_image = image.convert("L").point(lambda x: 0 if x <= 1 else 255, "1")
         width, height = bw_image.size
@@ -189,7 +189,7 @@ class petscii_screen:
 
                 # Create bitarray directly while iterating over the 8x8 block
                 char_bits = bitarray()
-
+                num_pixels = 0
                 for i in range(8):
                     for j in range(8):
                         px = x + j
@@ -199,6 +199,7 @@ class petscii_screen:
                             and py < height
                             and bw_image.getpixel((px, py)) != 0
                         ):
+                            num_pixels = num_pixels + 1
                             if inverse:
                                 char_bits.append(0)
                             else:
@@ -209,6 +210,12 @@ class petscii_screen:
                             else:
                                 char_bits.append(0)
 
+                if num_pixels <= cleanup:
+                    if inverse:
+                        char_bits = petscii_char.FULL_DATA
+                    else:
+                        char_bits = petscii_char.BLANK_DATA
+                
                 char = petscii_char(char_bits)
                 char_index = 0
                 if char in self.charset:
@@ -534,7 +541,7 @@ def read_petmate(file_path: str) -> List[petscii_screen]:
 
 
 def read_screens(
-    filename, charset=None, background_color=None, border_color=None, inverse=False
+    filename, charset=None, background_color=None, border_color=None, inverse=False, cleanup=1
 ) -> List["petscii_screen"]:
     if filename.endswith(".c"):
         return read_petscii(filename, charset)
@@ -545,7 +552,7 @@ def read_screens(
         img = Image.open(filename)
         for idx, frame in enumerate(ImageSequence.Iterator(img)):
             screen = petscii_screen(idx, background_color, border_color)
-            screen.read(frame, charset, inverse)
+            screen.read(frame, charset, inverse, cleanup)
             screens.append(screen)
         return screens
 

@@ -26,6 +26,12 @@ def parse_arguments():
         help="Use this charset instead (.64c or .bin)",
     )
     parser.add_argument(
+        "--cleanup",
+        type=int,
+        default=1,
+        help="Remove characters with under N pixels",
+    )
+    parser.add_argument(
         "--color-data",
         type=str,
         default=None,
@@ -146,6 +152,7 @@ def main():
             args.background_color,
             args.border_color,
             args.inverse,
+            args.cleanup
         )
         anim_change_index.append(len(screens))
         print(f"Found {len(screens_in_file)} screens in file")
