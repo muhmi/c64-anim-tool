@@ -301,11 +301,23 @@ exit
 .endblock
 
 test_copy_to_screen1
-	#copy_screen UNPACK_BUFFER_LOCATION, SCREEN1_LOCATION
+	{% for unroll in range(0, 250) %}
+	lda UNPACK_BUFFER_LOCATION + {{ unroll}}
+	sta SCREEN1_LOCATION + {{ unroll }}
+	{% endfor %}
+	{% for unroll in range(2, 8) %}
+		#copy_max_127 UNPACK_BUFFER_LOCATION + {{ unroll * 125}}, SCREEN1_LOCATION + {{ unroll * 125}}, 125
+	{% endfor %}
 	rts
 
 test_copy_to_screen2
-	#copy_screen UNPACK_BUFFER_LOCATION, SCREEN2_LOCATION
+	{% for unroll in range(0, 250) %}
+	lda UNPACK_BUFFER_LOCATION + {{ unroll}}
+	sta SCREEN2_LOCATION + {{ unroll }}
+	{% endfor %}
+	{% for unroll in range(2, 8) %}
+		#copy_max_127 UNPACK_BUFFER_LOCATION + {{ unroll * 125}}, SCREEN2_LOCATION + {{ unroll * 125}}, 125
+	{% endfor %}
 	rts
 
 {% if use_color %}

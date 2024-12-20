@@ -678,7 +678,7 @@ class Packer:
             f"Animation has {len(self.USED_BLOCKS)} used blocks out of {len(self.ALL_BLOCKS)}"
         )
 
-        test_music = "flotsam-preview-mitsubishi-20240827.dat"
+        test_music = "music.dat"
 
         last_used_op_code = 0
         for k, v in self.OP_CODES.items():
