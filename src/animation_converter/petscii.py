@@ -119,6 +119,24 @@ class petscii_char:
         return char_hamming_distance(self, other_char)
 
 
+def find_closest_char(
+    target_char: petscii_char, charset: list[petscii_char]
+) -> tuple[petscii_char, int]:
+    if not charset:
+        raise ValueError("charset cannot be empty")
+
+    closest_char = None
+    min_distance = float("inf")
+
+    for char in charset:
+        dist = target_char.distance(char)
+        if dist < min_distance:
+            min_distance = dist
+            closest_char = char
+
+    return closest_char, min_distance
+
+
 def write_charset(charset: List[petscii_char], file_name: str):
     binary = []
     for char in charset:
@@ -215,23 +233,25 @@ class petscii_screen:
                         char_bits = petscii_char.FULL_DATA
                     else:
                         char_bits = petscii_char.BLANK_DATA
-                
+
                 char = petscii_char(char_bits)
                 char_index = 0
                 if char in self.charset:
+                    # Char in charset, add usage
                     char_index = self.charset.index(char)
                     char = self.charset[char_index]
                     char.add_usage(self.screen_index, row, col)
                 else:
                     if default_charset is not None:
-                        print(
-                            f"Screen {self.screen_index}, character at location ({col}, {row}) is not in charset!"
-                        )
-                        char.display()
-                        sys.exit(1)
-                    char.add_usage(self.screen_index, row, col)
-                    char_index = len(self.charset)
-                    self.charset.append(char)
+                        # Find closest char in default charset
+                        char, _ = find_closest_char(char, self.charset)
+                        char_index = self.charset.index(char)
+                        char.add_usage(self.screen_index, row, col)
+                    else:
+                        # Add new char
+                        char.add_usage(self.screen_index, row, col)
+                        char_index = len(self.charset)
+                        self.charset.append(char)
 
                 # Store as integer, no need for bitarray
                 if offset < 1000:
@@ -541,7 +561,12 @@ def read_petmate(file_path: str) -> List[petscii_screen]:
 
 
 def read_screens(
-    filename, charset=None, background_color=None, border_color=None, inverse=False, cleanup=1
+    filename,
+    charset=None,
+    background_color=None,
+    border_color=None,
+    inverse=False,
+    cleanup=1,
 ) -> List["petscii_screen"]:
     if filename.endswith(".c"):
         return read_petscii(filename, charset)

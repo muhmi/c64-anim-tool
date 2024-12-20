@@ -152,7 +152,7 @@ def main():
             args.background_color,
             args.border_color,
             args.inverse,
-            args.cleanup
+            args.cleanup,
         )
         anim_change_index.append(len(screens))
         print(f"Found {len(screens_in_file)} screens in file")
