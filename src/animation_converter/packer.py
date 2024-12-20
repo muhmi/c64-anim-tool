@@ -783,10 +783,10 @@ class Packer:
 
             template = env.get_template("fill_color_template.asm")
             namespace = {
-                'enumerate': enumerate,
-                'len': len,
-                'hex': hex,
-                'fill_color_blocks': fill_color_blocks
+                "enumerate": enumerate,
+                "len": len,
+                "hex": hex,
+                "fill_color_blocks": fill_color_blocks,
             }
 
             fill_color_file = f"{output_folder}/fill_color.asm"

@@ -103,7 +103,7 @@ def parse_arguments():
         "--color-animation",
         type=str,
         default=None,
-        help="Generate code to animate color data based on first frame of this .c file"
+        help="Generate code to animate color data based on first frame of this .c file",
     )
     return parser.parse_args()
 
