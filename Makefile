@@ -32,4 +32,14 @@ distribute: ## Create standalone exe
 		--noupx \
 		src/animation_converter/main.py
 
+distribute-nuitka: ## Use nuitka instead of pyinstaller
+	@python -m nuitka \
+    --onefile \
+    --output-filename=animation-tool \
+    --include-data-dir="src/resources/test-program=src/resources/test-program" \
+    --include-data-dir="bins=bins" \
+    --include-package=numba \
+    --include-package=llvmlite \
+    src/animation_converter/main.py
+
 .DEFAULT_GOAL := help
