@@ -85,7 +85,7 @@ def parse_arguments():
         help="Randomize color frames, use given value as random seed",
     )
     parser.add_argument(
-        "--disable-rle", type=bool, default=True, help="Disable RLE encoder"
+        "--disable-rle", type=bool, default=False, help="Disable RLE encoder"
     )
     parser.add_argument(
         "--inverse", type=bool, default=False, help="Inverse characters"
@@ -99,7 +99,12 @@ def parse_arguments():
         default=False,
         help="Write color memory to background color between different animation source files",
     )
-
+    parser.add_argument(
+        "--color-animation",
+        type=str,
+        default=None,
+        help="Generate code to animate color data based on first frame of this .c file"
+    )
     return parser.parse_args()
 
 
@@ -212,6 +217,18 @@ def main():
         Size2D(4, 5),
     ]
 
+    def locations_with_same_color(screen: petscii.petscii_screen):
+        points = {}
+        for y in range(25):
+            for x in range(40):
+                offset = y * 40 + x
+                color = screen.color_data[offset]
+                if color in points:
+                    points[color].append(y * 40 + x)
+                else:
+                    points[color] = [y * 40 + x]
+        return points
+
     def set_packer_options(packer, args):
         if args.per_row_mode:
             packer.ONLY_PER_ROW_MODE = True
@@ -220,6 +237,10 @@ def main():
         if args.init_color_between_anims:
             packer.INIT_COLOR_MEM_BETWEEN_ANIMS = True
             packer.ANIM_CHANGE_SCREEN_INDEXES = anim_change_index
+        if args.color_animation:
+            packer.FILL_COLOR_WITH_EFFECT = True
+            screens = petscii.read_screens(args.color_animation)
+            packer.FILL_COLOR_BLOCKS = locations_with_same_color(screens[0])
 
     no_color_support = Size2D(2, 2)
 

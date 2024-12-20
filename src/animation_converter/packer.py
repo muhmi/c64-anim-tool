@@ -73,6 +73,8 @@ class Packer:
         self.INIT_COLOR_MEM_BETWEEN_ANIMS = False
         self.ANIM_CHANGE_SCREEN_INDEXES = []
         self.USE_ONLY_COLOR = False
+        self.FILL_COLOR_WITH_EFFECT = False
+        self.FILL_COLOR_BLOCKS = []
 
         self._initialize_player_ops()
 
@@ -725,6 +727,7 @@ class Packer:
             "blank_char_index": blank_char_index,
             "hex": hex,
             "len": len,
+            "fill_color_with_effect": self.FILL_COLOR_WITH_EFFECT,
             "enumerate": enumerate,
             "x_step": self.X_STEP,
             "y_step": self.Y_STEP,
@@ -771,5 +774,23 @@ class Packer:
         output = test_code_template.render(namespace)
         with open(f"{output_folder}/test.asm", "w") as f:
             f.write(output)
+
+        if self.FILL_COLOR_WITH_EFFECT:
+
+            fill_color_blocks = []
+            for key in self.FILL_COLOR_BLOCKS.keys():
+                fill_color_blocks.append(self.FILL_COLOR_BLOCKS[key])
+
+            template = env.get_template("fill_color_template.asm")
+            namespace = {
+                'enumerate': enumerate,
+                'len': len,
+                'hex': hex,
+                'fill_color_blocks': fill_color_blocks
+            }
+
+            fill_color_file = f"{output_folder}/fill_color.asm"
+            with open(fill_color_file, "w") as fp:
+                fp.write(template.render(namespace))
 
         utils.copy_file(f"{template_dir}/{test_music}", f"{output_folder}")

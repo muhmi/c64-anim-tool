@@ -162,6 +162,7 @@ test_current_buffer           .byte 0
 test_draw_next_frame          .byte 0
 test_background_color         .byte 255
 test_border_color             .byte 255
+test_tick                     .byte 0
 ; Code
 start
 
@@ -201,6 +202,10 @@ start
 	lda #1
 	jsr $1000
 
+{% if fill_color_with_effect %}
+	jsr init_fill_color
+{% endif %}
+
 	jsr player_init
 
 forever
@@ -225,6 +230,11 @@ test_raster_irq .block
 	asl $d019
 
 	jsr $1003
+
+	{% if fill_color_with_effect %}
+	jsr update_fill_color
+	jsr do_one_fill_color_step
+	{% endif %}
 
 	lda test_draw_next_frame
 	cmp #1
@@ -345,13 +355,24 @@ or_value
 helper_table
 .byte 6, 8, 10, 12, 14
 .endblock
+{% if fill_color_with_effect %}
+.include "fill_color.asm"
+{% endif %}
+{% if only_per_row_mode %}
+.include "player.asm"
+{% endif %}
 
 {% for filename, location in charset_files %}
 * = ${{location}}
 .binary "{{ filename }}"
 {% endfor %}
 
-.include "player.asm"
-
 ANIM_LOCATION=*
 .binary "anim.bin"
+
+{% if not only_per_row_mode %}
+.include "player.asm"
+{% endif %}
+
+
+
