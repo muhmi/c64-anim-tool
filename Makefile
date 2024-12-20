@@ -21,7 +21,7 @@ format-python: ## Autoformat python code
 	@echo "$(COLOR_YELLOW)done.$(COLOR_RESET)"
 
 distribute: ## Create standalone exe
-	@pyinstaller --onedir  \
+	@pyinstaller --onefile  \
 		--name animation-tool \
 		--add-data "src/resources/test-program:src/resources/test-program" \
 		--add-data "bins:bins" \
