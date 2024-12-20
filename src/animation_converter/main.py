@@ -288,7 +288,7 @@ def clean_build():
 def build():
     # -o test.prg test.asm
     result = subprocess.run(
-        [get_c64tass_path(), "-o", "test.prg", f"{get_build_path()}/test.asm"],
+        [get_c64tass_path(), "-B", "-o", "test.prg", f"{get_build_path()}/test.asm"],
         capture_output=True,
         text=True,
     )

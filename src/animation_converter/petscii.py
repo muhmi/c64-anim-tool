@@ -2,9 +2,11 @@ import json
 import os
 import re
 import sys
+from heapq import heappop, heappush
 from io import StringIO
-from typing import List, Tuple
+from typing import List, Set, Tuple
 
+import numpy as np
 from bitarray import bitarray
 from PIL import Image, ImageDraw, ImageSequence
 from utils import (create_folder_if_not_exists, rgb_to_idx, save_images_as_gif,
@@ -163,6 +165,66 @@ def read_charset(file_path, skipFirstBytes=False):
             petscii_chars.append(char)
 
     return petscii_chars
+
+
+def calculate_initial_distances(
+    chars: List[petscii_char],
+) -> List[Tuple[float, int, int]]:
+    """Calculate initial distances between all character pairs."""
+    distances = []
+    for i in range(len(chars)):
+        for j in range(i + 1, len(chars)):
+            dist = chars[i].distance(chars[j])
+            # Store as tuple (distance, char1_idx, char2_idx)
+            heappush(distances, (dist, i, j))
+    return distances
+
+
+def reduce_charset(charset: List[petscii_char], target_size: int) -> List[petscii_char]:
+    if len(charset) <= target_size:
+        return charset.copy()
+
+    # Convert to list for index access
+    current_chars = list(charset)
+
+    # Calculate initial distances and store in priority queue
+    distances = calculate_initial_distances(current_chars)
+
+    # Keep track of removed indices
+    removed_indices: Set[int] = set()
+
+    while len(current_chars) - len(removed_indices) > target_size:
+        # Find next valid pair
+        while distances:
+            dist, i, j = heappop(distances)
+            if i not in removed_indices and j not in removed_indices:
+                break
+        else:
+            break  # No more valid pairs
+
+        # Merge the characters
+        char1 = current_chars[i]
+        char2 = current_chars[j]
+
+        merged_char = petscii_char(char1.data)
+        merged_char.used_in_screen = char1.used_in_screen.union(char2.used_in_screen)
+        merged_char.usage = char1.usage.union(char2.usage)
+
+        # Mark indices as removed and add new character
+        removed_indices.add(i)
+        removed_indices.add(j)
+        new_idx = len(current_chars)
+        current_chars.append(merged_char)
+
+        # Calculate distances to new merged character
+        for k in range(len(current_chars) - 1):
+            if k not in removed_indices:
+                dist = current_chars[k].distance(merged_char)
+                heappush(distances, (dist, k, new_idx))
+
+    # Create final result excluding removed characters
+    result = [char for i, char in enumerate(current_chars) if i not in removed_indices]
+    return result[:target_size]
 
 
 def get_rgb_from_palette(image, x, y):
@@ -669,7 +731,7 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
             if char not in charset:
                 new_charset.append(char)
 
-        if len(new_charset) > 256:
+        if len(new_charset) > 255:
             charsets.append(charset)
             charset = [] + seed_charset
 
@@ -677,11 +739,10 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
             if char not in charset:
                 charset.append(char)
 
-            if len(charset) > 256:
-                print(
-                    f"  Screen {idx} has more than 256 characters ({len(charset)}), unable to process it"
-                )
-                sys.exit(1)
+        if len(charset) > 255:
+            charset = reduce_charset(charset, 253)
+            charset.append(petscii_char(petscii_char.BLANK_DATA))
+            charset.append(petscii_char(petscii_char.FULL_DATA))
 
         if idx > 0:
             diff = set(screens[idx - 1].charset) - set(screen.charset)
@@ -721,7 +782,7 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
                     debug_screen.color_data[offset] = 1
             dbg_screen_color_changes.append(debug_screen)
 
-        screen.remap_characters(charset)
+        screen.remap_characters(charset, allow_error=True)
 
     charsets.append(charset)
 
