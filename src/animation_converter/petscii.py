@@ -740,10 +740,10 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
                 charset.append(char)
 
         if len(charset) > 255:
-            charset = reduce_charset(charset, 253)
-            charset.append(petscii_char(petscii_char.BLANK_DATA))
-            charset.append(petscii_char(petscii_char.FULL_DATA))
-
+            charset = [
+                petscii_char(petscii_char.BLANK_DATA),
+                petscii_char(petscii_char.FULL_DATA),
+            ] + reduce_charset(charset, 253)
         if idx > 0:
             diff = set(screens[idx - 1].charset) - set(screen.charset)
             print(
@@ -828,8 +828,25 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
 
 
 def merge_charsets_compress(screens, max_charsets=4):
-    screens, charsets = merge_charsets(screens)
-    screens, charsets, _ = compress_charsets(
-        screens, charsets, max_charsets=max_charsets
-    )
-    return screens, charsets
+    if max_charsets == 1:
+        all_chars = []
+        for idx, screen in enumerate(screens):
+            all_chars.extend(screen.charset)
+
+        print(f"Crunching all {len(all_chars)} characters to one charset")
+        charset = [
+            petscii_char(petscii_char.BLANK_DATA),
+            petscii_char(petscii_char.FULL_DATA),
+        ] + reduce_charset(all_chars, 253)
+
+        for screen in screens:
+            screen.remap_characters(charset, True)
+
+        return screens, [charset]
+    else:
+
+        screens, charsets = merge_charsets(screens)
+        screens, charsets, _ = compress_charsets(
+            screens, charsets, max_charsets=max_charsets
+        )
+        return screens, charsets

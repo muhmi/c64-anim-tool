@@ -41,7 +41,7 @@ def parse_arguments():
     parser.add_argument(
         "--limit-charsets",
         type=int,
-        default=None,
+        default=4,
         help="Try to limit amount of charsets to this number, must be over 1",
     )
     parser.add_argument(
@@ -85,7 +85,7 @@ def parse_arguments():
         help="Randomize color frames, use given value as random seed",
     )
     parser.add_argument(
-        "--disable-rle", type=bool, default=False, help="Disable RLE encoder"
+        "--disable-rle", type=bool, default=True, help="Disable RLE encoder"
     )
     parser.add_argument(
         "--inverse", type=bool, default=False, help="Inverse characters"
