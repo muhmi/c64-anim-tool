@@ -2,12 +2,16 @@ import json
 import os
 import re
 import sys
+from functools import lru_cache
 from heapq import heappop, heappush
 from io import StringIO
+from itertools import combinations
+from multiprocessing import Pool, cpu_count
 from typing import List, Set, Tuple
 
 import numpy as np
 from bitarray import bitarray
+from numba import jit
 from PIL import Image, ImageDraw, ImageSequence
 from utils import (create_folder_if_not_exists, rgb_to_idx, save_images_as_gif,
                    vicPalette, write_bin)
@@ -35,24 +39,31 @@ class char_use_location:
         return f"char_use_location(screen_index={self.screen_index}, row={self.row}, col={self.col})"
 
 
+@jit(nopython=True)
 def byte_hamming_distance(byte1, byte2):
-    return bin(byte1 ^ byte2).count("1")
+    xor = byte1 ^ byte2
+    count = 0
+    while xor:
+        count += xor & 1
+        xor >>= 1
+    return count
 
 
-GLOBAL_DISTANCE_CACHE = {}
+@jit(nopython=True)
+def _jitted_char_distance(char1_data, char2_data):
+    distance = 0
+    for row1, row2 in zip(char1_data, char2_data):
+        distance += byte_hamming_distance(row1, row2)
+    return distance
 
 
+# Keep the same interface but use the jitted function internally
+@lru_cache(maxsize=20000)  # Replace the global dict with lru_cache
 def char_hamming_distance(char1, char2):
-    key = (char1, char2)
-    if key in GLOBAL_DISTANCE_CACHE:
-        return GLOBAL_DISTANCE_CACHE[key]
-    else:
-        distance = sum(
-            byte_hamming_distance(row1, row2)
-            for row1, row2 in zip(char1.data, char2.data)
-        )
-        GLOBAL_DISTANCE_CACHE[key] = distance
-        return distance
+    # Convert character data to numpy arrays for Numba
+    data1 = np.array(char1.data, dtype=np.uint8)
+    data2 = np.array(char2.data, dtype=np.uint8)
+    return _jitted_char_distance(data1, data2)
 
 
 class petscii_char:
@@ -167,42 +178,81 @@ def read_charset(file_path, skipFirstBytes=False):
     return petscii_chars
 
 
-def calculate_initial_distances(
-    chars: List[petscii_char],
-) -> List[Tuple[float, int, int]]:
-    """Calculate initial distances between all character pairs."""
-    distances = []
-    for i in range(len(chars)):
-        for j in range(i + 1, len(chars)):
-            dist = chars[i].distance(chars[j])
-            # Store as tuple (distance, char1_idx, char2_idx)
-            heappush(distances, (dist, i, j))
-    return distances
+@jit(nopython=True)
+def _jitted_calculate_distances(
+    char_data: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    n_chars = len(char_data)
+    n_pairs = (n_chars * (n_chars - 1)) // 2
+
+    # Pre-allocate arrays for distances and indices
+    distances = np.zeros(n_pairs, dtype=np.float32)
+    indices_i = np.zeros(n_pairs, dtype=np.int32)
+    indices_j = np.zeros(n_pairs, dtype=np.int32)
+
+    idx = 0
+    for i in range(n_chars):
+        for j in range(i + 1, n_chars):
+            # Calculate distance between chars[i] and chars[j]
+            dist = 0
+            for row1, row2 in zip(char_data[i], char_data[j]):
+                xor = row1 ^ row2
+                while xor:
+                    dist += xor & 1
+                    xor >>= 1
+
+            distances[idx] = dist
+            indices_i[idx] = i
+            indices_j[idx] = j
+            idx += 1
+
+    return distances, indices_i, indices_j
+
+
+@jit(nopython=True)
+def _jitted_find_min_valid(
+    distances: np.ndarray,
+    indices_i: np.ndarray,
+    indices_j: np.ndarray,
+    removed: np.ndarray,
+) -> Tuple[int, int, int]:
+    min_dist = np.inf
+    min_idx = -1
+
+    for idx in range(len(distances)):
+        i, j = indices_i[idx], indices_j[idx]
+        if not removed[i] and not removed[j] and distances[idx] < min_dist:
+            min_dist = distances[idx]
+            min_idx = idx
+
+    if min_idx != -1:
+        return min_idx, indices_i[min_idx], indices_j[min_idx]
+    return -1, -1, -1
 
 
 def reduce_charset(charset: List[petscii_char], target_size: int) -> List[petscii_char]:
     if len(charset) <= target_size:
         return charset.copy()
 
-    # Convert to list for index access
+    # Convert characters to numpy array for JIT processing
+    char_data = np.array([char.data for char in charset], dtype=np.uint8)
     current_chars = list(charset)
 
-    # Calculate initial distances and store in priority queue
-    distances = calculate_initial_distances(current_chars)
+    # Calculate initial distances using JIT
+    distances, indices_i, indices_j = _jitted_calculate_distances(char_data)
 
-    # Keep track of removed indices
-    removed_indices: Set[int] = set()
+    # Keep track of removed indices - make this large enough for all potential new chars
+    max_possible_chars = len(charset) * 2  # Conservative estimate
+    removed = np.zeros(max_possible_chars, dtype=np.bool_)
 
-    while len(current_chars) - len(removed_indices) > target_size:
-        # Find next valid pair
-        while distances:
-            dist, i, j = heappop(distances)
-            if i not in removed_indices and j not in removed_indices:
-                break
-        else:
-            break  # No more valid pairs
+    while len(current_chars) - np.sum(removed) > target_size:
+        # Find next valid pair using JIT
+        min_idx, i, j = _jitted_find_min_valid(distances, indices_i, indices_j, removed)
 
-        # Merge the characters
+        if min_idx == -1:
+            break
+
+        # Merge the characters (this part stays in Python for class operations)
         char1 = current_chars[i]
         char2 = current_chars[j]
 
@@ -210,20 +260,49 @@ def reduce_charset(charset: List[petscii_char], target_size: int) -> List[petsci
         merged_char.used_in_screen = char1.used_in_screen.union(char2.used_in_screen)
         merged_char.usage = char1.usage.union(char2.usage)
 
-        # Mark indices as removed and add new character
-        removed_indices.add(i)
-        removed_indices.add(j)
+        # Mark indices as removed
+        removed[i] = True
+        removed[j] = True
+
+        # Add new character
         new_idx = len(current_chars)
         current_chars.append(merged_char)
 
-        # Calculate distances to new merged character
-        for k in range(len(current_chars) - 1):
-            if k not in removed_indices:
-                dist = current_chars[k].distance(merged_char)
-                heappush(distances, (dist, k, new_idx))
+        # Extend arrays for new distances
+        char_data = np.vstack((char_data, merged_char.data))
+
+        # Pre-allocate arrays for new distances
+        new_distances = []
+        new_indices_i = []
+        new_indices_j = []
+
+        # Calculate new distances to merged character
+        for k in range(new_idx):
+            if not removed[k]:
+                dist = 0
+                for row1, row2 in zip(char_data[k], char_data[new_idx]):
+                    xor = row1 ^ row2
+                    while xor:
+                        dist += xor & 1
+                        xor >>= 1
+                new_distances.append(dist)
+                new_indices_i.append(k)
+                new_indices_j.append(new_idx)
+
+        # Convert to numpy arrays and append
+        if new_distances:  # Only append if we have new distances
+            distances = np.concatenate(
+                [distances, np.array(new_distances, dtype=np.float32)]
+            )
+            indices_i = np.concatenate(
+                [indices_i, np.array(new_indices_i, dtype=np.int32)]
+            )
+            indices_j = np.concatenate(
+                [indices_j, np.array(new_indices_j, dtype=np.int32)]
+            )
 
     # Create final result excluding removed characters
-    result = [char for i, char in enumerate(current_chars) if i not in removed_indices]
+    result = [char for i, char in enumerate(current_chars) if not removed[i]]
     return result[:target_size]
 
 
@@ -735,9 +814,12 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
             charsets.append(charset)
             charset = [] + seed_charset
 
-        for char in screen.charset:
-            if char not in charset:
-                charset.append(char)
+            for char in screen.charset:
+                if char not in charset:
+                    charset.append(char)
+        else:
+            charset.clear()
+            charset.extend(new_charset)
 
         if len(charset) > 255:
             charset = [

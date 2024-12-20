@@ -21,12 +21,15 @@ format-python: ## Autoformat python code
 	@echo "$(COLOR_YELLOW)done.$(COLOR_RESET)"
 
 distribute: ## Create standalone exe
-	@pyinstaller --onefile \
+	@pyinstaller --onedir  \
 		--name animation-tool \
 		--add-data "src/resources/test-program:src/resources/test-program" \
 		--add-data "bins:bins" \
 		--paths src \
 		--paths src/animation_converter \
+		--hidden-import=numba \
+		--bootloader-ignore-signals \
+		--noupx \
 		src/animation_converter/main.py
 
 .DEFAULT_GOAL := help
