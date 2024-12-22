@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
+from typing import List
 
 from PIL import Image, ImageDraw, ImageSequence
 
@@ -90,3 +91,20 @@ def get_resource_path(relative_path):
     # print(f"Contents: {list(test_path.glob('*'))}")
 
     return base_path / relative_path
+
+
+def read_palette_from_file(source: str) -> List[int]:
+    cols = Image.open(source)
+    palette = []
+    (width, _) = cols.size
+    for x in range(0, width):
+        palette.append(rgb_to_idx(cols.getpixel((x, 0))))
+    return palette[:255]
+
+
+def read_color_palette(source: str) -> List[int]:
+    palette = [1, 7, 3, 5, 4, 2, 6, 0]
+    if os.path.exists(source):
+        return read_palette_from_file(source)
+    else:
+        return [int(x.strip()) for x in source.split(",")]

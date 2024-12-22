@@ -2,7 +2,6 @@ import argparse
 import os
 import subprocess
 import sys
-from typing import List
 
 import color_data_utils
 import colorama
@@ -10,7 +9,7 @@ import petscii
 import utils
 from colorama import Fore
 from packer import Packer, Size2D
-from PIL import Image, ImageDraw, ImageSequence
+from PIL import ImageDraw, ImageSequence
 
 
 def parse_arguments():
@@ -115,23 +114,6 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def read_palette_from_file(source: str) -> List[int]:
-    cols = Image.open(source)
-    palette = []
-    (width, _) = cols.size
-    for x in range(0, width):
-        palette.append(utils.rgb_to_idx(cols.getpixel((x, 0))))
-    return palette
-
-
-def read_color_palette(source: str) -> List[int]:
-    palette = [1, 7, 3, 5, 4, 2, 6, 0]
-    if os.path.exists(source):
-        return read_palette_from_file(source)
-    else:
-        return [int(x.strip()) for x in source.split(",")]
-
-
 def main():
     # colorama
     colorama.init(autoreset=True)
@@ -227,7 +209,7 @@ def main():
 
     fill_color_palette = [1, 7, 3, 5, 4, 2, 6, 0]
     if args.color_animation_palette:
-        fill_color_palette = read_color_palette(args.color_animation_palette)
+        fill_color_palette = utils.read_color_palette(args.color_animation_palette)
 
     print(f"Packing, use_color = {args.use_color}")
 
