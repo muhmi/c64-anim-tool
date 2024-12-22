@@ -32,7 +32,7 @@ update_fill_color .block
     lda fill_color_values,x
     sta fill_color
     inx
-    cpx #8
+    cpx #{{len(fill_color_palette)}}
     bne +
     ldx #0
 +   stx fill_color_idx
@@ -62,8 +62,9 @@ jmp_to_fill
 .endblock
 
 fill_color_values
-.byte $1, $7, $3, $5, $4, $2, $6, $0
-
+{% for color in fill_color_palette %}
+.byte {{color}}
+{% endfor %}
 
 fill_color_tab_lo
 {% for idx, _ in enumerate(fill_color_blocks) %}

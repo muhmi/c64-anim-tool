@@ -75,6 +75,7 @@ class Packer:
         self.USE_ONLY_COLOR = False
         self.FILL_COLOR_WITH_EFFECT = False
         self.FILL_COLOR_BLOCKS = []
+        self.FILL_COLOR_PALETTE = [1, 7, 3, 5, 4, 2, 6, 0]
 
         self._initialize_player_ops()
 
@@ -787,6 +788,7 @@ class Packer:
                 "len": len,
                 "hex": hex,
                 "fill_color_blocks": fill_color_blocks,
+                "fill_color_palette": self.FILL_COLOR_PALETTE,
             }
 
             fill_color_file = f"{output_folder}/fill_color.asm"
