@@ -909,6 +909,55 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
     return screens, charsets
 
 
+def split_screens_even(
+    screens: List["petscii_screen"], n_chunks: int
+) -> List[List["petscii_screen"]]:
+    if n_chunks <= 0:
+        raise ValueError("Number of chunks must be positive")
+    if n_chunks > len(screens):
+        n_chunks = len(screens)
+
+    base_size = len(screens) // n_chunks
+    remainder = len(screens) % n_chunks
+
+    chunks = []
+    start = 0
+
+    for i in range(n_chunks):
+        chunk_size = base_size + (1 if i < remainder else 0)
+        end = start + chunk_size
+        chunks.append(screens[start:end])
+        start = end
+
+    return chunks
+
+
+def merge_charsets_new(
+    screens: List[petscii_screen], max_charsets: int = 4
+) -> List[petscii_screen]:
+    print(f"Merging charsets to {max_charsets}")
+    charsets = []
+    for chunk in split_screens_even(screens, max_charsets):
+        all_chars = []
+        for screen in chunk:
+            for char in screen.charset:
+                all_chars.append(char)
+
+        print(f"Generating charset {1+len(charsets)}/{max_charsets}")
+
+        charset = [
+            petscii_char(petscii_char.BLANK_DATA),
+            petscii_char(petscii_char.FULL_DATA),
+        ] + reduce_charset(all_chars, 253)
+
+        for screen in chunk:
+            screen.remap_characters(charset, allow_error=True)
+
+        charsets.append(charset)
+
+    return screens, charsets
+
+
 def merge_charsets_compress(screens, max_charsets=4):
     if max_charsets == 1:
         all_chars = []
@@ -926,9 +975,9 @@ def merge_charsets_compress(screens, max_charsets=4):
 
         return screens, [charset]
     else:
-
-        screens, charsets = merge_charsets(screens)
-        screens, charsets, _ = compress_charsets(
-            screens, charsets, max_charsets=max_charsets
-        )
-        return screens, charsets
+        return merge_charsets_new(screens, max_charsets)
+        # screens, charsets = merge_charsets(screens)
+        # screens, charsets, _ = compress_charsets(
+        #    screens, charsets, max_charsets=max_charsets
+        # )
+        # return screens, charsets
