@@ -935,7 +935,7 @@ def split_screens_even(
 def merge_charsets_new(
     screens: List[petscii_screen], max_charsets: int = 4
 ) -> List[petscii_screen]:
-    print(f"Merging charsets to {max_charsets}")
+    print(f"Merging data in {len(screens)} screens to {max_charsets} charsets")
     charsets = []
     for chunk in split_screens_even(screens, max_charsets):
         all_chars = []
@@ -958,7 +958,7 @@ def merge_charsets_new(
     return screens, charsets
 
 
-def merge_charsets_compress(screens, max_charsets=4):
+def merge_charsets_compress(screens, max_charsets=4, full_charsets=False):
     if max_charsets == 1:
         all_chars = []
         for idx, screen in enumerate(screens):
@@ -975,9 +975,11 @@ def merge_charsets_compress(screens, max_charsets=4):
 
         return screens, [charset]
     else:
-        return merge_charsets_new(screens, max_charsets)
-        # screens, charsets = merge_charsets(screens)
-        # screens, charsets, _ = compress_charsets(
-        #    screens, charsets, max_charsets=max_charsets
-        # )
-        # return screens, charsets
+        if full_charsets:
+            return merge_charsets_new(screens, max_charsets)
+        else:
+            screens, charsets = merge_charsets(screens)
+            screens, charsets, _ = compress_charsets(
+                screens, charsets, max_charsets=max_charsets
+            )
+            return screens, charsets

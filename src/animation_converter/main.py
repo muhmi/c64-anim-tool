@@ -45,6 +45,11 @@ def parse_arguments():
         help="Try to limit amount of charsets to this number, must be over 1",
     )
     parser.add_argument(
+        "--full-charsets",
+        action="store_true",
+        help="Try to produce only full 256 char charsets, quality may suffer now",
+    )
+    parser.add_argument(
         "--start-threshold",
         type=int,
         default=2,
@@ -202,7 +207,7 @@ def main():
     if args.limit_charsets:
         if len(charsets) > args.limit_charsets:
             screens, charsets = petscii.merge_charsets_compress(
-                screens, args.limit_charsets
+                screens, args.limit_charsets, args.full_charsets
             )
         else:
             print(f"No need to limit charsets, already at {len(charsets)}")
