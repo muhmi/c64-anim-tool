@@ -20,14 +20,6 @@ init_fill_color
     rts
 
 update_fill_color .block
-    inc fill_color_tick
-    lda fill_color_tick
-    cmp #3
-    bne exit
-
-    lda #0
-    sta fill_color_tick
-
     ldx fill_color_idx
     lda fill_color_values,x
     sta fill_color
