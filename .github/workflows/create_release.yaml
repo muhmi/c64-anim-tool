@@ -1,0 +1,43 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download latest Ubuntu artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: Build Executables
+          name: animation-tool-ubuntu-latest
+          path: dist/ubuntu
+          workflow_conclusion: success
+          
+      - name: Download latest MacOS artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: Build Executables
+          name: animation-tool-macos-latest
+          path: dist/macos
+          workflow_conclusion: success
+
+      - name: Generate timestamp
+        id: timestamp
+        run: echo "timestamp=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: release-${{ steps.timestamp.outputs.timestamp }}
+          name: Release ${{ steps.timestamp.outputs.timestamp }}
+          files: |
+            dist/ubuntu/*
+            dist/macos/*
+          generate_release_notes: true
