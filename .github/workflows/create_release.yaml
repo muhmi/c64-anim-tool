@@ -2,31 +2,32 @@ name: Create Release
 
 on:
   workflow_dispatch:
+  
+permissions:
+  contents: write
+  actions: read
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: read
     steps:
       - uses: actions/checkout@v4
       
-      - name: Download latest Ubuntu artifact
-        uses: dawidd6/action-download-artifact@v3
+      - name: Download Ubuntu artifact
+        uses: actions/download-artifact@v4
         with:
-          workflow: Build Executables
           name: animation-tool-ubuntu-latest
           path: dist/ubuntu
-          workflow_conclusion: success
+          repository: muhmi/c64-anim-tool
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: Download latest MacOS artifact
-        uses: dawidd6/action-download-artifact@v3
+      - name: Download MacOS artifact
+        uses: actions/download-artifact@v4
         with:
-          workflow: Build Executables
           name: animation-tool-macos-latest
           path: dist/macos
-          workflow_conclusion: success
+          repository: muhmi/c64-anim-tool
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate timestamp
         id: timestamp
