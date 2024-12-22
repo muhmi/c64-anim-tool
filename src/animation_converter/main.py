@@ -110,7 +110,7 @@ def parse_arguments():
         "--color-animation-palette",
         type=str,
         default=None,
-        help="Read color palette from a file for the color animation",
+        help="Read color palette from a file for the color animation (if a file is given its assumed to be an image with first row being the palette)",
     )
     return parser.parse_args()
 
