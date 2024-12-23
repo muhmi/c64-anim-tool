@@ -11,6 +11,7 @@ from typing import List, Set, Tuple
 
 import numpy as np
 from bitarray import bitarray
+from colorama import Fore
 from numba import jit
 from PIL import Image, ImageDraw, ImageSequence
 from utils import (create_folder_if_not_exists, rgb_to_idx, save_images_as_gif,
@@ -868,7 +869,7 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
 
     charsets.append(charset)
 
-    print(f"Merged the screens to {len(charsets)} charsets")
+    print(Fore.GREEN + f"Merged the screens to {len(charsets)} charsets")
 
     if debug_output_folder is not None:
 
@@ -935,7 +936,9 @@ def split_screens_even(
 def merge_charsets_new(
     screens: List[petscii_screen], max_charsets: int = 4
 ) -> List[petscii_screen]:
-    print(f"Merging data in {len(screens)} screens to {max_charsets} charsets")
+    print(
+        Fore.BLUE + f"Merging data in {len(screens)} screens to {max_charsets} charsets"
+    )
     charsets = []
     for chunk in split_screens_even(screens, max_charsets):
         all_chars = []
@@ -961,10 +964,10 @@ def merge_charsets_new(
 def merge_charsets_compress(screens, max_charsets=4, full_charsets=False):
     if max_charsets == 1:
         all_chars = []
-        for idx, screen in enumerate(screens):
+        for screen in screens:
             all_chars.extend(screen.charset)
 
-        print(f"Crunching all {len(all_chars)} characters to one charset")
+        print(Fore.GREEN + f"Crunching all {len(all_chars)} characters to one charset")
         charset = [
             petscii_char(petscii_char.BLANK_DATA),
             petscii_char(petscii_char.FULL_DATA),

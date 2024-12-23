@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, NamedTuple
 
 import utils
+from colorama import Fore
 from jinja2 import Environment, FileSystemLoader
 from petscii import petscii_char, petscii_screen
 from rle_codec import RLECodec
@@ -450,7 +451,7 @@ class Packer:
 
             if not self.USE_ONLY_COLOR:
                 if screen != screens[idx].screen_codes:
-                    print("ERROR: Packer & unpacker dont work together!!!")
+                    print(Fore.RED + "ERROR: Packer & unpacker dont work together!!!")
                     print(f"SCREEN DATA IS BROKEN AT FRAME {idx}")
                     print("unpacked:")
                     self.print_list(screen)
@@ -460,7 +461,7 @@ class Packer:
 
             if use_color:
                 if color != screens[idx].color_data:
-                    print("ERROR: Packer & unpacker dont work together!!!")
+                    print(Fore.RED + "ERROR: Packer & unpacker dont work together!!!")
                     print(f"COLOR DATA IS BROKEN AT FRAME {idx}")
                     print("unpacked:")
                     self.print_list(color)
@@ -692,7 +693,10 @@ class Packer:
         elif os.path.exists(self.MUSIC_FILE_NAME):
             test_music = self.MUSIC_FILE_NAME
         else:
-            print(f"Unable to find music data at {test_music}")
+            print(
+                Fore.YELLOW
+                + f"WARNING: Unable to find music data file {self.MUSIC_FILE_NAME}"
+            )
 
         if test_music:
             test_music_filename = os.path.basename(test_music)
@@ -734,7 +738,8 @@ class Packer:
                 top_10 = list(islice(sorted_rle_counts.items(), 10))
                 if top_10[0][0] == 1:
                     print(
-                        "!!! Warning, using RLE to pack full screen but its going to perform poorly with this data"
+                        Fore.YELLOW
+                        + "WARING: Using RLE to pack full screen but its going to perform poorly with this data"
                     )
 
         namespace = {
