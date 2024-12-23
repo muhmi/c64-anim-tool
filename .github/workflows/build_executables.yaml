@@ -32,12 +32,17 @@ jobs:
     - name: Build with Make
       run: make distribute
 
+    - name: Prepare artifacts
+      run: |
+        mkdir -p ${{ matrix.os == 'ubuntu-latest' && 'ubuntu' || 'macos' }}
+        cp dist/dist/animation-tool ${{ matrix.os == 'ubuntu-latest' && 'ubuntu' || 'macos' }}/
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: animation-tool-${{ matrix.os }}
         path: |
-          dist/*
+          ${{ matrix.os == 'ubuntu-latest' && 'ubuntu' || 'macos' }}/*
           README.md
 
   release:
@@ -51,13 +56,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: animation-tool-ubuntu-latest
-          path: ubuntu-build
+          path: release-files
 
       - name: Download MacOS artifact
         uses: actions/download-artifact@v4
         with:
           name: animation-tool-macos-latest
-          path: macos-build
+          path: release-files
+
+      - name: List downloaded files
+        run: ls -R release-files
 
       - name: Generate timestamp
         id: timestamp
@@ -69,7 +77,7 @@ jobs:
           tag_name: release-${{ steps.timestamp.outputs.timestamp }}
           name: Release ${{ steps.timestamp.outputs.timestamp }}
           files: |
-            ubuntu-build/dist/animation-tool
-            macos-build/dist/animation-tool
-            ubuntu-build/README.md
+            release-files/ubuntu/animation-tool
+            release-files/macos/animation-tool
+            release-files/README.md
           generate_release_notes: true
