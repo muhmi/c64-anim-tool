@@ -630,9 +630,6 @@ def ints_to_bitarray(list: List[int]):
     return ba
 
 
-# :{"name":"shutdown-charset","font":{"bits":[
-
-
 def read_charset_from_petmate(customFont):
     name = customFont["name"]
     bits = customFont["font"]["bits"]
