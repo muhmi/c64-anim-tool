@@ -2,11 +2,6 @@ name: Build Executables
 
 on:
   workflow_dispatch:
-    inputs:
-      create_release:
-        description: 'Create release from artifacts'
-        type: boolean
-        default: false
 
 jobs:
   build:
@@ -44,40 +39,3 @@ jobs:
         path: |
           ${{ matrix.os == 'ubuntu-latest' && 'ubuntu' || 'macos' }}/*
           README.md
-
-  release:
-    needs: build
-    if: github.event.inputs.create_release == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download Ubuntu artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: animation-tool-ubuntu-latest
-          path: release-files
-
-      - name: Download MacOS artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: animation-tool-macos-latest
-          path: release-files
-
-      - name: List downloaded files
-        run: ls -R release-files
-
-      - name: Generate timestamp
-        id: timestamp
-        run: echo "timestamp=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: release-${{ steps.timestamp.outputs.timestamp }}
-          name: Release ${{ steps.timestamp.outputs.timestamp }}
-          files: |
-            release-files/ubuntu/animation-tool
-            release-files/macos/animation-tool
-            release-files/README.md
-          generate_release_notes: true
