@@ -21,11 +21,13 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --charset CHARSET     Use this charset instead (.64c or .bin)
+  --cleanup CLEANUP     Remove characters with under N pixels
   --color-data COLOR_DATA
                         Use this file as source for color data
   --use-color           Animate color data
   --limit-charsets LIMIT_CHARSETS
                         Try to limit amount of charsets to this number, must be over 1
+  --full-charsets       Try to produce only full 256 char charsets, quality may suffer now
   --start-threshold START_THRESHOLD
                         When limiting charsets use this threshold value for closeness of characters at start (1 to 7)
   --border-color BORDER_COLOR
@@ -47,6 +49,10 @@ options:
                         Per for delta packer mode
   --init-color-between-anims INIT_COLOR_BETWEEN_ANIMS
                         Write color memory to background color between different animation source files
+  --color-animation COLOR_ANIMATION
+                        Generate code to animate color data based on first frame of this .c file
+  --color-animation-palette COLOR_ANIMATION_PALETTE
+                        Read color palette from a file for the color animation (if a file is given its assumed to be an image with first row being the palette)
 ```
 
 ### Generate .prg from GIF animation
