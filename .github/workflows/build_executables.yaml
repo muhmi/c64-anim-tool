@@ -47,24 +47,17 @@ jobs:
     permissions:
       contents: write
     steps:
-
       - name: Download Ubuntu artifact
         uses: actions/download-artifact@v4
         with:
           name: animation-tool-ubuntu-latest
-          path: dist/ubuntu
+          path: ubuntu-build
 
       - name: Download MacOS artifact
         uses: actions/download-artifact@v4
         with:
           name: animation-tool-macos-latest
-          path: dist/macos
-
-      - name: List files for verification
-        run: |
-          ls -R dist/
-          pwd
-          ls
+          path: macos-build
 
       - name: Generate timestamp
         id: timestamp
@@ -76,6 +69,7 @@ jobs:
           tag_name: release-${{ steps.timestamp.outputs.timestamp }}
           name: Release ${{ steps.timestamp.outputs.timestamp }}
           files: |
-            dist/ubuntu/dist/*
-            dist/macos/dist/*
+            ubuntu-build/dist/animation-tool
+            macos-build/dist/animation-tool
+            ubuntu-build/README.md
           generate_release_notes: true
