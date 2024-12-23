@@ -78,6 +78,8 @@ class Packer:
         self.FILL_COLOR_BLOCKS = []
         self.FILL_COLOR_PALETTE = [1, 7, 3, 5, 4, 2, 6, 0]
         self.MUSIC_FILE_NAME = "music.dat"
+        self.OVERRIDE_TEMPLATE_DIR = None
+        self.OUTPUT_SOURCES_DIR = None
 
         self._initialize_player_ops()
 
@@ -664,6 +666,9 @@ class Packer:
         template_dir = utils.get_resource_path(
             os.path.join("src", "resources", "test-program")
         )
+        if self.OVERRIDE_TEMPLATE_DIR:
+            template_dir = os.path.abspath(self.OVERRIDE_TEMPLATE_DIR)
+            print(Fore.GREEN + f"Reading templates and data from {template_dir}")
 
         macro_blocks = self.get_macro_blocks()
 
@@ -814,3 +819,11 @@ class Packer:
 
         if test_music:
             utils.copy_file(test_music, f"{output_folder}")
+
+        if self.OUTPUT_SOURCES_DIR:
+            print(Fore.GREEN + f"Output sources to {self.OUTPUT_SOURCES_DIR}")
+            utils.create_folder_if_not_exists(self.OUTPUT_SOURCES_DIR)
+            for filename in os.listdir(output_folder):
+                file_path = os.path.join(output_folder, filename)
+                if os.path.isfile(file_path):
+                    utils.copy_file(file_path, self.OUTPUT_SOURCES_DIR)

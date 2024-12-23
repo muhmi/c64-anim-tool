@@ -120,7 +120,19 @@ def parse_arguments():
         "--music",
         type=str,
         default=None,
-        help="Include given file as music to test.prg",
+        help="Include given file as music to test.prg, invalid file name leads to music being ignored.",
+    )
+    parser.add_argument(
+        "--template-dir",
+        type=str,
+        default=None,
+        help="Use this directory as source for templates",
+    )
+    parser.add_argument(
+        "--output-sources",
+        type=str,
+        default=None,
+        help="Output sources to given folder",
     )
     return parser.parse_args()
 
@@ -265,6 +277,10 @@ def main():
             packer.FILL_COLOR_PALETTE = fill_color_palette
         if args.music:
             packer.MUSIC_FILE_NAME = args.music
+        if args.template_dir:
+            packer.OVERRIDE_TEMPLATE_DIR = args.template_dir
+        if args.output_sources:
+            packer.OUTPUT_SOURCES_DIR = args.output_sources
 
     no_color_support = Size2D(2, 2)
 
