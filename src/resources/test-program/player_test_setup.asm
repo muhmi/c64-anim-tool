@@ -127,8 +127,10 @@ setup_raster_irq .macro
 	player_macro_block_tmp  .fill 1
 	player_general_tmp      .fill 1
 
+{% if test_music %}
 * = $1000
 	.binary	"{{test_music}}"
+{% endif %}
 
 * = $0801
 	.word (+), 10
@@ -199,8 +201,10 @@ start
 
 	#setup_raster_irq test_raster_irq,50
 
+{% if test_music %}
 	lda #1
 	jsr $1000
+{% endif %}
 
 {% if fill_color_with_effect %}
 	jsr init_fill_color
@@ -228,8 +232,9 @@ test_raster_irq .block
 	tya
 	pha
 	asl $d019
-
+{% if test_music %}
 	jsr $1003
+{% endif %}
 
 	{% if fill_color_with_effect %}
 	jsr update_fill_color

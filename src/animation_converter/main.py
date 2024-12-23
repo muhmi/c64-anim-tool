@@ -116,6 +116,12 @@ def parse_arguments():
         default=None,
         help="Read color palette from a file for the color animation (if a file is given its assumed to be an image with first row being the palette)",
     )
+    parser.add_argument(
+        "--music",
+        type=str,
+        default=None,
+        help="Include given file as music to test.prg",
+    )
     return parser.parse_args()
 
 
@@ -257,6 +263,8 @@ def main():
             screens = petscii.read_screens(args.color_animation)
             packer.FILL_COLOR_BLOCKS = locations_with_same_color(screens[0])
             packer.FILL_COLOR_PALETTE = fill_color_palette
+        if args.music:
+            packer.MUSIC_FILE_NAME = args.music
 
     no_color_support = Size2D(2, 2)
 

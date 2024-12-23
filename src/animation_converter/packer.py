@@ -76,6 +76,7 @@ class Packer:
         self.FILL_COLOR_WITH_EFFECT = False
         self.FILL_COLOR_BLOCKS = []
         self.FILL_COLOR_PALETTE = [1, 7, 3, 5, 4, 2, 6, 0]
+        self.MUSIC_FILE_NAME = "music.dat"
 
         self._initialize_player_ops()
 
@@ -659,6 +660,9 @@ class Packer:
         use_color: bool = False,
         optimize_player: bool = True,
     ):
+        template_dir = utils.get_resource_path(
+            os.path.join("src", "resources", "test-program")
+        )
 
         macro_blocks = self.get_macro_blocks()
 
@@ -681,7 +685,17 @@ class Packer:
             f"Animation has {len(self.USED_BLOCKS)} used blocks out of {len(self.ALL_BLOCKS)}"
         )
 
-        test_music = "music.dat"
+        test_music = None
+        test_music_filename = None
+        if os.path.exists(os.path.join(template_dir, self.MUSIC_FILE_NAME)):
+            test_music = os.path.join(template_dir, self.MUSIC_FILE_NAME)
+        elif os.path.exists(self.MUSIC_FILE_NAME):
+            test_music = self.MUSIC_FILE_NAME
+        else:
+            print(f"Unable to find music data at {test_music}")
+
+        if test_music:
+            test_music_filename = os.path.basename(test_music)
 
         last_used_op_code = 0
         for k, v in self.OP_CODES.items():
@@ -750,7 +764,7 @@ class Packer:
             "FILL_RLE_TEMPLATE_HELPER": self.FILL_RLE_TEMPLATE_HELPER,
             "PLAYER_RLE_END_MARKER": self.RLE_END_MARKER,
             "TEST_SLOWDOWN": anim_slowdown_frames,
-            "test_music": test_music,
+            "test_music": test_music_filename,
             "ops_in_use": self.OPS_USED,
             "bit_mask": bit_mask,
             "offset_from_macro": offset_from_macro_all,
@@ -758,9 +772,7 @@ class Packer:
             "only_per_row_mode": self.ONLY_PER_ROW_MODE,
             "last_used_op_code": last_used_op_code,
         }
-        template_dir = utils.get_resource_path(
-            os.path.join("src", "resources", "test-program")
-        )
+
         env = Environment(
             loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True
         )
@@ -795,4 +807,5 @@ class Packer:
             with open(fill_color_file, "w") as fp:
                 fp.write(template.render(namespace))
 
-        utils.copy_file(f"{template_dir}/{test_music}", f"{output_folder}")
+        if test_music:
+            utils.copy_file(test_music, f"{output_folder}")
