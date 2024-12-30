@@ -801,9 +801,10 @@ class Packer:
 
         if self.FILL_COLOR_WITH_EFFECT:
 
-            fill_color_blocks = []
-            for key in self.FILL_COLOR_BLOCKS.keys():
-                fill_color_blocks.append(self.FILL_COLOR_BLOCKS[key])
+            fill_color_blocks = [
+                self.FILL_COLOR_BLOCKS[key]
+                for key in sorted(self.FILL_COLOR_BLOCKS.keys())
+            ]
 
             template = env.get_template("fill_color_template.asm")
             namespace = {
