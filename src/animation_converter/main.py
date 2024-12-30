@@ -163,6 +163,8 @@ def main():
 
     anim_change_index = []
 
+    output_file_name = None
+
     screens = []
     for input_file in args.input_files:
         print(
@@ -191,6 +193,9 @@ def main():
         anim_change_index.append(len(screens))
         print(f"Found {len(screens_in_file)} screens in file")
         screens.extend(screens_in_file)
+
+        if output_file_name is None:
+            output_file_name = os.path.splitext(os.path.basename(input_file))[0]
 
     charsets = [default_charset]
 
@@ -281,6 +286,8 @@ def main():
             packer.OVERRIDE_TEMPLATE_DIR = args.template_dir
         if args.output_sources:
             packer.OUTPUT_SOURCES_DIR = args.output_sources
+        if output_file_name:
+            packer.PRG_FILE_NAME = output_file_name
 
     no_color_support = Size2D(2, 2)
 
@@ -300,7 +307,7 @@ def main():
     packer = Packer(block_size=selected_block_size)
     set_packer_options(packer, args)
     anim_stream = packer.pack(
-        screens, charsets, args.use_color, allow_debug_output=True
+        screens, charsets, args.use_color, allow_debug_output=False
     )
 
     print(
@@ -325,7 +332,7 @@ def main():
                 build_folder}/charset_{idx}.bin",
         )
 
-    build()
+    build(output_file_name)
 
     return 0
 
@@ -346,10 +353,16 @@ def clean_build():
             os.remove(file_path)
 
 
-def build():
+def build(output_file_name):
     # -o test.prg test.asm
     result = subprocess.run(
-        [get_c64tass_path(), "-B", "-o", "test.prg", f"{get_build_path()}/test.asm"],
+        [
+            get_c64tass_path(),
+            "-B",
+            "-o",
+            f"{output_file_name}.prg",
+            f"{get_build_path()}/{output_file_name}.asm",
+        ],
         capture_output=True,
         text=True,
     )

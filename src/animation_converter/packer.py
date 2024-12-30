@@ -80,6 +80,7 @@ class Packer:
         self.MUSIC_FILE_NAME = "music.dat"
         self.OVERRIDE_TEMPLATE_DIR = None
         self.OUTPUT_SOURCES_DIR = None
+        self.PRG_FILE_NAME = "test.prg"
 
         self._initialize_player_ops()
 
@@ -795,7 +796,7 @@ class Packer:
             fp.write(player)
 
         output = test_code_template.render(namespace)
-        with open(f"{output_folder}/test.asm", "w") as f:
+        with open(f"{output_folder}/{self.PRG_FILE_NAME}.asm", "w") as f:
             f.write(output)
 
         if self.FILL_COLOR_WITH_EFFECT:
