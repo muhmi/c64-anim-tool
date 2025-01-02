@@ -1,5 +1,4 @@
 import os
-import subprocess
 import sys
 
 import color_data_utils
@@ -8,6 +7,7 @@ import petscii
 import utils
 from colorama import Fore
 
+from animation_converter.build_utils import get_build_path, clean_build, build
 from animation_converter.cli_parser import parse_arguments
 from packer import Packer, Size2D
 
@@ -210,40 +210,6 @@ def main():
     build(output_file_name)
 
     return 0
-
-
-def get_build_path():
-    return utils.get_resource_path("build")
-
-
-def get_c64tass_path():
-    return utils.get_resource_path(os.path.join("bins", "macos", "64tass"))
-
-
-def clean_build():
-    folder_path = get_build_path()
-    for filename in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, filename)
-        if os.path.isfile(file_path):
-            os.remove(file_path)
-
-
-def build(output_file_name):
-    # -o test.prg test.asm
-    result = subprocess.run(
-        [
-            get_c64tass_path(),
-            "-B",
-            "-o",
-            f"{output_file_name}.prg",
-            f"{get_build_path()}/{output_file_name}.asm",
-        ],
-        capture_output=True,
-        text=True,
-    )
-    print(f"Return code: {result.returncode}")
-    print(f"Output: {result.stdout}")
-    print(f"Errors: {result.stderr}")
 
 
 if __name__ == "__main__":
