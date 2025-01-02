@@ -20,6 +20,7 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
+  --config CONFIG       Path to config file (YAML)
   --charset CHARSET     Use this charset instead (.64c or .bin)
   --cleanup CLEANUP     Remove characters with under N pixels
   --color-data COLOR_DATA
@@ -53,6 +54,11 @@ options:
                         Generate code to animate color data based on first frame of this .c file
   --color-animation-palette COLOR_ANIMATION_PALETTE
                         Read color palette from a file for the color animation (if a file is given its assumed to be an image with first row being the palette)
+  --music MUSIC         Include given file as music to test.prg, invalid file name leads to music being ignored.
+  --template-dir TEMPLATE_DIR
+                        Use this directory as source for templates
+  --output-sources OUTPUT_SOURCES
+                        Output sources to given folder
 ```
 
 ### Generate .prg from GIF animation
@@ -70,4 +76,19 @@ The result will be named "test.prg".
 ```bash
 animation-tool test-data/cubez/cubez-24.c --use-color --anim-slowdown-frames=5 --offset-color-frames=2 --charset=test-data/cubez/cubez-chars-charset.64c
 ```
+
+### Config file
+Instead of giving all options directly on commandline you can provide a YAML file with options.
+Example config:
+```yaml
+anim_slowdown_frames: 10
+color_animation: ./warning.c
+color_animation_palette: 1,2,3,4,5,4,3,2,1
+```
+NOTE: The yaml file uses snake-case instead of "-".
+
+The paths (detected by values containing /) are resolved by looking for the file:
+- relative to config file
+- relative to tool directory
+- relative to current working directory
 
