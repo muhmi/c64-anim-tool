@@ -27,3 +27,4 @@ ehthumbs.db
 Thumbs.db
 test.prg
 *.code-workspace
+.idea/*
