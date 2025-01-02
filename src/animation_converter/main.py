@@ -165,6 +165,8 @@ def parse_arguments():
     if args.config:
         config_data = load_config_file(args.config)
 
+        validate_config_against_parser(config_data, parser)
+
         # Get base directories
         config_dir = os.path.dirname(os.path.abspath(args.config))
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -452,6 +454,38 @@ def build(output_file_name):
     print(f"Return code: {result.returncode}")
     print(f"Output: {result.stdout}")
     print(f"Errors: {result.stderr}")
+
+
+def validate_config_against_parser(
+    config_data: Dict[str, Any], parser: argparse.ArgumentParser
+) -> None:
+    """
+    Validate that all config keys correspond to valid parser arguments.
+    Raises ValueError for invalid options.
+    """
+    # Get all valid argument names from parser
+    valid_args = set()
+    for action in parser._actions:
+        # Skip the help action and positional arguments
+        if isinstance(action, argparse._HelpAction) or not action.option_strings:
+            continue
+        # Convert from option string (e.g., '--my-option') to config key format (my_option)
+        for opt in action.option_strings:
+            if opt.startswith("--"):
+                valid_args.add(convert_arg_name(opt.lstrip("-"), to_snake=True))
+
+    # Check each config key against valid arguments
+    invalid_keys = []
+    for key in config_data.keys():
+        arg_key = convert_arg_name(key, to_snake=True)
+        if arg_key not in valid_args:
+            invalid_keys.append(key)
+
+    if invalid_keys:
+        raise ValueError(
+            f"Invalid configuration options found in config file: {', '.join(invalid_keys)}\n"
+            f"Valid options are: {', '.join(sorted(valid_args))}"
+        )
 
 
 if __name__ == "__main__":
