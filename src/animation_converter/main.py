@@ -2,19 +2,43 @@ import argparse
 import os
 import subprocess
 import sys
+from typing import Any, Dict
 
 import color_data_utils
 import colorama
 import petscii
 import utils
+import yaml
 from colorama import Fore
 from packer import Packer, Size2D
 from PIL import ImageDraw, ImageSequence
 
 
+def convert_arg_name(name: str, to_snake: bool = True) -> str:
+    """Convert between snake_case and dash-arguments."""
+    if to_snake:
+        return name.replace("-", "_")
+    else:
+        return name.replace("_", "-")
+
+
+def load_config_file(file_path: str) -> Dict[str, Any]:
+    print(Fore.GREEN + f"Reading config from {file_path}")
+    if file_path.endswith((".yml", ".yaml")):
+        with open(file_path, "r") as f:
+            return yaml.safe_load(f)
+    else:
+        raise ValueError("Config file must be YAML (.yml/.yaml)")
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Convert PNG/GIF to C64 PETSCII + charset."
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        help="Path to config file (YAML)",
     )
     parser.add_argument(
         "input_files", type=str, nargs="+", help="Input .c, PNG or GIF files."
@@ -134,7 +158,66 @@ def parse_arguments():
         default=None,
         help="Output sources to given folder",
     )
-    return parser.parse_args()
+
+    args = parser.parse_args()
+
+    # If config file is specified, load and merge with command line arguments
+    if args.config:
+        config_data = load_config_file(args.config)
+
+        # Get base directories
+        config_dir = os.path.dirname(os.path.abspath(args.config))
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        cwd = os.getcwd()
+
+        # Function to resolve a path considering multiple base directories
+        def resolve_path(value):
+            if os.path.isabs(value):
+                return value
+
+            # Try relative to config file
+            config_relative = os.path.join(config_dir, value)
+            if os.path.exists(config_relative):
+                return config_relative
+
+            # Try relative to script directory
+            script_relative = os.path.join(script_dir, value)
+            if os.path.exists(script_relative):
+                return script_relative
+
+            # Try relative to current working directory
+            cwd_relative = os.path.join(cwd, value)
+            if os.path.exists(cwd_relative):
+                return cwd_relative
+
+            # If not found, return the config-relative path as fallback
+            return config_relative
+
+        # Resolve paths in config
+        for key, value in config_data.items():
+            if isinstance(value, str) and ("/" in value or "\\" in value):
+                config_data[key] = resolve_path(value)
+
+        # Convert config to dict and update with command line arguments
+        args_dict = vars(args)
+
+        # Only update values that weren't explicitly set in command line
+        for key, value in config_data.items():
+            # Convert snake_case config keys to dash-style argument names
+            arg_key = convert_arg_name(key, to_snake=False)
+            # Remove leading dashes if present in the key
+            arg_key = arg_key.lstrip("-")
+            # Convert back to snake_case for argparse
+            arg_key = convert_arg_name(arg_key, to_snake=True)
+
+            if arg_key in args_dict and arg_key != "config":
+                if args_dict[arg_key] == parser.get_default(arg_key):
+                    args_dict[arg_key] = value
+
+        # Convert back to Namespace
+        args = argparse.Namespace(**args_dict)
+
+    return args
 
 
 def main():

@@ -5,12 +5,15 @@ click==8.1.7
 colorama==0.4.6
 isort==5.13.2
 Jinja2==3.1.4
+line_profiler==4.2.0
 llvmlite==0.43.0
 macholib==1.16.3
 MarkupSafe==2.1.5
 mypy-extensions==1.0.0
+Nuitka==2.5.7
 numba==0.60.0
 numpy==2.0.2
+ordered-set==4.1.0
 packaging==24.1
 pathspec==0.12.1
 pillow==10.4.0
@@ -20,5 +23,7 @@ pycodestyle==2.12.1
 pyinstaller==6.11.1
 pyinstaller-hooks-contrib==2024.10
 PySimpleGUI==5.0.7
+PyYAML==6.0.2
 rsa==4.9
 setuptools==75.6.0
+zstandard==0.23.0
