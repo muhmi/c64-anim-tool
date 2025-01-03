@@ -1,10 +1,10 @@
 import random
 from typing import List
 
-from petscii import petscii_screen
+from petscii import PetsciiScreen
 
 
-def offset_color_frames(screens: List[petscii_screen], offset: int):
+def offset_color_frames(screens: List[PetsciiScreen], offset: int):
     color_datas = []
     for screen in screens:
         color_datas.append([] + screen.color_data)
@@ -18,7 +18,7 @@ def offset_color_frames(screens: List[petscii_screen], offset: int):
     return offset_screens
 
 
-def randomize_color_frames(screens: List[petscii_screen], seed: int):
+def randomize_color_frames(screens: List[PetsciiScreen], seed: int):
     color_datas = []
     for screen in screens:
         color_datas.append([] + screen.color_data)

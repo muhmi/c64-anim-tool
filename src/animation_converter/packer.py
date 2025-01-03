@@ -7,7 +7,7 @@ from typing import List, NamedTuple
 import utils
 from colorama import Fore
 from jinja2 import Environment, FileSystemLoader
-from petscii import petscii_char, petscii_screen
+from petscii import PetsciiChar, PetsciiScreen
 from rle_codec import RLECodec
 
 
@@ -402,7 +402,7 @@ class Packer:
 
     def pack(
         self,
-        screens: List[petscii_screen],
+        screens: List[PetsciiScreen],
         charsets: List[List[int]],
         use_color=False,
         allow_debug_output=False,
@@ -706,7 +706,7 @@ class Packer:
 
     def write_player(
         self,
-        charsets: List[List[petscii_char]],
+        charsets: List[List[PetsciiChar]],
         output_folder: str,
         anim_slowdown_frames: int,
         use_color: bool = False,

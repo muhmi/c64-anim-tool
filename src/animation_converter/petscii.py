@@ -6,23 +6,32 @@ from functools import lru_cache
 from io import StringIO
 from typing import List, Tuple
 
+import numba
 import numpy as np
 from bitarray import bitarray
 from colorama import Fore
 from numba import jit
+from numba.experimental import jitclass
 from PIL import Image, ImageDraw, ImageSequence
 from utils import (create_folder_if_not_exists, rgb_to_idx, save_images_as_gif,
                    vicPalette, write_bin)
 
 
-class char_use_location:
-    def __init__(self, screen_index, row, col):
+@jitclass(
+    [
+        ("screen_index", numba.int32),
+        ("row", numba.int32),
+        ("col", numba.int32),
+    ]
+)
+class CharUseLocation:
+    def __init__(self, screen_index: int, row: int, col: int):
         self.screen_index = screen_index
         self.row = row
         self.col = col
 
     def __eq__(self, other):
-        if isinstance(other, char_use_location):
+        if isinstance(other, CharUseLocation):
             return (
                 self.screen_index == other.screen_index
                 and self.row == other.row
@@ -31,10 +40,7 @@ class char_use_location:
         return False
 
     def __hash__(self):
-        return hash((self.screen_index, self.row, self.col))
-
-    def __repr__(self):
-        return f"char_use_location(screen_index={self.screen_index}, row={self.row}, col={self.col})"
+        return self.screen_index * 10000 + self.row * 100 + self.col
 
 
 @jit(nopython=True)
@@ -64,7 +70,7 @@ def char_hamming_distance(char1, char2):
     return _jitted_char_distance(data1, data2)
 
 
-class petscii_char:
+class PetsciiChar:
     BLANK_DATA = bitarray("0" * 64)  # 8x8 = 64 bits, blank character
     FULL_DATA = bitarray("1" * 64)  # Full 8x8 character (all bits set)
     # Super ugly hack to support charset compression :D Look away :D
@@ -83,30 +89,27 @@ class petscii_char:
         return self._hash
 
     def __eq__(self, other):
-        if isinstance(other, petscii_char):
+        if isinstance(other, PetsciiChar):
             equal = self.data == other.data
-            if petscii_char.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK is None:
+            if PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK is None:
                 return equal
             else:
                 if not equal:
                     equal = (
                         self.distance(other)
-                        <= petscii_char.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
+                        <= PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
                     )
                 return equal
         return False
 
-    def __repr__(self):
-        return f"petscii_char(data={self.data})"
-
     def is_blank(self):
         if self._blank is None:
-            self._blank = self.data == petscii_char.BLANK_DATA
+            self._blank = self.data == PetsciiChar.BLANK_DATA
         return self._blank
 
     def add_usage(self, screen_index, row, col):
         self.used_in_screen.add(screen_index)
-        self.usage.add(char_use_location(screen_index, row, col))
+        self.usage.add(CharUseLocation(screen_index, row, col))
 
     def use_count(self):
         return len(self.usage)
@@ -131,8 +134,8 @@ class petscii_char:
 
 
 def find_closest_char(
-    target_char: petscii_char, charset: list[petscii_char]
-) -> tuple[petscii_char, int]:
+    target_char: PetsciiChar, charset: list[PetsciiChar]
+) -> tuple[PetsciiChar, int]:
     if not charset:
         raise ValueError("charset cannot be empty")
 
@@ -148,7 +151,7 @@ def find_closest_char(
     return closest_char, min_distance
 
 
-def write_charset(charset: List[petscii_char], file_name: str):
+def write_charset(charset: List[PetsciiChar], file_name: str):
     binary = []
     for char in charset:
         for b in char.data.tobytes():
@@ -170,7 +173,7 @@ def read_charset(file_path, skipFirstBytes=False):
 
             byte_data = bitarray()
             byte_data.frombytes(char_data)
-            char = petscii_char(byte_data)
+            char = PetsciiChar(byte_data)
             petscii_chars.append(char)
 
     return petscii_chars
@@ -228,7 +231,7 @@ def _jitted_find_min_valid(
     return -1, -1, -1
 
 
-def reduce_charset(charset: List[petscii_char], target_size: int) -> List[petscii_char]:
+def reduce_charset(charset: List[PetsciiChar], target_size: int) -> List[PetsciiChar]:
     if len(charset) <= target_size:
         return charset.copy()
 
@@ -254,7 +257,7 @@ def reduce_charset(charset: List[petscii_char], target_size: int) -> List[petsci
         char1 = current_chars[i]
         char2 = current_chars[j]
 
-        merged_char = petscii_char(char1.data)
+        merged_char = PetsciiChar(char1.data)
         merged_char.used_in_screen = char1.used_in_screen.union(char2.used_in_screen)
         merged_char.usage = char1.usage.union(char2.usage)
 
@@ -316,7 +319,7 @@ def get_pixel_rgb(image, x, y):
         return image.getpixel((x, y))
 
 
-class petscii_screen:
+class PetsciiScreen:
 
     def __init__(self, screen_index, background_color=None, border_color=None):
         self.screen_index = screen_index
@@ -333,8 +336,8 @@ class petscii_screen:
 
         if default_charset is None:
             self.charset = []
-            self.charset.append(petscii_char(petscii_char.BLANK_DATA))
-            self.charset.append(petscii_char(petscii_char.FULL_DATA))
+            self.charset.append(PetsciiChar(PetsciiChar.BLANK_DATA))
+            self.charset.append(PetsciiChar(PetsciiChar.FULL_DATA))
         else:
             self.charset = default_charset
 
@@ -369,11 +372,11 @@ class petscii_screen:
 
                 if num_pixels <= cleanup:
                     if inverse:
-                        char_bits = petscii_char.FULL_DATA
+                        char_bits = PetsciiChar.FULL_DATA
                     else:
-                        char_bits = petscii_char.BLANK_DATA
+                        char_bits = PetsciiChar.BLANK_DATA
 
-                char = petscii_char(char_bits)
+                char = PetsciiChar(char_bits)
                 if char in self.charset:
                     # Char in charset, add usage
                     char_index = self.charset.index(char)
@@ -447,7 +450,7 @@ class petscii_screen:
 
         return buffer.getvalue()
 
-    def remap_characters(self, new_charset: List[petscii_char], allow_error=False):
+    def remap_characters(self, new_charset: List[PetsciiChar], allow_error=False):
         new_screen = []
         for code in self.screen_codes:
             char = self.charset[code]
@@ -519,7 +522,7 @@ class petscii_screen:
         return len(self.charset)
 
     def copy(self):
-        new_screen = petscii_screen(
+        new_screen = PetsciiScreen(
             self.screen_index, self.background_color, self.border_color
         )
 
@@ -528,13 +531,13 @@ class petscii_screen:
         new_screen.color_data = self.color_data.copy()
 
         # Deep copy of charset
-        new_screen.charset = [petscii_char(char.data.copy()) for char in self.charset]
+        new_screen.charset = [PetsciiChar(char.data.copy()) for char in self.charset]
 
         # Copy usage information for each character
         for old_char, new_char in zip(self.charset, new_screen.charset):
             new_char.used_in_screen = old_char.used_in_screen.copy()
             new_char.usage = {
-                char_use_location(loc.screen_index, loc.row, loc.col)
+                CharUseLocation(loc.screen_index, loc.row, loc.col)
                 for loc in old_char.usage
             }
 
@@ -548,7 +551,7 @@ def save_debug_screens(screens, ouput_filename, duration=200, loop=0):
     save_images_as_gif(images, ouput_filename, duration, loop)
 
 
-def read_petscii(file_path: str, charset: List[petscii_char]) -> List[petscii_screen]:
+def read_petscii(file_path: str, charset: List[PetsciiChar]) -> List[PetsciiScreen]:
 
     with open(file_path, "r") as file:
         content = file.read()
@@ -571,7 +574,7 @@ def read_petscii(file_path: str, charset: List[petscii_char]) -> List[petscii_sc
             if x.strip()
         ]
 
-        screen = petscii_screen(int(frame_id, 16))
+        screen = PetsciiScreen(int(frame_id, 16))
         screen.charset = charset
         screen.border_color = border
         screen.background_color = bg
@@ -626,7 +629,7 @@ def read_charset_from_petmate(custom_font):
     for i in range(0, len(bits), 8):
         char_data = bits[i : i + 8]
         byte_data = ints_to_bitarray(char_data)
-        char = petscii_char(byte_data)
+        char = PetsciiChar(byte_data)
         charset.append(char)
 
     if len(charset) > 256:
@@ -637,7 +640,7 @@ def read_charset_from_petmate(custom_font):
     return charset
 
 
-def read_petmate(file_path: str) -> List[petscii_screen]:
+def read_petmate(file_path: str) -> List[PetsciiScreen]:
 
     script_dir = os.path.dirname(__file__)
 
@@ -668,7 +671,7 @@ def read_petmate(file_path: str) -> List[petscii_screen]:
             print(f"Cannot find custom charset with name {charset_name}")
             sys.exit(1)
 
-        screen = petscii_screen(idx)
+        screen = PetsciiScreen(idx)
         screen.charset = [] + charset
         screen.border_color = border
         screen.background_color = bg
@@ -692,7 +695,7 @@ def read_screens(
     border_color=None,
     inverse=False,
     cleanup=1,
-) -> List["petscii_screen"]:
+) -> List["PetsciiScreen"]:
     if filename.endswith(".c"):
         return read_petscii(filename, charset)
     if filename.endswith(".petmate"):
@@ -701,22 +704,22 @@ def read_screens(
         screens = []
         img = Image.open(filename)
         for idx, frame in enumerate(ImageSequence.Iterator(img)):
-            screen = petscii_screen(idx, background_color, border_color)
+            screen = PetsciiScreen(idx, background_color, border_color)
             screen.read(frame, charset, inverse, cleanup)
             screens.append(screen)
         return screens
 
 
 def compress_charsets(
-    screens: List["petscii_screen"],
-    charsets: List[List["petscii_char"]],
+    screens: List["PetsciiScreen"],
+    charsets: List[List["PetsciiChar"]],
     max_charsets: int,
     debug_output_folder=None,
     start_threshold=1,
-) -> Tuple[List["petscii_screen"], List["petscii_char"], float]:
+) -> Tuple[List["PetsciiScreen"], List["PetsciiChar"], float]:
 
-    petscii_char.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK = start_threshold
-    found_threshold = petscii_char.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
+    PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK = start_threshold
+    found_threshold = PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
 
     new_screens = [] + screens
     new_charsets = [] + charsets
@@ -731,10 +734,10 @@ def compress_charsets(
             debug_output_folder=debug_output_folder,
             debug_prefix="compressed_changes_",
         )
-        petscii_char.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK += 1
-        found_threshold = petscii_char.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
+        PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK += 1
+        found_threshold = PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
 
-    petscii_char.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK = None
+    PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK = None
 
     return new_screens, new_charsets, found_threshold
 
@@ -805,8 +808,8 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
 
         if len(charset) > 255:
             charset = [
-                petscii_char(petscii_char.BLANK_DATA),
-                petscii_char(petscii_char.FULL_DATA),
+                PetsciiChar(PetsciiChar.BLANK_DATA),
+                PetsciiChar(PetsciiChar.FULL_DATA),
             ] + reduce_charset(charset, 253)
         if idx > 0:
             diff = set(screens[idx - 1].charset) - set(screen.charset)
@@ -892,8 +895,8 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
 
 
 def split_screens_even(
-    screens: List["petscii_screen"], n_chunks: int
-) -> List[List["petscii_screen"]]:
+    screens: List["PetsciiScreen"], n_chunks: int
+) -> List[List["PetsciiScreen"]]:
     if n_chunks <= 0:
         raise ValueError("Number of chunks must be positive")
     if n_chunks > len(screens):
@@ -915,8 +918,8 @@ def split_screens_even(
 
 
 def merge_charsets_new(
-    screens: List[petscii_screen], max_charsets: int = 4
-) -> List[petscii_screen]:
+    screens: List[PetsciiScreen], max_charsets: int = 4
+) -> List[PetsciiScreen]:
     print(
         Fore.BLUE + f"Merging data in {len(screens)} screens to {max_charsets} charsets"
     )
@@ -930,8 +933,8 @@ def merge_charsets_new(
         print(f"Generating charset {1+len(charsets)}/{max_charsets}")
 
         charset = [
-            petscii_char(petscii_char.BLANK_DATA),
-            petscii_char(petscii_char.FULL_DATA),
+            PetsciiChar(PetsciiChar.BLANK_DATA),
+            PetsciiChar(PetsciiChar.FULL_DATA),
         ] + reduce_charset(all_chars, 253)
 
         for screen in chunk:
@@ -950,8 +953,8 @@ def merge_charsets_compress(screens, max_charsets=4, full_charsets=False):
 
         print(Fore.GREEN + f"Crunching all {len(all_chars)} characters to one charset")
         charset = [
-            petscii_char(petscii_char.BLANK_DATA),
-            petscii_char(petscii_char.FULL_DATA),
+            PetsciiChar(PetsciiChar.BLANK_DATA),
+            PetsciiChar(PetsciiChar.FULL_DATA),
         ] + reduce_charset(all_chars, 253)
 
         for screen in screens:
