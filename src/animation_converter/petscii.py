@@ -3,11 +3,8 @@ import os
 import re
 import sys
 from functools import lru_cache
-from heapq import heappop, heappush
 from io import StringIO
-from itertools import combinations
-from multiprocessing import Pool, cpu_count
-from typing import List, Set, Tuple
+from typing import List, Tuple
 
 import numpy as np
 from bitarray import bitarray
@@ -331,7 +328,7 @@ class petscii_screen:
 
     def read(self, image, default_charset=None, inverse=False, cleanup=1):
 
-        bw_image = image.convert("L").point(lambda x: 0 if x <= 1 else 255, "1")
+        bw_image = image.convert("L").point(lambda p: 0 if p <= 1 else 255, "1")
         width, height = bw_image.size
 
         if default_charset is None:
@@ -377,7 +374,6 @@ class petscii_screen:
                         char_bits = petscii_char.BLANK_DATA
 
                 char = petscii_char(char_bits)
-                char_index = 0
                 if char in self.charset:
                     # Char in charset, add usage
                     char_index = self.charset.index(char)
@@ -433,11 +429,11 @@ class petscii_screen:
         if self.border_color:
             color_border = self.border_color
 
-        def write_ints_to_buffer(ints, buffer, group_size=40):
+        def write_ints_to_buffer(ints, target_buffer, group_size=40):
             for i in range(0, len(ints), group_size):
                 group = ints[i : i + group_size]
                 line = ",".join(str(num) for num in group)
-                buffer.write(line + ",\n")
+                target_buffer.write(line + ",\n")
 
         buffer = StringIO()
         buffer.write(
@@ -452,24 +448,17 @@ class petscii_screen:
         return buffer.getvalue()
 
     def remap_characters(self, new_charset: List[petscii_char], allow_error=False):
-        def find_closest_char(target_char, char_list):
-            if not char_list:
-                return None
-
-            closest_char = min(char_list, key=lambda x: target_char.distance(x))
-            return closest_char
-
         new_screen = []
         for code in self.screen_codes:
             char = self.charset[code]
-            if allow_error == False:
+            if not allow_error:
                 new_index = new_charset.index(char)
                 new_screen.append(new_index)
             else:
                 if char in new_charset:
                     new_index = new_charset.index(char)
                 else:
-                    closest_char = find_closest_char(char, new_charset)
+                    closest_char, _ = find_closest_char(char, new_charset)
                     new_index = new_charset.index(closest_char)
                 new_screen.append(new_index)
 
@@ -503,8 +492,6 @@ class petscii_screen:
             (screen_width + 2 * border, screen_height + 2 * border),
             color=vicPalette[0],
         )
-        draw = ImageDraw.Draw(img)
-
         for row in range(25):
             for col in range(40):
                 offset = row * 40 + col
@@ -567,7 +554,7 @@ def read_petscii(file_path: str, charset: List[petscii_char]) -> List[petscii_sc
         content = file.read()
 
     # Regular expression to match frame data
-    frame_pattern = re.compile(r"unsigned char frame(\w+)\[\]=\{(.*?)\};", re.DOTALL)
+    frame_pattern = re.compile(r"unsigned char frame(\w+)\[]=\{(.*?)};", re.DOTALL)
     frames = frame_pattern.findall(content)
 
     screens = []
@@ -613,12 +600,12 @@ def read_json(file_path: str):
     return data
 
 
-def ints_to_bitarray(list: List[int]):
-    if len(list) != 8:
+def ints_to_bitarray(ints: List[int]):
+    if len(ints) != 8:
         raise ValueError("The input list must contain exactly 8 integers")
 
     ba = bitarray(endian="big")
-    for num in list:
+    for num in ints:
         # Ensure each number is within the 0-255 range (8 bits)
         if not 0 <= num <= 255:
             raise ValueError(f"Each integer must be between 0 and 255, got {num}")
@@ -630,9 +617,9 @@ def ints_to_bitarray(list: List[int]):
     return ba
 
 
-def read_charset_from_petmate(customFont):
-    name = customFont["name"]
-    bits = customFont["font"]["bits"]
+def read_charset_from_petmate(custom_font):
+    name = custom_font["name"]
+    bits = custom_font["font"]["bits"]
     print(f"Reading custom font {name}, bits = {len(bits)}")
 
     charset = []
@@ -656,8 +643,7 @@ def read_petmate(file_path: str) -> List[petscii_screen]:
 
     petmate = read_json(file_path)
 
-    charsets = {}
-    charsets["upper"] = read_charset(f"{script_dir}/data/c64_charset.bin")
+    charsets = {"upper": read_charset(f"{script_dir}/data/c64_charset.bin")}
     for name, customFont in petmate["customFonts"].items():
         charsets[name] = read_charset_from_petmate(customFont)
 
@@ -785,9 +771,7 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
 
     seed_charset = [] + chars_used_in_all
 
-    sorted_chars = sorted(
-        all_characters, key=lambda char: len(char.usage), reverse=True
-    )
+    sorted_chars = sorted(all_characters, key=lambda ch: len(ch.usage), reverse=True)
     for char in sorted_chars:
         if char not in seed_charset:
             seed_charset.append(char)
