@@ -120,7 +120,7 @@ class Packer:
         if self.player_next_free_op > 255:
             print(
                 f"Player op code count is too high! {
-                    self.player_next_free_op}"
+                self.player_next_free_op}"
             )
             sys.exit(1)
 
@@ -156,7 +156,8 @@ class Packer:
                 blocks.append(block)
         return blocks
 
-    def offsets(self, block):
+    @staticmethod
+    def offsets(block):
         offsets = []
         for y in range(block.y, block.y + block.height):
             for x in range(block.x, block.x + block.width):
@@ -293,8 +294,8 @@ class Packer:
             encoded = RLECodec.encode(data)
             if len(encoded) < len(data) - 2:
                 op_name = f"player_op_fill_rle{
-                    len(encoded)}_{
-                    len(data)}"
+                len(encoded)}_{
+                len(data)}"
                 if op_name not in self.NAME_TO_OP_CODE:
                     op = self.add_op(op_name)
                     self.FILL_RLE_SIZE[op] = len(encoded)
@@ -657,7 +658,6 @@ class Packer:
 
     def write_player(
         self,
-        screens: List[petscii_screen],
         charsets: List[List[petscii_char]],
         output_folder: str,
         anim_slowdown_frames: int,
@@ -800,7 +800,6 @@ class Packer:
             f.write(output)
 
         if self.FILL_COLOR_WITH_EFFECT:
-
             fill_color_blocks = [
                 self.FILL_COLOR_BLOCKS[key]
                 for key in sorted(self.FILL_COLOR_BLOCKS.keys())

@@ -6,10 +6,10 @@ import colorama
 import petscii
 import utils
 from colorama import Fore
-
-from animation_converter.build_utils import get_build_path, clean_build, build
-from animation_converter.cli_parser import parse_arguments
 from packer import Packer, Size2D
+
+from animation_converter.build_utils import build, clean_build, get_build_path
+from animation_converter.cli_parser import parse_arguments
 
 
 def main():
@@ -192,7 +192,6 @@ def main():
     utils.write_bin(f"{build_folder}/anim.bin", anim_stream)
 
     packer.write_player(
-        screens,
         charsets,
         build_folder,
         args.anim_slowdown_frames,
