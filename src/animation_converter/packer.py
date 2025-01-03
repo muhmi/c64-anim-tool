@@ -278,8 +278,7 @@ class Packer:
 
         end_line_marker = 200
 
-        anim_stream = []
-        anim_stream.append(self.OP_PER_ROW_CHANGES)
+        anim_stream = [self.OP_PER_ROW_CHANGES]
 
         for y in range(25):
             row_changes = sorted((c for c in changes if c[1] == y), key=lambda c: c[0])
