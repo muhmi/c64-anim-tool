@@ -28,15 +28,15 @@ vicPalette = (  # pepto old
 
 
 def rgb_to_idx(rgb):
-    smallestError = 1000000
+    smallest_error = 1000000
     idx = 0
     for i in range(16):
         cr = vicPalette[i][0] - rgb[0]
         cg = vicPalette[i][1] - rgb[1]
         cb = vicPalette[i][2] - rgb[2]
         err = math.sqrt((cr * cr) + (cg * cg) + (cb * cb))
-        if err < smallestError:
-            smallestError = err
+        if err < smallest_error:
+            smallest_error = err
             idx = i
     return idx
 
@@ -103,7 +103,6 @@ def read_palette_from_file(source: str) -> List[int]:
 
 
 def read_color_palette(source: str) -> List[int]:
-    palette = [1, 7, 3, 5, 4, 2, 6, 0]
     if os.path.exists(source):
         return read_palette_from_file(source)
     else:

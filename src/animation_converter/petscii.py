@@ -250,7 +250,7 @@ def reduce_charset(charset: List[petscii_char], target_size: int) -> List[petsci
         if min_idx == -1:
             break
 
-        # Merge the characters (this part stays in Python for class operations)
+        # Merge the characters
         char1 = current_chars[i]
         char2 = current_chars[j]
 
