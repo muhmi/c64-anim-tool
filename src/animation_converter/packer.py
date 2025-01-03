@@ -35,6 +35,8 @@ class Packer:
     def __init__(
         self, block_size: Size2D = Size2D(3, 3), macro_block_size: Size2D = Size2D(2, 4)
     ):
+        self.USED_MACRO_BLOCKS = None
+        self.USED_BLOCKS = None
         self.BLOCK_SIZE = block_size
         self.MACRO_BLOCK_SIZE = macro_block_size
         self.X_STEP = self.MACRO_BLOCK_SIZE.x * self.BLOCK_SIZE.x
@@ -70,7 +72,7 @@ class Packer:
         self.OPS_USED = set()
         self.RLE_DECODE_NEEDED = False
         self.ONLY_PER_ROW_MODE = False
-        self.INIT_COLOR_MEM_BETWEEN_ANIMS = False
+        self.INIT_COLOR_MEM_BETWEEN_ANIMATIONS = False
         self.ANIM_CHANGE_SCREEN_INDEXES = []
         self.USE_ONLY_COLOR = False
         self.FILL_COLOR_WITH_EFFECT = False
@@ -135,7 +137,7 @@ class Packer:
     def _initialize_player_ops(self):
         self.OP_ERROR = self.add_op("player_op_error")
         self.OP_SET_BORDER = self.add_op("player_op_set_border")
-        self.OP_SET_BACKGROUD = self.add_op("player_op_set_background")
+        self.OP_SET_BACKGROUND = self.add_op("player_op_set_background")
         self.OP_FRAME_END = self.add_op("player_op_frame_done")
         self.OP_SET_CHARSET = self.add_op("player_op_set_charset")
         self.OP_RESTART = self.add_op("player_op_restart")
@@ -255,8 +257,7 @@ class Packer:
 
         op_name = "player_op_fill_rle_fullscreen"
 
-        anim_stream = []
-        anim_stream.append(self.NAME_TO_OP_CODE[op_name])
+        anim_stream = [self.NAME_TO_OP_CODE[op_name]]
         anim_stream.extend(encoded)
         anim_stream.append(self.RLE_END_MARKER)
 
@@ -318,9 +319,8 @@ class Packer:
         return anim_stream
 
     def diff_frames_macro(self, screen1: List[int], screen2: List[int]):
-        anim_stream = []
+        anim_stream = [self.OP_FULL_SCREEN_2x2_BLOCKS]
 
-        anim_stream.append(self.OP_FULL_SCREEN_2x2_BLOCKS)
         for macro_block in self.get_macro_blocks():
             changes = 0
             block_changes = []
@@ -375,19 +375,17 @@ class Packer:
                     # Write the data
                     self.encode_block(screen2, block, anim_stream)
 
-            if use_color == False:
+            if not use_color:
                 macro = self.diff_frames_macro(screen1, screen2)
                 if len(macro) < len(anim_stream):
                     anim_stream = macro
 
         all_values = set(screen2)
         if len(all_values) == 1:
-            anim_stream = []
-            anim_stream.append(self.OP_CLEAR)
-            anim_stream.append(screen2[0])
+            anim_stream = [self.OP_CLEAR, screen2[0]]
             return anim_stream
 
-        # TODO: Bring this in for other anims?
+        # TODO: Bring this in for other animations?
         # per_row_changes = self.diff_frames_per_row(screen1, screen2)
         # if len(per_row_changes) < len(anim_stream):
         #    anim_stream = per_row_changes
@@ -448,7 +446,7 @@ class Packer:
                 screen.background_color is not None
                 and prev_background != screen.background_color
             ):
-                anim_stream.append(self.OP_SET_BACKGROUD)
+                anim_stream.append(self.OP_SET_BACKGROUND)
                 anim_stream.append(screen.background_color)
                 prev_background = screen.background_color
 
@@ -481,7 +479,7 @@ class Packer:
 
                 anim_stream.append(self.OP_SET_SCREEN_MODE)
             else:
-                if self.INIT_COLOR_MEM_BETWEEN_ANIMS:
+                if self.INIT_COLOR_MEM_BETWEEN_ANIMATIONS:
                     if idx in self.ANIM_CHANGE_SCREEN_INDEXES:
                         print(
                             f"frame {idx}, clear color memory to {screen.color_data[0]}"
@@ -522,7 +520,8 @@ class Packer:
 
         return anim_stream
 
-    def print_list(self, ints, group_size=40):
+    @staticmethod
+    def print_list(ints, group_size=40):
         for i in range(0, len(ints), group_size):
             group = ints[i : i + group_size]
             line = ",".join(f"{num:4d}" for num in group)
@@ -652,7 +651,7 @@ class Packer:
                 value = read_next_byte()
                 color = [value] * 1000
             else:
-                if op_code == self.OP_SET_BACKGROUD:
+                if op_code == self.OP_SET_BACKGROUND:
                     offset += 1
                 elif op_code == self.OP_SET_BORDER:
                     offset += 1

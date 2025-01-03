@@ -8,7 +8,7 @@ def set_packer_options(anim_change_index, output_file_name, packer_to_setup, arg
     if args.disable_rle:
         packer_to_setup.set_rle_encoder_enabled(False)
     if args.init_color_between_anims:
-        packer_to_setup.INIT_COLOR_MEM_BETWEEN_ANIMS = True
+        packer_to_setup.INIT_COLOR_MEM_BETWEEN_ANIMATIONS = True
         packer_to_setup.ANIM_CHANGE_SCREEN_INDEXES = anim_change_index
     if args.color_animation:
         packer_to_setup.FILL_COLOR_WITH_EFFECT = True
