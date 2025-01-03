@@ -108,3 +108,16 @@ def read_color_palette(source: str) -> List[int]:
         return read_palette_from_file(source)
     else:
         return [int(x.strip()) for x in source.split(",")]
+
+
+def locations_with_same_color(screen_for_color_data):
+    points = {}
+    for y in range(25):
+        for x in range(40):
+            offset = y * 40 + x
+            color = screen_for_color_data.color_data[offset]
+            if color in points:
+                points[color].append(y * 40 + x)
+            else:
+                points[color] = [y * 40 + x]
+    return points

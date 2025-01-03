@@ -10,6 +10,7 @@ from packer import Packer, Size2D
 
 from animation_converter.build_utils import build, clean_build, get_build_path
 from animation_converter.cli_parser import parse_arguments
+from animation_converter.packer_config import set_packer_options
 
 
 def main():
@@ -27,10 +28,10 @@ def main():
             print(Fore.RED + f"File {args.charset} does not exist")
             return 1
 
-        skipFirstBytes = args.charset.endswith(".64c")
+        skip_first_bytes = args.charset.endswith(".64c")
 
         print(f"Reading charset from file {args.charset}")
-        default_charset = petscii.read_charset(args.charset, skipFirstBytes)
+        default_charset = petscii.read_charset(args.charset, skip_first_bytes)
         print(f"{len(default_charset)} characters found.")
 
     utils.create_folder_if_not_exists(build_folder)
@@ -54,7 +55,7 @@ def main():
             print(f"No default charset provided, using c64_charset.bin")
             default_charset = petscii.read_charset(f"{script_dir}/data/c64_charset.bin")
 
-        if os.path.exists(input_file) == False:
+        if not os.path.exists(input_file):
             print(Fore.RED + f"File {input_file} does not exist")
             return 1
         screens_in_file = petscii.read_screens(
@@ -130,40 +131,6 @@ def main():
         Size2D(4, 5),
     ]
 
-    def locations_with_same_color(screen: petscii.petscii_screen):
-        points = {}
-        for y in range(25):
-            for x in range(40):
-                offset = y * 40 + x
-                color = screen.color_data[offset]
-                if color in points:
-                    points[color].append(y * 40 + x)
-                else:
-                    points[color] = [y * 40 + x]
-        return points
-
-    def set_packer_options(packer, args):
-        if args.per_row_mode:
-            packer.ONLY_PER_ROW_MODE = True
-        if args.disable_rle:
-            packer.set_rle_encoder_enabled(False)
-        if args.init_color_between_anims:
-            packer.INIT_COLOR_MEM_BETWEEN_ANIMS = True
-            packer.ANIM_CHANGE_SCREEN_INDEXES = anim_change_index
-        if args.color_animation:
-            packer.FILL_COLOR_WITH_EFFECT = True
-            screens = petscii.read_screens(args.color_animation)
-            packer.FILL_COLOR_BLOCKS = locations_with_same_color(screens[0])
-            packer.FILL_COLOR_PALETTE = fill_color_palette
-        if args.music:
-            packer.MUSIC_FILE_NAME = args.music
-        if args.template_dir:
-            packer.OVERRIDE_TEMPLATE_DIR = args.template_dir
-        if args.output_sources:
-            packer.OUTPUT_SOURCES_DIR = args.output_sources
-        if output_file_name:
-            packer.PRG_FILE_NAME = output_file_name
-
     no_color_support = Size2D(2, 2)
 
     for block_size in block_sizes:
@@ -172,7 +139,9 @@ def main():
             continue
 
         packer = Packer(block_size=block_size)
-        set_packer_options(packer, args)
+        set_packer_options(
+            anim_change_index, fill_color_palette, output_file_name, packer, args
+        )
         anim_stream = packer.pack(screens, charsets, args.use_color)
 
         if smallest_size is None or len(anim_stream) < smallest_size:
@@ -180,7 +149,9 @@ def main():
             selected_block_size = block_size
 
     packer = Packer(block_size=selected_block_size)
-    set_packer_options(packer, args)
+    set_packer_options(
+        anim_change_index, fill_color_palette, output_file_name, packer, args
+    )
     anim_stream = packer.pack(
         screens, charsets, args.use_color, allow_debug_output=False
     )
