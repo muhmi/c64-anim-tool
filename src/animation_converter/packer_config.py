@@ -1,10 +1,8 @@
-from animation_converter import petscii
+from animation_converter import petscii, utils
 from animation_converter.utils import locations_with_same_color
 
 
-def set_packer_options(
-    anim_change_index, fill_color_palette, output_file_name, packer_to_setup, args
-):
+def set_packer_options(anim_change_index, output_file_name, packer_to_setup, args):
     if args.per_row_mode:
         packer_to_setup.ONLY_PER_ROW_MODE = True
     if args.disable_rle:
@@ -16,7 +14,10 @@ def set_packer_options(
         packer_to_setup.FILL_COLOR_WITH_EFFECT = True
         screens = petscii.read_screens(args.color_animation)
         packer_to_setup.FILL_COLOR_BLOCKS = locations_with_same_color(screens[0])
-        packer_to_setup.FILL_COLOR_PALETTE = fill_color_palette
+        if args.color_animation_palette:
+            packer_to_setup.FILL_COLOR_PALETTE = utils.read_color_palette(
+                args.color_animation_palette
+            )
     if args.music:
         packer_to_setup.MUSIC_FILE_NAME = args.music
     if args.template_dir:

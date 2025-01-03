@@ -2,7 +2,6 @@ import os
 import sys
 from io import StringIO
 from itertools import islice
-from pathlib import Path
 from typing import List, NamedTuple
 
 import utils
@@ -75,8 +74,57 @@ class Packer:
         self.ANIM_CHANGE_SCREEN_INDEXES = []
         self.USE_ONLY_COLOR = False
         self.FILL_COLOR_WITH_EFFECT = False
-        self.FILL_COLOR_BLOCKS = []
-        self.FILL_COLOR_PALETTE = [1, 7, 3, 5, 4, 2, 6, 0]
+        self.FILL_COLOR_BLOCKS = {}
+        self.FILL_COLOR_PALETTE = [
+            0,
+            0,
+            11,
+            11,
+            12,
+            12,
+            15,
+            15,
+            7,
+            7,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            7,
+            7,
+            15,
+            15,
+            12,
+            12,
+            11,
+            11,
+            0,
+            0,
+        ]
         self.MUSIC_FILE_NAME = "music.dat"
         self.OVERRIDE_TEMPLATE_DIR = None
         self.OUTPUT_SOURCES_DIR = None

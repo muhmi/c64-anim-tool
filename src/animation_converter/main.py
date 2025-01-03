@@ -111,10 +111,6 @@ def main():
         else:
             print(f"No need to limit charsets, already at {len(charsets)}")
 
-    fill_color_palette = [1, 7, 3, 5, 4, 2, 6, 0]
-    if args.color_animation_palette:
-        fill_color_palette = utils.read_color_palette(args.color_animation_palette)
-
     print(f"Packing, use_color = {args.use_color}")
 
     smallest_size = None
@@ -139,9 +135,7 @@ def main():
             continue
 
         packer = Packer(block_size=block_size)
-        set_packer_options(
-            anim_change_index, fill_color_palette, output_file_name, packer, args
-        )
+        set_packer_options(anim_change_index, output_file_name, packer, args)
         anim_stream = packer.pack(screens, charsets, args.use_color)
 
         if smallest_size is None or len(anim_stream) < smallest_size:
@@ -149,9 +143,7 @@ def main():
             selected_block_size = block_size
 
     packer = Packer(block_size=selected_block_size)
-    set_packer_options(
-        anim_change_index, fill_color_palette, output_file_name, packer, args
-    )
+    set_packer_options(anim_change_index, output_file_name, packer, args)
     anim_stream = packer.pack(
         screens, charsets, args.use_color, allow_debug_output=False
     )
