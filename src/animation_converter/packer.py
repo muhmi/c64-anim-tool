@@ -784,6 +784,7 @@ class Packer:
             "blank_char_index": blank_char_index,
             "hex": hex,
             "len": len,
+            "max": max,
             "fill_color_with_effect": self.FILL_COLOR_WITH_EFFECT,
             "enumerate": enumerate,
             "x_step": self.X_STEP,

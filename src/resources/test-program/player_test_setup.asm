@@ -168,6 +168,9 @@ test_tick                     .byte 0
 {% if scroll_copy %}
 test_scroll_x                 .byte 0
 test_scroll_sx                .byte 0
+test_scrolly                  .byte 0
+test_scroll_src_ptr           = $66
+test_scroll_dst_ptr           = $68
 {% endif %}
 ; Code
 start
@@ -268,19 +271,62 @@ test_raster_irq .block
 
 	lda test_draw_next_frame
 	cmp #1
-	beq +
+	beq exit
+
+	{% if scroll_direction == "up"%}
+
+	lda test_scrolly
+	jsr test_set_scrolly
+
+	lda test_scrolly
+	clc
+	sbc #1
+	cmp #$ff
+	bne +
+	lda #7
++	sta test_scrolly
+
+	lda test_scrolly
+	cmp #7
+	bne +
+	lda #1
+	sta test_draw_next_frame
++
+	{% elif scroll_direction == "down" %}
+
+	lda test_scrolly
+	jsr test_set_scrolly
+
+	lda test_scrolly
+	clc
+	adc #1
+	cmp #8
+	bne +
+	lda #0
++	sta test_scrolly
+
+	lda test_scrolly
+	cmp #0
+	bne +
+	lda #1
+	sta test_draw_next_frame
++
+
+	{% else %}
 
 	{% if TEST_SLOWDOWN > 0 %}
 	inc test_slowdown
 	lda test_slowdown
 	cmp #{{ TEST_SLOWDOWN }}
-	bne +
+	bne exit
 	lda #0
 	sta test_slowdown
 	{% endif %}
 	lda #1
 	sta test_draw_next_frame
-+
+	{% endif %}
+
+exit
 	pla
 	tay
 	pla
@@ -334,17 +380,36 @@ exit
 
 {% if scroll_copy %}
 init_scroll
+	{% if scroll_direction == "up" or scroll_direction == "down" %}
+
+	{% if scroll_direction == "up" %}
+	lda #0
+
+	sta test_scroll_sx
+
+	lda #7
+	{% else %}
+	lda #{{used_area.x + used_area.height / 2}}
+	sta test_scroll_sx
+
+	lda #0
+	{% endif %}
+	sta test_scrolly
+
+
+	{% else %}
 	lda #{{used_area.x}}
 	sta test_scroll_x
 	lda #{{used_area.x}}
 	sta test_scroll_sx
+	{% endif %}
 	rts
 
 {% if scroll_direction == "left" %}
 copy_scroll .macro
 .block
 min_x = {{used_area.x}}
-max_x = {{used_area.x + used_area.width}}
+max_x = {{used_area.x + used_area.width - 1}}
 min_y = {{used_area.y}}
 max_y = {{used_area.y + used_area.height}}
 
@@ -383,11 +448,12 @@ zero
 +	inc test_scroll_sx
 out
 .endblock
+.endmacro
 {% elif scroll_direction == "right" %}
 copy_scroll .macro
 .block
 min_x = {{used_area.x}}
-max_x = {{used_area.x + used_area.width}}
+max_x = {{used_area.x + used_area.width - 1}}
 min_y = {{used_area.y}}
 max_y = {{used_area.y + used_area.height}}
 
@@ -427,13 +493,85 @@ zero
 +	dec test_scroll_sx
 out
 .endblock
-{% else %}
-{{ raise("Scroll direction not supported") }}
-{% endif %}
-
 .endmacro
+{% elif scroll_direction == "up" or scroll_direction == "down" %}
+copy_scroll .macro
+.block
+min_x = {{used_area.x}}
+max_x = 1 + {{used_area.x + used_area.width}}
+min_y = {{used_area.y}}
+max_y = {{used_area.y + used_area.height}}
+	ldx test_scroll_sx
+
+
+{% for row in range(used_area.y, used_area.y + used_area.height) %}
+
+	lda copy_src_lo,x
+	sta test_scroll_src_ptr
+	lda copy_src_hi,x
+	sta test_scroll_src_ptr+1
+
+	ldy #min_x
+loop{{row}}
+	lda (test_scroll_src_ptr),y
+	sta \2 + {{row * 40}},y
+	iny
+	cpy #max_x
+	bne loop{{row}}
+
+	inx
+	cpx #{{used_area.y + used_area.height}}
+	bne +
+	ldx #0
++
+
+{% endfor %}
+
+{% if scroll_direction == "up" %}
+	inc test_scroll_sx
+	lda test_scroll_sx
+	cmp #{{used_area.y + used_area.height}}
+	bne +
+	lda #0
++	sta test_scroll_sx
+{% else %}
+	dec test_scroll_sx
+	lda test_scroll_sx
+	cmp #{{used_area.y-1}}
+	bne +
+	lda #{{max(0, used_area.y + used_area.height - 1)}}
++	sta test_scroll_sx
+{% endif %}
+
+	rts
+
+.endblock
+.endmacro
+{% endif %}
+
+
+{% if scroll_direction == "up" or scroll_direction == "down" %}
+copy_src_lo
+{% for row in range(0, 25) %}
+.byte <(UNPACK_BUFFER_LOCATION + {{row * 40}} )
+{% endfor %}
+copy_src_hi
+{% for row in range(0, 25) %}
+.byte >(UNPACK_BUFFER_LOCATION + {{row * 40}} )
+{% endfor %}
+{% endif %}
+
+test_set_scrolly
+	sta $58
+	lda $d011
+	and #$78
+	ora $58
+	and #$7F
+	sta $d011
+	rts
 
 {% endif %}
+
 
 test_copy_to_screen1
 {% if scroll_copy %}
