@@ -3,7 +3,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, NamedTuple
 
 from PIL import Image, ImageDraw, ImageSequence
 
@@ -120,3 +120,23 @@ def locations_with_same_color(screen_for_color_data):
             else:
                 points[color] = [y * 40 + x]
     return points
+
+
+class Size2D(NamedTuple):
+    x: int
+    y: int
+
+
+class Block(NamedTuple):
+    x: int
+    y: int
+    width: int
+    height: int
+
+    def has_pixels_in_range(self):
+        if self.y * 40 + self.x >= 1000:
+            return False
+        # 24 comes from 1000 // 40 - 1
+        max_y = min(self.y + self.height - 1, 24)
+        max_x = min(self.x + self.width - 1, 39)
+        return max_y * 40 + max_x < 1000

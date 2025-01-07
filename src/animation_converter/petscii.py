@@ -707,6 +707,8 @@ def read_screens(
             screen = PetsciiScreen(idx, background_color, border_color)
             screen.read(frame, charset, inverse, cleanup)
             screens.append(screen)
+        if len(screens) == 1:
+            screens = [screens[0], screens[0]]
         return screens
 
 

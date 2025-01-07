@@ -165,6 +165,10 @@ test_draw_next_frame          .byte 0
 test_background_color         .byte 255
 test_border_color             .byte 255
 test_tick                     .byte 0
+{% if scroll_copy %}
+test_scroll_x                 .byte 0
+test_scroll_sx                .byte 0
+{% endif %}
 ; Code
 start
 
@@ -189,6 +193,10 @@ start
 
 	;jsr test_anim_restarted
 
+	{% if scroll_copy %}
+	jsr init_scroll
+	{% endif %}
+
 	lda #0
 	sta $d020
 	sta $d021
@@ -199,7 +207,7 @@ start
 	sta test_charset_index
 	jsr test_setcharset
 
-	#setup_raster_irq test_raster_irq,50
+	#setup_raster_irq test_raster_irq,0
 
 {% if test_music %}
 	lda #1
@@ -213,17 +221,34 @@ start
 	jsr player_init
 
 forever
-	lda test_draw_next_frame
-	cmp #1
-	bne +
-
 	jsr player_unpack
+	jsr copy_buffer
+	jsr wait_for_next_frame
 	jsr test_swap_frame
 
 	lda #0
 	sta test_draw_next_frame
 
 +	jmp forever
+
+copy_buffer .block
+	lda test_current_buffer
+	cmp #0
+	bne +
+	jsr test_copy_to_screen2
+	jmp exit
++
+	jsr test_copy_to_screen1
+exit
+	rts
+.endblock
+
+wait_for_next_frame .block
+-	lda test_draw_next_frame
+	cmp #1
+	bne -
+	rts
+.endblock
 
 test_raster_irq .block
 	pha
@@ -265,27 +290,19 @@ test_raster_irq .block
 .endblock
 
 test_swap_frame .block
-
 	lda test_current_buffer
 	cmp #0
 	bne +
-
-	; Showing buffer 0, which is SCREEN1_LOCATION, write new frame to SCREEN2_LOCATION
-	jsr test_copy_to_screen2
 	#wait_vblank
 	#set_screen_offset $0800
 	lda #1
 	sta test_current_buffer
 	jmp exit
-
 +
-	; Showing buffer 1 currently ...
-	jsr test_copy_to_screen1
 	#wait_vblank
 	#set_screen_offset $0400
 	lda #0
 	sta test_current_buffer
-
 exit
 	lda test_border_color
 	cmp #$ff
@@ -314,12 +331,75 @@ exit
 	rts
 .endblock
 
+
+{% if scroll_copy %}
+init_scroll
+	lda #{{used_area.x}}
+	sta test_scroll_x
+	lda #{{used_area.x}}
+	sta test_scroll_sx
+	rts
+
+copy_scroll .macro
+.block
+min_x = {{used_area.x}}
+max_x = {{used_area.x + used_area.width}}
+min_y = {{used_area.y}}
+max_y = {{used_area.y + used_area.height}}
+
+	ldx test_scroll_x
+	ldy test_scroll_sx
+loop
+	.for row := min_y, row < max_y, row += 1
+ 	lda \1 + (row * 40), y
+	sta \2 + (row * 40), x
+	.endfor
+
+	iny
+	cpy #max_x+1
+	bne +
+	ldy #min_x
++
+
+	inx
+	cpx #40
+	beq +
+	jmp loop
++
+
+	lda test_scroll_x
+	cmp #0
+	beq zero
+	dec test_scroll_x
+	jmp out
+zero
+
+	lda test_scroll_sx
+	cmp #max_x
+	bne +
+	lda #min_x
+	sta test_scroll_sx
++	inc test_scroll_sx
+out
+.endblock
+.endmacro
+
+{% endif %}
+
 test_copy_to_screen1
+{% if scroll_copy %}
+	#copy_scroll UNPACK_BUFFER_LOCATION, SCREEN1_LOCATION
+{% else %}
 	#copy_screen UNPACK_BUFFER_LOCATION, SCREEN1_LOCATION
+{% endif %}
 	rts
 
 test_copy_to_screen2
+{% if scroll_copy %}
+	#copy_scroll UNPACK_BUFFER_LOCATION, SCREEN2_LOCATION
+{% else %}
 	#copy_screen UNPACK_BUFFER_LOCATION, SCREEN2_LOCATION
+{% endif %}
 	rts
 
 {% if use_color %}

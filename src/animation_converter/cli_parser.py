@@ -53,7 +53,10 @@ def parse_arguments():
         default=None,
         help="Use this file as source for color data",
     )
-    parser.add_argument("--use-color", action="store_true", help="Animate color data")
+    parser.add_argument(
+        "--use-color", action="store_true", default=False, help="Animate color data"
+    )
+    parser.add_argument("--scroll", action="store_true", help="Scroll animation")
     parser.add_argument(
         "--limit-charsets",
         type=int,

@@ -2,33 +2,15 @@ import os
 import sys
 from io import StringIO
 from itertools import islice
-from typing import List, NamedTuple
+from typing import List
 
 import utils
 from colorama import Fore
 from jinja2 import Environment, FileSystemLoader
 from petscii import PetsciiChar, PetsciiScreen
 from rle_codec import RLECodec
-
-
-class Size2D(NamedTuple):
-    x: int
-    y: int
-
-
-class Block(NamedTuple):
-    x: int
-    y: int
-    width: int
-    height: int
-
-    def has_pixels_in_range(self):
-        if self.y * 40 + self.x >= 1000:
-            return False
-        # 24 comes from 1000 // 40 - 1
-        max_y = min(self.y + self.height - 1, 24)
-        max_x = min(self.x + self.width - 1, 39)
-        return max_y * 40 + max_x < 1000
+from scroller import find_areas_with_content
+from utils import Block, Size2D
 
 
 class Packer:
@@ -72,6 +54,7 @@ class Packer:
         self.OPS_USED = set()
         self.RLE_DECODE_NEEDED = False
         self.ONLY_PER_ROW_MODE = False
+        self.SCROLL_WHEN_COPY_SCREEN = False
         self.INIT_COLOR_MEM_BETWEEN_ANIMATIONS = False
         self.ANIM_CHANGE_SCREEN_INDEXES = []
         self.USE_ONLY_COLOR = False
@@ -704,6 +687,7 @@ class Packer:
 
     def write_player(
         self,
+        screens: List[PetsciiScreen],
         charsets: List[List[PetsciiChar]],
         output_folder: str,
         anim_slowdown_frames: int,
@@ -828,6 +812,8 @@ class Packer:
             "rle_decode_needed": self.RLE_DECODE_NEEDED,
             "only_per_row_mode": self.ONLY_PER_ROW_MODE,
             "last_used_op_code": last_used_op_code,
+            "scroll_copy": self.SCROLL_WHEN_COPY_SCREEN,
+            "used_area": find_areas_with_content(screens),
         }
 
         env = Environment(
