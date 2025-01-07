@@ -56,7 +56,12 @@ def parse_arguments():
     parser.add_argument(
         "--use-color", action="store_true", default=False, help="Animate color data"
     )
-    parser.add_argument("--scroll", action="store_true", help="Scroll animation")
+    parser.add_argument(
+        "--scroll",
+        type=str,
+        default=None,
+        help="Scroll animation, needs direction: up,down,left,right",
+    )
     parser.add_argument(
         "--limit-charsets",
         type=int,

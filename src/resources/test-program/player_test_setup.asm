@@ -340,6 +340,7 @@ init_scroll
 	sta test_scroll_sx
 	rts
 
+{% if scroll_direction == "left" %}
 copy_scroll .macro
 .block
 min_x = {{used_area.x}}
@@ -382,6 +383,54 @@ zero
 +	inc test_scroll_sx
 out
 .endblock
+{% elif scroll_direction == "right" %}
+copy_scroll .macro
+.block
+min_x = {{used_area.x}}
+max_x = {{used_area.x + used_area.width}}
+min_y = {{used_area.y}}
+max_y = {{used_area.y + used_area.height}}
+
+
+	ldx test_scroll_x
+	ldy test_scroll_sx
+loop
+	.for row := min_y, row < max_y, row += 1
+ 	lda \1 + (row * 40), y
+	sta \2 + (row * 40), x
+	.endfor
+
+	iny
+	cpy #max_x+1
+	bne +
+	ldy #min_x
++
+
+	inx
+	cpx #40
+	beq +
+	jmp loop
++
+
+	lda test_scroll_x
+	cmp #0
+	beq zero
+	dec test_scroll_x
+	jmp out
+zero
+
+	lda test_scroll_sx
+	cmp #min_x
+	bne +
+	lda #max_x
+	sta test_scroll_sx
++	dec test_scroll_sx
+out
+.endblock
+{% else %}
+{{ raise("Scroll direction not supported") }}
+{% endif %}
+
 .endmacro
 
 {% endif %}

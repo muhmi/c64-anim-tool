@@ -55,6 +55,7 @@ class Packer:
         self.RLE_DECODE_NEEDED = False
         self.ONLY_PER_ROW_MODE = False
         self.SCROLL_WHEN_COPY_SCREEN = False
+        self.SCROLL_DIRECTION = "left"
         self.INIT_COLOR_MEM_BETWEEN_ANIMATIONS = False
         self.ANIM_CHANGE_SCREEN_INDEXES = []
         self.USE_ONLY_COLOR = False
@@ -813,6 +814,7 @@ class Packer:
             "only_per_row_mode": self.ONLY_PER_ROW_MODE,
             "last_used_op_code": last_used_op_code,
             "scroll_copy": self.SCROLL_WHEN_COPY_SCREEN,
+            "scroll_direction": self.SCROLL_DIRECTION,
             "used_area": find_areas_with_content(screens),
         }
 
