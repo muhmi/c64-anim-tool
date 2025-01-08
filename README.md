@@ -26,11 +26,17 @@ options:
   --color-data COLOR_DATA
                         Use this file as source for color data
   --use-color           Animate color data
+  --scroll SCROLL       Scroll animation, needs direction: up,down,left,right
+  --scroll-disable-repeat
+                        Disable repeat for scroll animation, for left/right
   --limit-charsets LIMIT_CHARSETS
-                        Try to limit amount of charsets to this number, must be over 1
-  --full-charsets       Try to produce only full 256 char charsets, quality may suffer now
+                        Try to limit amount of charsets to this number, must
+                        be over 1
+  --full-charsets       Try to produce only full 256 char charsets, quality
+                        may suffer now
   --start-threshold START_THRESHOLD
-                        When limiting charsets use this threshold value for closeness of characters at start (1 to 7)
+                        When limiting charsets use this threshold value for
+                        closeness of characters at start (1 to 7)
   --border-color BORDER_COLOR
                         Use this border color
   --background-color BACKGROUND_COLOR
@@ -38,7 +44,8 @@ options:
   --anim-slowdown-frames ANIM_SLOWDOWN_FRAMES
                         Slowdown test animation by given frames
   --mode {petscii,animation}
-                        Conversion mode: 'petscii' or 'animation'. Default is 'petscii'.
+                        Conversion mode: 'petscii' or 'animation'. Default is
+                        'petscii'.
   --offset-color-frames OFFSET_COLOR_FRAMES
                         Offset color frames by given value, can be negative
   --randomize-color-frames RANDOMIZE_COLOR_FRAMES
@@ -49,12 +56,17 @@ options:
   --per-row-mode PER_ROW_MODE
                         Per for delta packer mode
   --init-color-between-anims INIT_COLOR_BETWEEN_ANIMS
-                        Write color memory to background color between different animation source files
+                        Write color memory to background color between
+                        different animation source files
   --color-animation COLOR_ANIMATION
-                        Generate code to animate color data based on first frame of this .c file
+                        Generate code to animate color data based on first
+                        frame of this .c file
   --color-animation-palette COLOR_ANIMATION_PALETTE
-                        Read color palette from a file for the color animation (if a file is given its assumed to be an image with first row being the palette)
-  --music MUSIC         Include given file as music to test.prg, invalid file name leads to music being ignored.
+                        Read color palette from a file for the color animation
+                        (if a file is given its assumed to be an image with
+                        first row being the palette)
+  --music MUSIC         Include given file as music to test.prg, invalid file
+                        name leads to music being ignored.
   --template-dir TEMPLATE_DIR
                         Use this directory as source for templates
   --output-sources OUTPUT_SOURCES
