@@ -102,13 +102,6 @@ def parse_arguments():
         help="Slowdown test animation by given frames",
     )
     parser.add_argument(
-        "--mode",
-        type=str,
-        choices=["petscii", "animation"],
-        default="petscii",
-        help="Conversion mode: 'petscii' or 'animation'. Default is 'petscii'.",
-    )
-    parser.add_argument(
         "--offset-color-frames",
         type=int,
         default=None,
