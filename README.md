@@ -43,9 +43,6 @@ options:
                         Assume image background is this color
   --anim-slowdown-frames ANIM_SLOWDOWN_FRAMES
                         Slowdown test animation by given frames
-  --mode {petscii,animation}
-                        Conversion mode: 'petscii' or 'animation'. Default is
-                        'petscii'.
   --offset-color-frames OFFSET_COLOR_FRAMES
                         Offset color frames by given value, can be negative
   --randomize-color-frames RANDOMIZE_COLOR_FRAMES
