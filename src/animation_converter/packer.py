@@ -57,6 +57,7 @@ class Packer:
         self.SCROLL_WHEN_COPY_SCREEN = False
         self.SCROLL_DIRECTION = "left"
         self.INIT_COLOR_MEM_BETWEEN_ANIMATIONS = False
+        self.SCROLL_DISABLE_REPEAT = False
         self.ANIM_CHANGE_SCREEN_INDEXES = []
         self.USE_ONLY_COLOR = False
         self.FILL_COLOR_WITH_EFFECT = False
@@ -816,6 +817,7 @@ class Packer:
             "last_used_op_code": last_used_op_code,
             "scroll_copy": self.SCROLL_WHEN_COPY_SCREEN,
             "scroll_direction": self.SCROLL_DIRECTION,
+            "scroll_disable_repeat": self.SCROLL_DISABLE_REPEAT,
             "used_area": find_areas_with_content(screens),
         }
 

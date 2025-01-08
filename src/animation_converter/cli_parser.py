@@ -1,5 +1,6 @@
 import argparse
 import os
+from timeit import default_number
 from typing import Any, Dict
 
 import yaml
@@ -61,6 +62,12 @@ def parse_arguments():
         type=str,
         default=None,
         help="Scroll animation, needs direction: up,down,left,right",
+    )
+    parser.add_argument(
+        "--scroll-disable-repeat",
+        action="store_true",
+        default=False,
+        help="Disable repeat for scroll animation, for left/right",
     )
     parser.add_argument(
         "--limit-charsets",

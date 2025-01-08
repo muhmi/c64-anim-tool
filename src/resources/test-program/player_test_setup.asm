@@ -398,18 +398,30 @@ init_scroll
 
 
 	{% else %}
+	{% if not scroll_disable_repeat %}
 	lda #{{used_area.x}}
 	sta test_scroll_x
 	lda #{{used_area.x}}
 	sta test_scroll_sx
+	{% else %}
+	lda #0
+	sta test_scroll_x
+	lda #0
+	sta test_scroll_sx
+	{% endif %}
 	{% endif %}
 	rts
 
 {% if scroll_direction == "left" %}
 copy_scroll .macro
 .block
+{% if not scroll_disable_repeat %}
 min_x = {{used_area.x}}
 max_x = {{used_area.x + used_area.width - 1}}
+{% else %}
+min_x = 0
+max_x = 39
+{% endif %}
 min_y = {{used_area.y}}
 max_y = {{used_area.y + used_area.height}}
 
@@ -452,8 +464,13 @@ out
 {% elif scroll_direction == "right" %}
 copy_scroll .macro
 .block
+{% if not scroll_disable_repeat %}
 min_x = {{used_area.x}}
 max_x = {{used_area.x + used_area.width - 1}}
+{% else %}
+min_x = 0
+max_x = 39
+{% endif %}
 min_y = {{used_area.y}}
 max_y = {{used_area.y + used_area.height}}
 
