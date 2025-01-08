@@ -627,9 +627,6 @@ or_value
 helper_table
 .byte 6, 8, 10, 12, 14
 .endblock
-{% if fill_color_with_effect %}
-.include "fill_color.asm"
-{% endif %}
 {% if only_per_row_mode %}
 .include "player.asm"
 {% endif %}
@@ -645,6 +642,8 @@ ANIM_LOCATION=*
 {% if not only_per_row_mode %}
 .include "player.asm"
 {% endif %}
-
+{% if fill_color_with_effect %}
+.include "fill_color.asm"
+{% endif %}
 
 
