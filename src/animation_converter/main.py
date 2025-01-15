@@ -5,13 +5,12 @@ import color_data_utils
 import colorama
 import petscii
 import utils
+from build_utils import build, clean_build, get_build_path
+from cli_parser import parse_arguments
 from colorama import Fore
 from packer import Packer
-
-from animation_converter.build_utils import build, clean_build, get_build_path
-from animation_converter.cli_parser import parse_arguments
-from animation_converter.packer_config import set_packer_options
-from animation_converter.utils import Size2D
+from packer_config import set_packer_options
+from utils import Size2D
 
 
 def main():

@@ -1,5 +1,6 @@
-from animation_converter import petscii, utils
-from animation_converter.utils import locations_with_same_color
+import petscii
+import utils
+from utils import locations_with_same_color
 
 
 def set_packer_options(anim_change_index, output_file_name, packer_to_setup, args):

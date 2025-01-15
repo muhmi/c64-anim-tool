@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from animation_converter import utils
+import utils
 
 
 def get_build_path():
