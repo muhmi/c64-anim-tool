@@ -5,6 +5,7 @@ import color_data_utils
 import colorama
 import petscii
 import utils
+from anim_reorder import reorder_screens_by_similarity
 from build_utils import build, clean_build, get_build_path
 from cli_parser import parse_arguments
 from colorama import Fore
@@ -74,6 +75,9 @@ def main():
             output_file_name = os.path.splitext(os.path.basename(input_file))[0]
 
     charsets = [default_charset]
+
+    if args.allow_reorder_frames:
+        screens = reorder_screens_by_similarity(screens)
 
     if args.color_data:
         print(f"Reading color data from {args.color_data}")

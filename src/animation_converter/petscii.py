@@ -1,10 +1,11 @@
 import json
+import multiprocessing
 import os
 import re
 import sys
 from functools import lru_cache
 from io import StringIO
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import numba
 import numpy as np
@@ -919,32 +920,141 @@ def split_screens_even(
     return chunks
 
 
-def merge_charsets_new(
-    screens: List[PetsciiScreen], max_charsets: int = 4
-) -> List[PetsciiScreen]:
-    print(
-        Fore.BLUE + f"Merging data in {len(screens)} screens to {max_charsets} charsets"
+def serialize_screen(screen: PetsciiScreen) -> Dict:
+    """
+    Convert a PetsciiScreen into a picklable dictionary format.
+    """
+    return {
+        "screen_index": screen.screen_index,
+        "screen_codes": screen.screen_codes,
+        "color_data": screen.color_data,
+        "background_color": screen.background_color,
+        "border_color": screen.border_color,
+        "charset_data": [(char.data.tobytes()) for char in screen.charset],
+    }
+
+
+def deserialize_screen(data: Dict) -> PetsciiScreen:
+    """
+    Convert serialized data back into a PetsciiScreen object.
+    """
+    screen = PetsciiScreen(
+        data["screen_index"], data["background_color"], data["border_color"]
     )
+    screen.screen_codes = data["screen_codes"]
+    screen.color_data = data["color_data"]
+
+    # Reconstruct charset
+    screen.charset = []
+    for char_bytes in data["charset_data"]:
+        char_data = bitarray()
+        char_data.frombytes(char_bytes)
+        char = PetsciiChar(char_data)
+        screen.charset.append(char)
+
+    return screen
+
+
+def process_chunk_serialized(chunk_data: List[Dict]) -> Tuple[List[Dict], List[bytes]]:
+    """
+    Process a chunk of serialized screen data.
+    Returns serialized screens and charset data.
+    """
+    # Deserialize screens for processing
+    screens = [deserialize_screen(data) for data in chunk_data]
+
+    # Collect all characters
+    all_chars = []
+    for screen in screens:
+        for char in screen.charset:
+            all_chars.append(char)
+
+    # Create optimized charset
+    charset = [
+        PetsciiChar(PetsciiChar.BLANK_DATA),
+        PetsciiChar(PetsciiChar.FULL_DATA),
+    ] + reduce_charset(all_chars, 253)
+
+    # Remap screens to use new charset
+    for screen in screens:
+        screen.remap_characters(charset, allow_error=True)
+
+    # Serialize results
+    processed_screens = [serialize_screen(screen) for screen in screens]
+    charset_data = [char.data.tobytes() for char in charset]
+
+    return processed_screens, charset_data
+
+
+def merge_charsets_parallel(
+    screens: List[PetsciiScreen], max_charsets: int = 4, num_processes: int = None
+) -> Tuple[List[PetsciiScreen], List[List[PetsciiChar]]]:
+    """
+    Parallel version of merge_charsets_new that handles CharUseLocation limitations.
+    """
+    print(
+        Fore.BLUE
+        + f"Merging data in {len(screens)} screens to {max_charsets} charsets using parallel processing"
+    )
+
+    # Split screens into chunks
+    chunks = split_screens_even(screens, max_charsets)
+
+    # Serialize all screen data
+    serialized_chunks = [
+        [serialize_screen(screen) for screen in chunk] for chunk in chunks
+    ]
+
+    # Set up multiprocessing
+    if num_processes is None:
+        num_processes = multiprocessing.cpu_count()
+
+    processed_screens = []
     charsets = []
-    for chunk in split_screens_even(screens, max_charsets):
-        all_chars = []
-        for screen in chunk:
-            for char in screen.charset:
-                all_chars.append(char)
 
-        print(f"Generating charset {1+len(charsets)}/{max_charsets}")
+    # Process chunks in parallel
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        # Map each chunk to a process
+        results = []
+        for i, chunk_data in enumerate(serialized_chunks):
+            print(f"Starting processing of charset {i+1}/{max_charsets}")
+            results.append(pool.apply_async(process_chunk_serialized, (chunk_data,)))
 
-        charset = [
-            PetsciiChar(PetsciiChar.BLANK_DATA),
-            PetsciiChar(PetsciiChar.FULL_DATA),
-        ] + reduce_charset(all_chars, 253)
+        # Collect and deserialize results
+        for i, result in enumerate(results):
+            processed_chunk_data, charset_data = result.get()
 
-        for screen in chunk:
-            screen.remap_characters(charset, allow_error=True)
+            # Deserialize processed screens
+            chunk_screens = [deserialize_screen(data) for data in processed_chunk_data]
+            processed_screens.extend(chunk_screens)
 
-        charsets.append(charset)
+            # Deserialize charset
+            chunk_charset = []
+            for char_bytes in charset_data:
+                char_data = bitarray()
+                char_data.frombytes(char_bytes)
+                char = PetsciiChar(char_data)
+                chunk_charset.append(char)
+            charsets.append(chunk_charset)
 
-    return screens, charsets
+            print(f"Completed charset {i+1}/{max_charsets}")
+
+    return processed_screens, charsets
+
+
+def merge_charsets_new(
+    screens: List[PetsciiScreen], max_charsets: int = 4, num_processes: int = None
+) -> Tuple[List[PetsciiScreen], List[List[PetsciiChar]]]:
+    """
+    Enhanced version of merge_charsets_new that uses parallel processing
+    with proper serialization handling.
+    """
+    try:
+        return merge_charsets_parallel(screens, max_charsets, num_processes)
+    except Exception as e:
+        print(Fore.RED + f"Parallel processing failed: {str(e)}")
+        print(Fore.YELLOW + "Falling back to sequential processing")
+        return merge_charsets_new(screens, max_charsets)
 
 
 def merge_charsets_compress(screens, max_charsets=4, full_charsets=False):

@@ -158,6 +158,12 @@ def parse_arguments():
         default=None,
         help="Output sources to given folder",
     )
+    parser.add_argument(
+        "--allow-reorder-frames",
+        type=bool,
+        default=False,
+        help="Allow reordering of frames so that frames with similar charsets are next to each other",
+    )
 
     args = parser.parse_args()
 
