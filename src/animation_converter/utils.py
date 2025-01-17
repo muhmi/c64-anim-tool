@@ -2,6 +2,7 @@ import math
 import os
 import shutil
 import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import List, NamedTuple
 
@@ -27,6 +28,7 @@ vicPalette = (  # pepto old
 )
 
 
+@lru_cache(maxsize=20000)
 def rgb_to_idx(rgb):
     smallest_error = 1000000
     idx = 0
