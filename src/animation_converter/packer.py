@@ -114,7 +114,6 @@ class Packer:
         ]
         self.MUSIC_FILE_NAME = "music.dat"
         self.OVERRIDE_TEMPLATE_DIR = None
-        self.OUTPUT_SOURCES_DIR = None
         self.PRG_FILE_NAME = "test.prg"
 
         self._initialize_player_ops()
@@ -857,11 +856,3 @@ class Packer:
 
         if test_music:
             utils.copy_file(test_music, f"{output_folder}")
-
-        if self.OUTPUT_SOURCES_DIR:
-            print(Fore.GREEN + f"Output sources to {self.OUTPUT_SOURCES_DIR}")
-            utils.create_folder_if_not_exists(self.OUTPUT_SOURCES_DIR)
-            for filename in os.listdir(output_folder):
-                file_path = os.path.join(output_folder, filename)
-                if os.path.isfile(file_path):
-                    utils.copy_file(file_path, self.OUTPUT_SOURCES_DIR)

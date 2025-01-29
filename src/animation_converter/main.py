@@ -169,11 +169,20 @@ def main():
 
     print("Writing charsets")
     for idx, charset in enumerate(charsets):
+        print(f"{build_folder}/charset_{idx}.bin")
         petscii.write_charset(
             charset,
             f"{
                 build_folder}/charset_{idx}.bin",
         )
+
+    if args.output_sources:
+        print(Fore.GREEN + f"Output sources to {args.output_sources}")
+        utils.create_folder_if_not_exists(args.output_sources)
+        for filename in os.listdir(build_folder):
+            file_path = os.path.join(build_folder, filename)
+            if os.path.isfile(file_path):
+                utils.copy_file(file_path, args.output_sources)
 
     if args.skip_build == False:
         build(output_file_name, args.non_linear_prg)

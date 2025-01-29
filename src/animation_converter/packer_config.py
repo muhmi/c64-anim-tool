@@ -23,8 +23,6 @@ def set_packer_options(anim_change_index, output_file_name, packer_to_setup, arg
         packer_to_setup.MUSIC_FILE_NAME = args.music
     if args.template_dir:
         packer_to_setup.OVERRIDE_TEMPLATE_DIR = args.template_dir
-    if args.output_sources:
-        packer_to_setup.OUTPUT_SOURCES_DIR = args.output_sources
     if output_file_name:
         packer_to_setup.PRG_FILE_NAME = output_file_name
     if args.scroll:
