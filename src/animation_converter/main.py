@@ -174,7 +174,8 @@ def main():
                 build_folder}/charset_{idx}.bin",
         )
 
-    build(output_file_name)
+    if args.skip_build == False:
+        build(output_file_name, args.non_linear_prg)
 
     return 0
 

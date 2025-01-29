@@ -20,16 +20,23 @@ def clean_build():
             os.remove(file_path)
 
 
-def build(output_file_name):
+def build(output_file_name, non_linear_prg=False):
     # -o test.prg test.asm
-    result = subprocess.run(
+    command = [get_c64tass_path(), "-B"]
+
+    if non_linear_prg:
+        command.append("-n")
+
+    command.extend(
         [
-            get_c64tass_path(),
-            "-B",
             "-o",
             f"{output_file_name}.prg",
             f"{get_build_path()}/{output_file_name}.asm",
-        ],
+        ]
+    )
+
+    result = subprocess.run(
+        command,
         capture_output=True,
         text=True,
     )

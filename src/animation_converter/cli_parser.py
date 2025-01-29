@@ -164,6 +164,12 @@ def parse_arguments():
         default=False,
         help="Allow reordering of frames so that frames with similar charsets are next to each other",
     )
+    parser.add_argument(
+        "--non-linear-prg", type=bool, default=False, help="Generate non-linear (mprg)"
+    )
+    parser.add_argument(
+        "--skip-build", type=bool, default=False, help="Dont try to build .prg"
+    )
 
     args = parser.parse_args()
 
