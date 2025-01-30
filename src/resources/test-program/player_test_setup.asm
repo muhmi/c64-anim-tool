@@ -154,7 +154,7 @@ setup_raster_irq .macro
 ; * = $fff0
 	jmp start
 
-* = $3000
+* = {{ effect_start_address }}
 ; Variables
 {% if TEST_SLOWDOWN > 0 %}
 test_slowdown                 .byte {{ TEST_SLOWDOWN - 1 }}

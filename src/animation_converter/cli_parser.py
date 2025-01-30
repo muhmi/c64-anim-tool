@@ -170,6 +170,12 @@ def parse_arguments():
     parser.add_argument(
         "--skip-build", type=bool, default=False, help="Dont try to build .prg"
     )
+    parser.add_argument(
+        "--effect-start-address",
+        type=str,
+        default="$3000",
+        help="Effect start address in hex",
+    )
 
     args = parser.parse_args()
 

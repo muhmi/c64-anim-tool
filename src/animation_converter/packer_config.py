@@ -3,6 +3,18 @@ import utils
 from utils import locations_with_same_color
 
 
+def parse_address(address: str):
+    if address[0] == "$":
+        return to_asm_hex(int(f"0x{address[1:]}", 16))
+    if len(address) > 2 and address[0] == "0" and address[1] == "x":
+        return to_asm_hex(int(address, 16))
+    return to_asm_hex(int(address))
+
+
+def to_asm_hex(num: int):
+    return f"${hex(num)[2:]}"
+
+
 def set_packer_options(anim_change_index, output_file_name, packer_to_setup, args):
     if args.per_row_mode:
         packer_to_setup.ONLY_PER_ROW_MODE = True
@@ -30,3 +42,5 @@ def set_packer_options(anim_change_index, output_file_name, packer_to_setup, arg
         packer_to_setup.SCROLL_DIRECTION = args.scroll
     if args.scroll_disable_repeat:
         packer_to_setup.SCROLL_DISABLE_REPEAT = True
+    if args.effect_start_address:
+        packer_to_setup.EFFECT_START_ADDRESS = parse_address(args.effect_start_address)
