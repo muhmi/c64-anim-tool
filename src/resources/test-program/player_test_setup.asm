@@ -653,7 +653,8 @@ helper_table
 .binary "{{ filename }}"
 {% endfor %}
 
-ANIM_LOCATION=*
+ANIM_LOCATION={{anim_start_address}}
+* = ANIM_LOCATION
 .binary "anim.bin"
 
 {% if not only_per_row_mode %}

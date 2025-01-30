@@ -44,3 +44,6 @@ def set_packer_options(anim_change_index, output_file_name, packer_to_setup, arg
         packer_to_setup.SCROLL_DISABLE_REPEAT = True
     if args.effect_start_address:
         packer_to_setup.EFFECT_START_ADDRESS = parse_address(args.effect_start_address)
+    if args.anim_start_address:
+        if args.anim_start_address != "*":
+            packer_to_setup.ANIM_START_ADDRESS = parse_address(args.anim_start_address)

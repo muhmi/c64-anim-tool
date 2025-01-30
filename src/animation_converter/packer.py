@@ -116,6 +116,7 @@ class Packer:
         self.OVERRIDE_TEMPLATE_DIR = None
         self.PRG_FILE_NAME = "test.prg"
         self.EFFECT_START_ADDRESS = 0x3000
+        self.ANIM_START_ADDRESS = "*"
 
         self._initialize_player_ops()
 
@@ -786,6 +787,7 @@ class Packer:
             "hex": hex,
             "len": len,
             "max": max,
+            "anim_start_address": self.ANIM_START_ADDRESS,
             "effect_start_address": self.EFFECT_START_ADDRESS,
             "fill_color_with_effect": self.FILL_COLOR_WITH_EFFECT,
             "enumerate": enumerate,

@@ -176,6 +176,12 @@ def parse_arguments():
         default="$3000",
         help="Effect start address in hex",
     )
+    parser.add_argument(
+        "--anim-start-address",
+        type=str,
+        default="*",
+        help="Set anim start address, defaults to after charsets",
+    )
 
     args = parser.parse_args()
 
