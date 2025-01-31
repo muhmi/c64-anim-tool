@@ -135,6 +135,12 @@ def parse_arguments():
         help="Generate code to animate color data based on first frame of this .c file",
     )
     parser.add_argument(
+        "--color-animation-slowdown",
+        type=int,
+        default=None,
+        help="Slowdown color animation",
+    )
+    parser.add_argument(
         "--color-animation-palette",
         type=str,
         default=None,

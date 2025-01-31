@@ -117,6 +117,7 @@ class Packer:
         self.PRG_FILE_NAME = "test.prg"
         self.EFFECT_START_ADDRESS = 0x3000
         self.ANIM_START_ADDRESS = "*"
+        self.COLOR_ANIM_SLOWDOWN = 0
 
         self._initialize_player_ops()
 
@@ -790,6 +791,7 @@ class Packer:
             "anim_start_address": self.ANIM_START_ADDRESS,
             "effect_start_address": self.EFFECT_START_ADDRESS,
             "fill_color_with_effect": self.FILL_COLOR_WITH_EFFECT,
+            "color_anim_slowdown": self.COLOR_ANIM_SLOWDOWN,
             "enumerate": enumerate,
             "x_step": self.X_STEP,
             "y_step": self.Y_STEP,

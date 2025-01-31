@@ -159,6 +159,9 @@ setup_raster_irq .macro
 {% if TEST_SLOWDOWN > 0 %}
 test_slowdown                 .byte {{ TEST_SLOWDOWN - 1 }}
 {% endif %}
+{% if color_anim_slowdown > 0 %}
+test_color_slowdown			  .byte {{ color_anim_slowdown }}
+{% endif %}
 test_charset_index            .byte 0
 test_current_buffer           .byte 0
 test_draw_next_frame          .byte 0
@@ -265,8 +268,24 @@ test_raster_irq .block
 {% endif %}
 
 	{% if fill_color_with_effect %}
+	{% if color_anim_slowdown > 0 %}
+
+	dec test_color_slowdown
+	lda test_color_slowdown
+	cmp #0
+	bne +
+
 	jsr update_fill_color
 	jsr do_one_fill_color_step
+
+	lda #{{ color_anim_slowdown }}
+	sta test_color_slowdown
+
+	+
+	{% else %}
+	jsr update_fill_color
+	jsr do_one_fill_color_step
+	{% endif %}
 	{% endif %}
 
 	lda test_draw_next_frame
