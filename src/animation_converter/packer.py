@@ -824,6 +824,7 @@ class Packer:
             "scroll_direction": self.SCROLL_DIRECTION,
             "scroll_disable_repeat": self.SCROLL_DISABLE_REPEAT,
             "used_area": find_areas_with_content(screens),
+            "fill_color_palette": self.FILL_COLOR_PALETTE,
         }
 
         env = Environment(

@@ -160,7 +160,7 @@ setup_raster_irq .macro
 test_slowdown                 .byte {{ TEST_SLOWDOWN - 1 }}
 {% endif %}
 {% if color_anim_slowdown > 0 %}
-test_color_slowdown			  .byte {{ color_anim_slowdown }}
+test_color_slowdown			  .byte 1
 {% endif %}
 test_charset_index            .byte 0
 test_current_buffer           .byte 0
@@ -189,9 +189,16 @@ start
 	#screen_off
 	#set_vic_bank 2
 
+	{% if fill_color_with_effect %}
+	#clear_screen {{ fill_color_palette[0] }}, $d800
+	{% else %}
+
 	{% if not use_color and "player_op_clear_color" not in ops_in_use %}
 	#clear_screen 1, $d800
 	{% endif %}
+
+	{% endif %}
+
 
 	#clear_screen {{ blank_char_index }}, SCREEN1_LOCATION
 	#clear_screen {{ blank_char_index }}, SCREEN2_LOCATION
