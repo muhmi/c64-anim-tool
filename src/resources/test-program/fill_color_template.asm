@@ -1,12 +1,11 @@
-{% for idx, offsets in enumerate(fill_color_blocks) %}
-fill_color_step{{idx}}
-	lda fill_color
-	{% for offset in offsets %}
-    sta ${{hex(0xd800 + offset)[2:]}}
-    {% endfor %}
-    rts
-{% endfor %}
+fill_max_127 .macro
+	ldx #\2 - 1
+-   sta \1,x
+	dex
+	bpl -
+.endmacro
 
+{{ fill_color_generated_code }}
 
 init_fill_color
     lda #0

@@ -141,6 +141,18 @@ def parse_arguments():
         help="Slowdown color animation",
     )
     parser.add_argument(
+        "--color-anim-min-seq-len",
+        type=int,
+        default=10,
+        help="Minimum amount of consequent offsets to merge to a loop for color animation generated code",
+    )
+    parser.add_argument(
+        "--color-anim-max-seq-len",
+        type=int,
+        default=10,
+        help="Max amount of consequent offsets to merge to a loop for color animation generated code",
+    )
+    parser.add_argument(
         "--color-animation-palette",
         type=str,
         default=None,

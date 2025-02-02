@@ -4,6 +4,7 @@ from io import StringIO
 from itertools import islice
 from typing import List
 
+import color_data_utils
 import utils
 from colorama import Fore
 from jinja2 import Environment, FileSystemLoader
@@ -118,6 +119,8 @@ class Packer:
         self.EFFECT_START_ADDRESS = 0x3000
         self.ANIM_START_ADDRESS = "*"
         self.COLOR_ANIM_SLOWDOWN = 0
+        self.FILL_COLOR_MIN_SEQ_LEN = 10
+        self.FILL_COLOR_MAX_SEQ_LEN = 127
 
         self._initialize_player_ops()
 
@@ -854,6 +857,11 @@ class Packer:
                 "len": len,
                 "hex": hex,
                 "fill_color_blocks": fill_color_blocks,
+                "fill_color_generated_code": color_data_utils.generate_color_fill_code(
+                    fill_color_blocks,
+                    self.FILL_COLOR_MIN_SEQ_LEN,
+                    self.FILL_COLOR_MAX_SEQ_LEN,
+                ),
                 "fill_color_palette": self.FILL_COLOR_PALETTE,
             }
 
