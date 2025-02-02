@@ -53,6 +53,12 @@ options:
                         Write color memory to background color between different animation source files
   --color-animation COLOR_ANIMATION
                         Generate code to animate color data based on first frame of this .c file
+  --color-animation-slowdown COLOR_ANIMATION_SLOWDOWN
+                        Slowdown color animation
+  --color-anim-min-seq-len COLOR_ANIM_MIN_SEQ_LEN
+                        Minimum amount of consequent offsets to merge to a loop for color animation generated code
+  --color-anim-max-seq-len COLOR_ANIM_MAX_SEQ_LEN
+                        Max amount of consequent offsets to merge to a loop for color animation generated code
   --color-animation-palette COLOR_ANIMATION_PALETTE
                         Read color palette from a file for the color animation (if a file is given its assumed to be an image with first row being the palette)
   --music MUSIC         Include given file as music to test.prg, invalid file name leads to music being ignored.
@@ -66,6 +72,10 @@ options:
                         Generate non-linear (mprg)
   --skip-build SKIP_BUILD
                         Dont try to build .prg
+  --effect-start-address EFFECT_START_ADDRESS
+                        Effect start address in hex
+  --anim-start-address ANIM_START_ADDRESS
+                        Set anim start address, defaults to after charsets
 
 ```
 
