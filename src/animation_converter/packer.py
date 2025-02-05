@@ -712,10 +712,8 @@ class Packer:
 
         # write a tester for the player
         charset_files = []
-        anim_location = 0
         for idx, _ in enumerate(charsets):
             offset = 0x5800 + (idx * 0x800)
-            anim_location = offset + 0x800
             charset_files.append((f"charset_{idx}.bin", hex(offset)[2:]))
 
         charset = charsets[0]
@@ -810,7 +808,6 @@ class Packer:
             "use_color": use_color,
             "block_offsets": self.offsets(self.ALL_BLOCKS[0]),
             "block_offsets_sizes": self.BLOCK_OFFSETS_SIZES,
-            "anim_location": "$" + hex(anim_location)[2:],
             "used_blocks": self.USED_BLOCKS,
             "remove_unused_blocks": optimize_player,
             "FILL_RLE_TEMPLATE_HELPER": self.FILL_RLE_TEMPLATE_HELPER,

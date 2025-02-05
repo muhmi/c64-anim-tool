@@ -3,9 +3,9 @@ SET_CHARSET_CALLBACK         = test_setcharset_index  ; Used by player to signal
 RESTART_CALLBACK             = test_anim_restarted    ;
 UNPACK_BUFFER_LOCATION       = $0400                  ; Memory address used by player to unpack the frames
 COLOR_UNPACK_BUFFER_LOCATION = $0800                  ; Memory address used by player to unpack the color frames
-PLAYER_LOCATION              = $3000                  ; Player location calculated by packer, placed after chardsets and animation data
 SCREEN1_LOCATION             = $4400
 SCREEN2_LOCATION             = $4800
+EFFECT_LOCATION				 = {{ effect_start_address }}
 
 ; Player will now write color changes for border and background to these locations
 PLAYER_BORDER_COLOR_VAR      = test_border_color
@@ -122,11 +122,6 @@ setup_raster_irq .macro
 	cli
 .endmacro
 
-* = $54
-	player_data_src_ptr     .addr ?
-	player_macro_block_tmp  .fill 1
-	player_general_tmp      .fill 1
-
 {% if test_music %}
 * = $1000
 	.binary	"{{test_music}}"
@@ -154,7 +149,7 @@ setup_raster_irq .macro
 ; * = $fff0
 	jmp start
 
-* = {{ effect_start_address }}
+* = EFFECT_LOCATION
 ; Variables
 {% if TEST_SLOWDOWN > 0 %}
 test_slowdown                 .byte {{ TEST_SLOWDOWN - 1 }}
@@ -652,7 +647,9 @@ test_setcharset_index
 test_anim_restarted
 
 clear_unpack_buffers
+{% if use_color %}
 	#clear_screen {{ blank_char_index }}, COLOR_UNPACK_BUFFER_LOCATION
+{% endif %}
 	#clear_screen {{ blank_char_index }}, UNPACK_BUFFER_LOCATION
 	rts
 
@@ -670,12 +667,15 @@ or_value
 helper_table
 .byte 6, 8, 10, 12, 14
 .endblock
+EFFECT_END_LOCATION=*
 {% if only_per_row_mode %}
+PLAYER_LOCATION=*
 .include "player.asm"
 {% endif %}
 
-{% for filename, location in charset_files %}
+{% for idx, (filename, location) in enumerate(charset_files) %}
 * = ${{location}}
+CHARSET_{{idx}}_LOCATION={{location}}
 .binary "{{ filename }}"
 {% endfor %}
 
@@ -684,6 +684,7 @@ ANIM_LOCATION={{anim_start_address}}
 .binary "anim.bin"
 
 {% if not only_per_row_mode %}
+PLAYER_LOCATION=*
 .include "player.asm"
 {% endif %}
 {% if fill_color_with_effect %}

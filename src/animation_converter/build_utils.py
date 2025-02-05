@@ -29,6 +29,8 @@ def build(output_file_name, non_linear_prg=False):
 
     command.extend(
         [
+            "-L",
+            f"{get_build_path()}/{output_file_name}.lst",
             "-o",
             f"{output_file_name}.prg",
             f"{get_build_path()}/{output_file_name}.asm",
