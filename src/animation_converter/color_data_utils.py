@@ -32,11 +32,12 @@ def randomize_color_frames(screens: List[PetsciiScreen], seed: int):
 
 
 def generate_color_fill_code(
-    fill_blocks, min_sequence_length=10, max_sequence_length=120, base_address=0xD800
+    fill_blocks, min_sequence_length=10, max_sequence_length=120
 ):
     def find_sequences(numbers):
         sequences = []
         current_seq = []
+
         for i, num in enumerate(numbers):
             if not current_seq:
                 current_seq = [num]
@@ -53,24 +54,18 @@ def generate_color_fill_code(
                 if len(current_seq) >= min_sequence_length:
                     sequences.append(current_seq)
                 current_seq = [num]
+
         if current_seq and len(current_seq) >= min_sequence_length:
             sequences.append(current_seq)
+
         return sequences
 
     def remove_sequences_from_list(numbers, sequences):
         flat_seq = [num for seq in sequences for num in seq]
         return [num for num in numbers if num not in flat_seq]
 
-    def group_sequences_by_length(sequences):
-        length_groups = {}
-        for seq in sequences:
-            length = len(seq)
-            if length not in length_groups:
-                length_groups[length] = []
-            length_groups[length].append(seq)
-        return length_groups
-
     result = []
+
     for idx, offsets in enumerate(fill_blocks):
         result.append(f"fill_color_step{idx}")
         result.append("\tlda fill_color")
@@ -78,29 +73,16 @@ def generate_color_fill_code(
         # Find continuous sequences
         sequences = find_sequences(offsets)
 
-        # Group sequences by length and sort by length (descending)
-        length_groups = group_sequences_by_length(sequences)
-        sorted_lengths = sorted(length_groups.keys(), reverse=True)
-
-        # Generate optimized fill code for each length group
-        for length in sorted_lengths:
-            sequences_of_length = length_groups[length]
-            result.append(f"\tldx #{length} - 1")
-            result.append("-")
-            # Generate a loop for each sequence of this length
-            loop_label = f"l{length}_{idx}"
-            for sequence in sequences_of_length:
-                start_offset = sequence[0]
-                result.append(f"\tsta ${hex(base_address + start_offset)[2:]},x")
-
-            result.append("\tdex")
-            result.append("\tbpl -")
-            result.append("")
+        # Generate fill_max_127 calls for sequences
+        for sequence in sequences:
+            start_offset = sequence[0]
+            count = len(sequence)
+            result.append(f"\t#fill_max_127 ${hex(0xd800 + start_offset)[2:]}, {count}")
 
         # Generate individual sta instructions for remaining offsets
         remaining = remove_sequences_from_list(offsets, sequences)
         for offset in remaining:
-            result.append(f"\tsta ${hex(base_address + offset)[2:]}")
+            result.append(f"\tsta ${hex(0xd800 + offset)[2:]}")
 
         result.append("\trts")
         result.append("")
