@@ -229,7 +229,19 @@ start
 	jsr player_init
 
 forever
+{% if scroll_direction == "up" or scroll_direction == "down" and TEST_SLOWDOWN > 0 %}
+
+	inc test_slowdown
+	lda test_slowdown
+	cmp #{{ TEST_SLOWDOWN }}
+	bne +
+	lda #0
+	sta test_slowdown
 	jsr player_unpack
++
+{% else %}
+	jsr player_unpack
+{% endif %}
 	jsr copy_buffer
 	jsr wait_for_next_frame
 	jsr test_swap_frame
