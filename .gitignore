@@ -1,30 +1,43 @@
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.env
-.venv
-env/
-venv/
-ENV/
-.coverage
-htmlcov/
-dist/
+# Build directories
 build/
-test-data/
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-docs/_build/
-# OS generated files #
-######################
+cmake-build-*/
+out/
+
+# IDE directories
+.vs/
+.vscode/
+.idea/
+
+# Compiled files
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Dependency directories
+src/third_party/
+
+# Downloaded stb files
+src/third_party/stb/*.h
+
+# OS specific files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-*.prg
-*.code-workspace
-.idea/*
+
+# Binary output
+bin/
+lib/
+
+# Testing output
+Testing/

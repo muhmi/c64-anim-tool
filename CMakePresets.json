@@ -1,0 +1,123 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 20,
+      "patch": 0
+    },
+    "configurePresets": [
+      {
+        "name": "base",
+        "hidden": true,
+        "generator": "Ninja",
+        "binaryDir": "${sourceDir}/build/${presetName}",
+        "cacheVariables": {
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        }
+      },
+      {
+        "name": "debug",
+        "displayName": "Debug Build",
+        "description": "Debug build with symbols",
+        "inherits": "base",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "BUILD_TESTING": "OFF",
+          "BUILD_CLI": "ON"
+        }
+      },
+      {
+        "name": "release",
+        "displayName": "Release Build",
+        "description": "Optimized release build",
+        "inherits": "base",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Release",
+          "BUILD_TESTING": "OFF",
+          "BUILD_CLI": "ON"
+        }
+      },
+      {
+        "name": "clang-sanitizer",
+        "displayName": "Clang Sanitizer Build",
+        "description": "Debug build with Clang sanitizers enabled",
+        "inherits": "base",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "CMAKE_C_COMPILER": "clang",
+          "CMAKE_CXX_COMPILER": "clang++",
+          "ENABLE_SANITIZERS": "ON",
+          "BUILD_TESTING": "OFF",
+          "BUILD_CLI": "ON"
+        }
+      },
+      {
+        "name": "all-tests",
+        "displayName": "All Tests",
+        "description": "Build with all tests enabled",
+        "inherits": "base",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "BUILD_TESTING": "ON",
+          "BUILD_CLI": "OFF"
+        }
+      },
+      {
+        "name": "all-debug",
+        "displayName": "Complete Debug",
+        "description": "Debug build with CLI and all tests",
+        "inherits": "base",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "BUILD_TESTING": "ON",
+          "BUILD_CLI": "ON"
+        }
+      }
+    ],
+    "buildPresets": [
+      {
+        "name": "debug",
+        "configurePreset": "debug"
+      },
+      {
+        "name": "release",
+        "configurePreset": "release"
+      },
+      {
+        "name": "clang-sanitizer",
+        "configurePreset": "clang-sanitizer"
+      },
+      {
+        "name": "all-tests",
+        "configurePreset": "all-tests"
+      },
+      {
+        "name": "all-debug",
+        "configurePreset": "all-debug"
+      }
+    ],
+    "testPresets": [
+      {
+        "name": "all-tests",
+        "configurePreset": "all-tests",
+        "output": {
+          "outputOnFailure": true
+        },
+        "execution": {
+          "noTestsAction": "error",
+          "stopOnFailure": false
+        }
+      },
+      {
+        "name": "complete-tests",
+        "configurePreset": "all-debug",
+        "output": {
+          "outputOnFailure": true
+        },
+        "execution": {
+          "noTestsAction": "error",
+          "stopOnFailure": false
+        }
+      }
+    ]
+  }
