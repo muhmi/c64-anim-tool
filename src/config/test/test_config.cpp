@@ -4,7 +4,7 @@
 #include <string>
 #include <filesystem>
 
-#include "config/config.h"
+#include "../config.h"
 
 // Create a temporary YAML file for testing
 std::string createTempYamlFile(const std::string& content) {
