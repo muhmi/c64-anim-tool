@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.20)
-project(giftool VERSION 0.1.0 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.25)
+project(c64-anim-tool VERSION 0.1.0 LANGUAGES CXX)
 
 # Set C++20 as the standard
 set(CMAKE_CXX_STANDARD 20)
@@ -111,11 +111,11 @@ target_link_libraries(config_lib PUBLIC
 
 # Create the CLI executable if requested
 if(BUILD_CLI)
-  add_executable(giftool
+  add_executable(c64-anim-tool
     src/cli/main.cpp
   )
   
-  target_link_libraries(giftool PRIVATE
+  target_link_libraries(c64-anim-tool PRIVATE
     gif_lib
     config_lib
     CLI11::CLI11
