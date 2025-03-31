@@ -3,7 +3,6 @@
 #include <CLI/CLI.hpp>
 
 #include "config/config.h"
-#include "gif/gif_processor.h"
 
 int main(int argc, char** argv) {
     // Create app configuration
@@ -45,19 +44,6 @@ int main(int argc, char** argv) {
     // Print configuration if verbose
     if (config.verbose) {
         print_config(config);
-    }
-    
-    // Process the GIF image
-    try {
-        GifProcessor processor(config);
-        processor.process();
-        
-        if (config.verbose) {
-            std::cout << "Processing completed successfully!" << std::endl;
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "Error processing image: " << e.what() << std::endl;
-        return 1;
     }
     
     return 0;

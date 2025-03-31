@@ -133,22 +133,6 @@ FetchContent_MakeAvailable(fmt)
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src/third_party/stb)
 
-# Create the core GIF library
-add_library(gif_lib
-        src/gif/gif_processor.cpp
-        src/gif/stb_impl.cpp # This file needs to be created with proper impl
-)
-
-target_include_directories(gif_lib PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src  # Makes "gif/gif_processor.h" work
-)
-
-target_link_libraries(gif_lib PUBLIC
-        stb
-        yaml-cpp
-        fmt::fmt
-)
-
 # Create the config library
 add_library(config_lib
         src/config/config.cpp
@@ -170,7 +154,6 @@ if (BUILD_CLI)
     )
 
     target_link_libraries(c64-anim-tool PRIVATE
-            gif_lib
             config_lib
             CLI11::CLI11
             fmt::fmt
@@ -204,26 +187,12 @@ if (BUILD_TESTING)
 
     catch_discover_tests(config_tests)
 
-    # GIF module tests
-    add_executable(gif_tests
-            src/gif/test/test_gif_processor.cpp
-    )
-
-    target_link_libraries(gif_tests PRIVATE
-            gif_lib
-            Catch2::Catch2WithMain
-    )
-
-    catch_discover_tests(gif_tests)
-
     # Combined test suite for CI/CD
     add_executable(all_tests
             src/config/test/test_config.cpp
-            src/gif/test/test_gif_processor.cpp
     )
 
     target_link_libraries(all_tests PRIVATE
-            gif_lib
             config_lib
             Catch2::Catch2WithMain
     )

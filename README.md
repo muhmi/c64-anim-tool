@@ -10,17 +10,6 @@ Tool for processing gifs/petcii animations to be used in C64 demos
 - C++20 compatible compiler (GCC 10+, Clang 10+, MSVC 2019+)
 - Git (for fetching dependencies)
 
-### Getting STB Library
-
-The project uses the STB single-header libraries. Before building, you need to download them:
-
-```bash
-mkdir -p src/third_party/stb
-cd src/third_party/stb
-curl -O https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
-curl -O https://raw.githubusercontent.com/nothings/stb/master/stb_image_write.h
-```
-
 ### Building with CMake Presets
 
 The project includes CMake presets for different build configurations:
