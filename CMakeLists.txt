@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.28)
 project(c64-anim-tool VERSION 0.1.0 LANGUAGES CXX)
 
 # Set C++20 as the standard
@@ -22,6 +22,31 @@ option(BUILD_CLI "Build CLI application" ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+# Handle macOS SDK paths
+if(APPLE)
+  # Get the currently active SDK path
+  execute_process(
+          COMMAND xcrun --show-sdk-path
+          OUTPUT_VARIABLE MACOS_SDK_PATH
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  if(MACOS_SDK_PATH)
+    message(STATUS "Using macOS SDK: ${MACOS_SDK_PATH}")
+    set(CMAKE_OSX_SYSROOT ${MACOS_SDK_PATH})
+
+    # Extract SDK version for information
+    execute_process(
+            COMMAND xcrun --show-sdk-version
+            OUTPUT_VARIABLE MACOS_SDK_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    message(STATUS "macOS SDK version: ${MACOS_SDK_VERSION}")
+  else()
+    message(WARNING "Could not determine macOS SDK path")
+  endif()
+endif()
 
 # Configure compile options based on compiler
 if(MSVC)
