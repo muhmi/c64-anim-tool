@@ -52,6 +52,5 @@ private:
     int channels_ = 0;
     std::vector<unsigned char> image_data_;
     
-    // Reference to configuration
-    const AppConfig& config_;
+    AppConfig config_;
 };
