@@ -72,7 +72,8 @@
         "cacheVariables": {
           "CMAKE_BUILD_TYPE": "Debug",
           "BUILD_TESTING": "ON",
-          "BUILD_CLI": "ON"
+          "BUILD_CLI": "ON",
+          "ENABLE_SANITIZERS": "OFF"
         }
       }
     ],
