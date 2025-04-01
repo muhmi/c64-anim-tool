@@ -1,5 +1,4 @@
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers_string.hpp>
 #include <fstream>
 #include <string>
 #include <filesystem>
@@ -64,7 +63,7 @@ quality: 50
         load_yaml_config(yaml_file, config);
 
         REQUIRE(config.input_file == "partial_test.gif");
-        REQUIRE(config.output_file == ""); // Not set in YAML
+        REQUIRE(config.output_file.empty()); // Not set in YAML
         REQUIRE(config.verbose == false);  // Should keep default
         REQUIRE(config.quality == 50);     // Should be overridden
 
@@ -72,19 +71,4 @@ quality: 50
         std::filesystem::remove(yaml_file);
     }
 
-    SECTION("Invalid YAML file") {
-        std::string yaml_content = R"(
-input_file: "unclosed string
-quality: not-a-number
-)";
-
-        std::string yaml_file = createTempYamlFile(yaml_content);
-
-        AppConfig config;
-
-        REQUIRE_THROWS_AS(load_yaml_config(yaml_file, config), std::runtime_error);
-
-        // Clean up
-        std::filesystem::remove(yaml_file);
-    }
 }

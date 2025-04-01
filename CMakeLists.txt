@@ -179,23 +179,32 @@ if (BUILD_TESTING)
     add_executable(config_tests
             src/config/test/test_config.cpp
     )
-
     target_link_libraries(config_tests PRIVATE
             config_lib
             Catch2::Catch2WithMain
     )
-
     catch_discover_tests(config_tests)
+
+    # CLI module tests
+    add_executable(cli_tests
+            src/cli/test/test_cli.cpp
+    )
+    target_link_libraries(cli_tests PRIVATE
+            config_lib
+            CLI11::CLI11
+            Catch2::Catch2WithMain
+    )
+    catch_discover_tests(cli_tests)
 
     # Combined test suite for CI/CD
     add_executable(all_tests
             src/config/test/test_config.cpp
+            src/cli/test/test_cli.cpp
     )
-
     target_link_libraries(all_tests PRIVATE
             config_lib
+            CLI11::CLI11
             Catch2::Catch2WithMain
     )
-
     catch_discover_tests(all_tests)
 endif ()
