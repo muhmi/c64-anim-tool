@@ -105,7 +105,7 @@ include(FetchContent)
 FetchContent_Declare(
         cli11
         GIT_REPOSITORY https://github.com/CLIUtils/CLI11
-        GIT_TAG v2.3.2
+        GIT_TAG v2.5.0
 )
 FetchContent_MakeAvailable(cli11)
 
@@ -125,7 +125,7 @@ FetchContent_MakeAvailable(yaml-cpp)
 FetchContent_Declare(
         fmt
         GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-        GIT_TAG 10.1.1  # Use a specific version
+        GIT_TAG 11.1.4
 )
 FetchContent_MakeAvailable(fmt)
 
