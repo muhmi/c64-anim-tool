@@ -1,0 +1,95 @@
+
+Processing order:
+
+ - cli/main.cpp
+   - read cli args + yaml
+   (config/config.h)
+
+
+ SOURCES:
+
+ - read frames from given source(s) in order given in config
+  each set of sources and options needs to be a animation
+  each animation can define:
+   - features to use:
+     - color data animation by code
+   - options to for example read only chars/col etc from source
+   - options for features:
+     - like color animation speed
+     - scroll speed, direction
+
+   sources can be:
+   - petscii
+   - animated gif (how do you handle bg color / fg color?)
+   - palette animation config (this animates color memory only)
+   - asesprite file
+     - layer for charset anim (somehow maybe bg/fg col?)
+     - layer for sprite anim
+   - animated gif as sprite animation source
+
+Transform all :
+ - Need some middle bit that merges all those previous steps that _produce_ source data
+   - source data can be:
+    - frames with:
+     - bg
+     - fg
+     - charset
+     - charmem
+     - colmem
+     - spritedata
+     - sprite locations
+     - sprite anim feature?
+     -
+ - Should the merging of charsets happen here?
+
+ - Now we should have instead of GifFrame or PetsciiFrame something like AnimationFrame
+  - Animation which contains:
+      - Charsets
+      - Used features (like scroll up, scroll down, animate color memory...)
+      - AnimationFrame:
+        - bg per frame
+        - fg per frame
+        - char mem
+        - charset used
+        - color memory
+        - sprite frames and locations (its ok to have more than 8 sprites)
+        <extra data needed by each feature somehow attached>
+
+ - Allow one config to define multiple animations in one file
+   In this case we can try to optimize the player / packing to work with all animations, instead of one.
+
+ -
+
+ - Conversion of frames to animation data:
+
+
+Other topics:
+
+- How do I define in c++ and write (in extensible manner):
+ - Features of anim tool like
+   - scroll screen (maybe also color ram)
+   - animate color memory based on some input data ( petscii frames like in prev version?)
+   - tween sprite locations
+   - multiplexer to allow more sprites?
+ - Each "feature" has implications on
+   - the data the tool produces
+   - code that is produced
+   - runtime cost
+   - memory usage
+ - How do I define per "feature" or "effect" what are their
+  - memory needs
+  - cpu needs? (need to calculate somehow roughly ballbarkishly how many cycles I need)
+  - do they rely on double buffering
+  - How big is their code?
+  - Where in memory the code can be placed?
+ - The assembly code for each feature needs to be written somehow to handle relocation VIC banks
+   - no hardcoded VIC setup
+   - calculate each value
+
+- Tool should have some way to define which memory areas are "out of bounds", so for example for integrating to
+  previous hashembler based demobase is easier (exclude ranges used by music and demobase)
+
+- Tool config should allow to set if we want to play 1x music in the produced binary
+
+- Tool config should allow creating only souces (well, we need to compile and make sure it builds first) for integrating to
+  some demo
