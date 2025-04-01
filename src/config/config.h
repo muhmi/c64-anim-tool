@@ -13,8 +13,6 @@ struct AppConfig {
     bool verbose = false;
     int quality = 100;
     std::vector<std::string> include_paths;
-    
-    // Add other configuration options here as needed
 };
 
 /**
@@ -24,11 +22,11 @@ struct AppConfig {
  * @param config Configuration structure to populate
  * @throws std::runtime_error if the file cannot be parsed
  */
-void load_yaml_config(const std::string& config_path, AppConfig& config);
+void load_yaml_config(const std::string &config_path, AppConfig &config);
 
 /**
  * Print the current configuration.
  * 
  * @param config Configuration to print
  */
-void print_config(const AppConfig& config);
+void print_config(const AppConfig &config);
