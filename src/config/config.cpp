@@ -2,7 +2,9 @@
 #include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
 
-void load_yaml_config(const std::string &config_path, AppConfig &config) {
+using namespace AnimTool;
+
+void AnimTool::load_yaml_config(const std::string &config_path, AppConfig &config) {
     YAML::Node yaml = YAML::LoadFile(config_path);
 
     if (yaml["input_file"]) {
@@ -30,7 +32,7 @@ void load_yaml_config(const std::string &config_path, AppConfig &config) {
 
 }
 
-void print_config(const AppConfig &config) {
+void AnimTool::print_config(const AppConfig &config) {
     fmt::print("Configuration:\n");
     fmt::print("  Input file: {}\n", config.input_file);
     fmt::print("  Output file: {}\n", config.output_file);

@@ -133,7 +133,7 @@ FetchContent_MakeAvailable(fmt)
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src/third_party/stb)
 
-# Create the config library
+# Config
 add_library(config_lib
         src/config/config.cpp
 )
@@ -147,7 +147,19 @@ target_link_libraries(config_lib PUBLIC
         fmt::fmt
 )
 
-# Create the CLI executable if requested
+# Petscii stuffs
+add_library(petscii_lib
+        src/petscii/petscii.cpp
+)
+
+target_include_directories(petscii_lib PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src  # Makes "config/config.h" work
+)
+
+target_link_libraries(petscii_lib PUBLIC
+        fmt::fmt
+)
+
 if (BUILD_CLI)
     add_executable(c64-anim-tool
             src/cli/main.cpp
@@ -155,12 +167,12 @@ if (BUILD_CLI)
 
     target_link_libraries(c64-anim-tool PRIVATE
             config_lib
+            petscii_lib
             CLI11::CLI11
             fmt::fmt
     )
 endif ()
 
-# Testing setup
 if (BUILD_TESTING)
     # Fetch Catch2
     FetchContent_Declare(
@@ -191,6 +203,7 @@ if (BUILD_TESTING)
     )
     target_link_libraries(cli_tests PRIVATE
             config_lib
+            petscii_lib
             CLI11::CLI11
             Catch2::Catch2WithMain
     )

@@ -5,7 +5,7 @@
 
 int main(int argc, char **argv) {
     // Create app configuration
-    AppConfig config;
+    AnimTool::AppConfig config;
     std::string config_path;
 
     // Set up CLI parser

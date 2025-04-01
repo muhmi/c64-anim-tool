@@ -31,7 +31,7 @@ include_paths:
 
         std::string yaml_file = createTempYamlFile(yaml_content);
 
-        AppConfig config;
+        AnimTool::AppConfig config;
         load_yaml_config(yaml_file, config);
 
         REQUIRE(config.input_file == "test_input.gif");
@@ -55,7 +55,7 @@ quality: 50
 
         std::string yaml_file = createTempYamlFile(yaml_content);
 
-        AppConfig config;
+        AnimTool::AppConfig config;
         // Set some defaults before loading
         config.verbose = false;
         config.quality = 100;
