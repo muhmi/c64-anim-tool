@@ -12,6 +12,6 @@ namespace AnimTool::Anim {
         };
         std::vector<Charset> charsets;
 
-        [[nodiscard]] Type type() const override { return Type::CHARACTER_RAM; }
+        [[nodiscard]] Type getType() const override { return Type::CHARACTER_RAM; }
     };
 }

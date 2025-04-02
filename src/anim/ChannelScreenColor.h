@@ -12,7 +12,7 @@ namespace AnimTool::Anim {
             uint16_t duration{};
         };
 
-        [[nodiscard]] Type type() const override { return Type::SCREEN_COLOR; }
+        [[nodiscard]] Type getType() const override { return Type::SCREEN_COLOR; }
     };
 
 }

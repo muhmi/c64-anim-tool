@@ -10,6 +10,6 @@ namespace AnimTool::Anim {
             uint16_t duration{};
         };
 
-        [[nodiscard]] Type type() const override { return Type::COLOR_RAM; }
+        [[nodiscard]] Type getType() const override { return Type::COLOR_RAM; }
     };
 }

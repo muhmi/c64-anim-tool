@@ -11,13 +11,13 @@ namespace AnimTool::Anim {
         };
 
         struct AnimatedArea {
-            std::__1::vector<AnimTool::Anim::ScreenLocation> locations;
+            std::vector<AnimTool::Anim::ScreenLocation> locations;
         };
-        std::__1::vector<AnimatedArea> areas;
+        std::vector<AnimatedArea> areas;
 
-        [[nodiscard]] Type type() const override { return Type::COLOR_ANIMATION; }
+        [[nodiscard]] Type getType() const override { return Type::COLOR_ANIMATION; }
 
-        [[nodiscard]] std::__1::vector<Type> replacesChannels() const override {
+        [[nodiscard]] std::vector<Type> replacesChannels() const override {
             return {Type::COLOR_ANIMATION};
         }
     };

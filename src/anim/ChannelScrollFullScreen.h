@@ -16,6 +16,6 @@ namespace AnimTool::Anim {
         };
         Direction direction{};
 
-        [[nodiscard]] Type type() const override { return Type::SCROLL_FULL_SCREEN; }
+        [[nodiscard]] Type getType() const override { return Type::SCROLL_FULL_SCREEN; }
     };
 }

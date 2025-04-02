@@ -39,7 +39,7 @@ void Char::incUseCount() {
     parentCharset->usage_count[index] += 1;
 }
 
-std::string SourceChannel::name() const {
+std::string SourceChannel::getName() const {
     const std::type_info &info = typeid(*this);
 #ifdef __GNUC__
     int status;

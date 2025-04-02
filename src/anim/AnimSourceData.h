@@ -54,14 +54,16 @@ namespace AnimTool::Anim {
 
         ~SourceChannel() = default;
 
-        std::string source_name{};
+        [[nodiscard]] std::string getSourceName() const { return this->source_name; }
 
-        [[nodiscard]] virtual std::string name() const;
+        [[nodiscard]] virtual std::string getName() const;
 
-        [[nodiscard]] virtual Type type() const = 0;
+        [[nodiscard]] virtual Type getType() const = 0;
 
         // returns a list of channel types this channel replaces
         [[nodiscard]] virtual std::vector<Type> replacesChannels() const { return {}; };
+    private:
+        std::string source_name{};
     };
 
     // Animation source data is split to channels which represent changes different things like VIC register or charset RAM
