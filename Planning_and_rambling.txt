@@ -1,64 +1,91 @@
 
-Processing order:
-
- - cli/main.cpp
-   - read cli args + yaml
-   (config/config.h)
-
+Order of "things":
+ - Read config (yaml + cli args)
+  - For each animation in configs:
+	 - Read source files
+	 - Sources produce input data which is turned into Animation, which contains Frames with the parts of VIC state we want to animate
+ - Optimize source Animations based on options give in config:
+  - A animation read from gif file that only is used to animate charcter ram and charset might have more charsets than X and user requests charsets to be merged to Y
+   - Then we run a step to merge the charsets here and return a new Animation
+  - Petscii files contain
+   - bg color
+   - fg color
+   - characters
+   - color ram
+  - Petmate files
+    - same as petcii but also
+    - custom charsets
+    - when to change charset per frame
+  - asesprite
+    - all of the above with petscii and petate
+    - sprite animation frames
+    - sprite locations per frame
+	    - potentially also some tweening function for sprite locations?
+  - There can be animation
+    - for color ram onl just color frames or
+    - character ram
+    - changing character sets
+    - changing bg / fg color
+    - changing sprite frames / data / locations
+    - Potentially color frame data fed to some feature like "animate color data with code"
+    - Or any other non-VIC data that is needed by "features" or some other animation processing
 
  SOURCES:
 
  - read frames from given source(s) in order given in config
-  each set of sources and options needs to be a animation
-  each animation can define:
-   - features to use:
-     - color data animation by code
-   - options to for example read only chars/col etc from source
-   - options for features:
-     - like color animation speed
-     - scroll speed, direction
+	each set of sources and options needs to be a animation
+	each animation can define:
+	 - features to use:
+		 - color data animation by code
+	 - options to for example read only chars/col etc from source
+	 - options for features:
+		 - like color animation speed
+		 - scroll speed, direction
 
-   sources can be:
-   - petscii
-   - animated gif (how do you handle bg color / fg color?)
-   - palette animation config (this animates color memory only)
-   - asesprite file
-     - layer for charset anim (somehow maybe bg/fg col?)
-     - layer for sprite anim
-   - animated gif as sprite animation source
+	 sources can be:
+	 - petscii
+	 - animated gif (how do you handle bg color / fg color?)
+	 - palette animation config (this animates color memory only)
+	 - asesprite file
+		 - layer for charset anim (somehow maybe bg/fg col?)
+		 - layer for sprite anim
+	 - animated gif as sprite animation source
 
 Transform all :
  - Need some middle bit that merges all those previous steps that _produce_ source data
-   - source data can be:
-    - frames with:
-     - bg
-     - fg
-     - charset
-     - charmem
-     - colmem
-     - spritedata
-     - sprite locations
-     - sprite anim feature?
-     -
+	 - source data can be:
+		- frames with:
+		 - bg
+		 - fg
+		 - charset
+		 - charmem
+		 - colmem
+		 - spritedata
+		 - sprite locations
+		 - sprite anim feature?
+		 -
  - Should the merging of charsets happen here?
 
  - Now we should have instead of GifFrame or PetsciiFrame something like AnimationFrame
-  - Animation which contains:
-      - Charsets
-      - Used features (like scroll up, scroll down, animate color memory...)
-      - AnimationFrame:
-        - bg per frame
-        - fg per frame
-        - char mem
-        - charset used
-        - color memory
-        - sprite frames and locations (its ok to have more than 8 sprites)
-        <extra data needed by each feature somehow attached>
+	- Animation which contains:
+			- Charsets
+			- Used features (like scroll up, scroll down, animate color memory...)
+			- AnimationFrame:
+				- bg per frame
+				- fg per frame
+				- char mem
+				- charset used
+				- color memory
+				- sprite frames and locations (its ok to have more than 8 sprites)
+				<extra data needed by each feature somehow attached>
+			- Timeline
+			  - Time between frame changes
+			    - output asm code should aim to render all before frame changes (if not possible implement something, like bg color change to red in produced bin)
+			  - Order of frames (so, yeah timelime)
+			  - Possibly other metadata meant for "features" like tweening sprites, scrolling screen, changing memory contents...
 
  - Allow one config to define multiple animations in one file
-   In this case we can try to optimize the player / packing to work with all animations, instead of one.
-
- -
+	 In this case we can try to optimize the player / packing to work with all animations, instead of one.
 
  - Conversion of frames to animation data:
 
@@ -67,29 +94,56 @@ Other topics:
 
 - How do I define in c++ and write (in extensible manner):
  - Features of anim tool like
-   - scroll screen (maybe also color ram)
-   - animate color memory based on some input data ( petscii frames like in prev version?)
-   - tween sprite locations
-   - multiplexer to allow more sprites?
+	 - scroll screen (maybe also color ram)
+	 - animate color memory based on some input data ( petscii frames like in prev version?)
+	 - tween sprite locations
+	 - multiplexer to allow more sprites?
  - Each "feature" has implications on
-   - the data the tool produces
-   - code that is produced
-   - runtime cost
-   - memory usage
+	 - the data the tool produces
+	 - code that is produced
+	 - runtime cost
+	 - memory usage
  - How do I define per "feature" or "effect" what are their
-  - memory needs
-  - cpu needs? (need to calculate somehow roughly ballbarkishly how many cycles I need)
-  - do they rely on double buffering
-  - How big is their code?
-  - Where in memory the code can be placed?
+	- memory needs
+	- cpu needs? (need to calculate somehow roughly ballbarkishly how many cycles I need)
+	- do they rely on double buffering
+	- How big is their code?
+	- Where in memory the code can be placed?
  - The assembly code for each feature needs to be written somehow to handle relocation VIC banks
-   - no hardcoded VIC setup
-   - calculate each value
+	 - no hardcoded VIC setup
+	 - calculate each value
 
 - Tool should have some way to define which memory areas are "out of bounds", so for example for integrating to
-  previous hashembler based demobase is easier (exclude ranges used by music and demobase)
+	previous hashembler based demobase is easier (exclude ranges used by music and demobase)
 
 - Tool config should allow to set if we want to play 1x music in the produced binary
 
-- Tool config should allow creating only souces (well, we need to compile and make sure it builds first) for integrating to
-  some demo
+- Tool config should allow creating only asm sources (well, we need to compile and make sure it builds first) for integrating to
+	some demo
+	 - Maybe I still limit my self to tass?
+
+- I still need to produce .prg or .d64
+ - If I want .d64 should I just use mankelis system and run it to produce a demo with the player for all features and somehow
+	 make the loadlists for each required animation data?
+ - Should I make this tool default to .d64 ?
+   - So by default try to break animations somehow to load parts while others are running?
+     - how is this even possible on C64?
+     - Switch banks? Load to bank 2 while using bank 2?
+       - but some anims are just too big?
+       - How to tell user that they are asking for something that wont work?
+         - How to tell it in a way that a non-programmer understands?
+
+
+ - This would be somehow ok? I can run the external tool anyways and need to make it work for tass anyways
+- Or for TASS is there a reasonable way to integrate the sources with c++ code? Probably not?
+
+- Some things like option to animate color data based on gif / petscii frames need to be somehow marked as owning
+  the color ram (this might be same for some character data anims?)
+  - This means the tools should be able to say if you try to read color data from gif AND enable color data anim based on
+    some code ...
+
+- GIF animation reader needs to read millis between frames
+
+- How do I write the 6502 asm for the features? The old python thing works nice because of the templating but its
+  really hard to count from that how many cycles / bytes each bit takes?
+

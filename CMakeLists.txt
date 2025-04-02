@@ -163,6 +163,8 @@ target_link_libraries(petscii_lib PUBLIC
 if (BUILD_CLI)
     add_executable(c64-anim-tool
             src/cli/main.cpp
+            src/anim/Frame.cpp
+            src/anim/Frame.h
     )
 
     target_link_libraries(c64-anim-tool PRIVATE
@@ -213,6 +215,8 @@ if (BUILD_TESTING)
     add_executable(all_tests
             src/config/test/test_config.cpp
             src/cli/test/test_cli.cpp
+            src/anim/Frame.cpp
+            src/anim/Frame.h
     )
     target_link_libraries(all_tests PRIVATE
             config_lib

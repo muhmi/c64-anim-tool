@@ -29,7 +29,7 @@ std::vector<Frame> AnimTool::Petscii::Reader::readFrames(const std::string &pets
     auto frames_end = std::sregex_iterator();
 
     for (auto i = frames_begin; i != frames_end; ++i) {
-        const std::smatch match = *i;
+        const std::smatch& match = *i;
         std::string frame_id = match[1];
         std::string frame_data = match[2];
 
