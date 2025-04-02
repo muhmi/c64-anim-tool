@@ -90,13 +90,13 @@ else ()
     endif ()
 endif ()
 
-if(TARGET yaml-cpp)
+if (TARGET yaml-cpp)
     target_compile_options(yaml-cpp PRIVATE ${EXTERNAL_WARNING_FLAGS})
-endif()
+endif ()
 
-if(TARGET fmt)
+if (TARGET fmt)
     target_compile_options(fmt PRIVATE ${EXTERNAL_WARNING_FLAGS})
-endif()
+endif ()
 
 # Add external dependencies
 include(FetchContent)
@@ -160,16 +160,24 @@ target_link_libraries(petscii_lib PUBLIC
         fmt::fmt
 )
 
+# Anim stuffs
+add_library(anim_lib
+        src/anim/anim_source_data_types.cpp
+)
+
+target_include_directories(anim_lib PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src  # Makes "config/config.h" work
+)
+
 if (BUILD_CLI)
     add_executable(c64-anim-tool
             src/cli/main.cpp
-            src/anim/frame.cpp
-            src/anim/frame.h
     )
 
     target_link_libraries(c64-anim-tool PRIVATE
             config_lib
             petscii_lib
+            anim_lib
             CLI11::CLI11
             fmt::fmt
     )
@@ -206,6 +214,7 @@ if (BUILD_TESTING)
     target_link_libraries(cli_tests PRIVATE
             config_lib
             petscii_lib
+            anim_lib
             CLI11::CLI11
             Catch2::Catch2WithMain
     )
@@ -215,11 +224,11 @@ if (BUILD_TESTING)
     add_executable(all_tests
             src/config/test/test_config.cpp
             src/cli/test/test_cli.cpp
-            src/anim/frame.cpp
-            src/anim/frame.h
     )
     target_link_libraries(all_tests PRIVATE
             config_lib
+            petscii_lib
+            anim_lib
             CLI11::CLI11
             Catch2::Catch2WithMain
     )
