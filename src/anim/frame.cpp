@@ -1,4 +1,4 @@
-#include "Frame.h"
+#include "frame.h"
 
 using namespace AnimTool::Anim;
 
