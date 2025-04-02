@@ -133,35 +133,12 @@ FetchContent_MakeAvailable(fmt)
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src/third_party/stb)
 
-# Config
-add_library(config_lib
-        src/config/config.cpp
-)
 
-target_include_directories(config_lib PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-target_link_libraries(config_lib PUBLIC
-        yaml-cpp
-        fmt::fmt
-)
-
-# Petscii stuffs
-add_library(petscii_lib
-        src/petscii/petscii.cpp
-)
-
-target_include_directories(petscii_lib PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-target_link_libraries(petscii_lib PUBLIC
-        fmt::fmt
-)
 
 # Anim stuffs
 add_library(anim_lib
+        src/petscii/petscii.cpp
+        src/config/config.cpp
         src/anim/AnimSourceData.cpp
         # src/anim/ChannelCharacterRam.cpp
         # src/anim/ChannelScreenColor.cpp
@@ -176,8 +153,8 @@ target_include_directories(anim_lib PUBLIC
 )
 
 target_link_libraries(anim_lib PUBLIC
-        config_lib
         fmt::fmt
+        yaml-cpp
 )
 
 if (BUILD_CLI)
@@ -186,8 +163,6 @@ if (BUILD_CLI)
     )
 
     target_link_libraries(c64-anim-tool PRIVATE
-            config_lib
-            petscii_lib
             anim_lib
             CLI11::CLI11
             fmt::fmt
@@ -213,7 +188,6 @@ if (BUILD_TESTING)
             src/config/test/test_config.cpp
     )
     target_link_libraries(config_tests PRIVATE
-            config_lib
             Catch2::Catch2WithMain
     )
     catch_discover_tests(config_tests)
@@ -223,8 +197,6 @@ if (BUILD_TESTING)
             src/cli/test/test_cli.cpp
     )
     target_link_libraries(cli_tests PRIVATE
-            config_lib
-            petscii_lib
             anim_lib
             CLI11::CLI11
             Catch2::Catch2WithMain
@@ -237,8 +209,6 @@ if (BUILD_TESTING)
             src/cli/test/test_cli.cpp
     )
     target_link_libraries(all_tests PRIVATE
-            config_lib
-            petscii_lib
             anim_lib
             CLI11::CLI11
             Catch2::Catch2WithMain
