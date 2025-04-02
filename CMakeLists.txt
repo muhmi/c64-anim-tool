@@ -139,7 +139,7 @@ add_library(config_lib
 )
 
 target_include_directories(config_lib PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src  # Makes "config/config.h" work
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_link_libraries(config_lib PUBLIC
@@ -153,7 +153,7 @@ add_library(petscii_lib
 )
 
 target_include_directories(petscii_lib PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src  # Makes "config/config.h" work
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_link_libraries(petscii_lib PUBLIC
@@ -162,11 +162,22 @@ target_link_libraries(petscii_lib PUBLIC
 
 # Anim stuffs
 add_library(anim_lib
-        src/anim/anim_source_data_types.cpp
+        src/anim/AnimSourceData.cpp
+        # src/anim/ChannelCharacterRam.cpp
+        # src/anim/ChannelScreenColor.cpp
+        # src/anim/ChannelColorRAM.cpp
+        # src/anim/ChannelColorAnimation.cpp
+        # src/anim/ChannelScrollFullScreen.cpp
+        # src/anim/ChannelSprite.cpp
 )
 
 target_include_directories(anim_lib PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src  # Makes "config/config.h" work
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_link_libraries(anim_lib PUBLIC
+        config_lib
+        fmt::fmt
 )
 
 if (BUILD_CLI)
