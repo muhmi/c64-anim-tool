@@ -7,7 +7,7 @@
 
 #endif
 
-using namespace AnimTool::Anim;
+using namespace AnimTool;
 
 uint8_t *Char::data() {
     return &parentCharset->bitmap[index * 8];

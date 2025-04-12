@@ -16,9 +16,5 @@ namespace AnimTool::Anim {
         std::vector<AnimatedArea> areas;
 
         [[nodiscard]] Type getType() const override { return Type::COLOR_ANIMATION; }
-
-        [[nodiscard]] std::vector<Type> replacesChannels() const override {
-            return {Type::COLOR_ANIMATION};
-        }
     };
 }

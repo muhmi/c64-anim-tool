@@ -1,21 +1,22 @@
-#include "petscii.h"
-#include <fmt/core.h>
+#include "PetsciiReader.h"
+#include "fmt/core.h"
 #include <fstream>
 #include <regex>
 #include <string>
 #include <vector>
 #include <sstream>
+#include <stdexcept>
+#include <memory>
 
-using namespace AnimTool::Petscii;
+using namespace AnimTool;
 
-std::vector<Frame> AnimTool::Petscii::Reader::readFrames(const std::string &petscii_c_filename) {
-    std::vector<Frame> frames;
+std::unique_ptr<PetsciiAnim> AnimTool::PetsciiReader::readFrames(const std::string &petscii_c_filename) {
+    std::unique_ptr<PetsciiAnim> anim = std::make_unique<PetsciiAnim>();
+    anim->source_filename = petscii_c_filename;
 
-    // Read the entire file content
     std::ifstream file(petscii_c_filename);
     if (!file.is_open()) {
-        fmt::print(stderr, "Error: Could not open file {}", petscii_c_filename);
-        return frames;
+        throw std::runtime_error(fmt::format("Failed to open file: {}", petscii_c_filename));
     }
 
     std::stringstream buffer;
@@ -107,8 +108,8 @@ std::vector<Frame> AnimTool::Petscii::Reader::readFrames(const std::string &pets
             }
         }
 
-        frames.push_back(frame);
+        anim->frames.push_back(frame);
     }
 
-    return frames;
+    return anim;
 }

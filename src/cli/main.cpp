@@ -4,25 +4,24 @@
 #include "config/config.h"
 
 int main(int argc, char **argv) {
-    // Create app configuration
     AnimTool::AppConfig config;
     std::string config_path;
 
-    // Set up CLI parser
-    CLI::App app{"GIF Processing Tool"};
+    CLI::App app{"Anim tool"};
 
     // Config file option
     app.add_option("--config", config_path, "Configuration file path")
             ->check(CLI::ExistingFile);
 
     // Tool options
+    /*
     app.add_option("-i,--input", config.input_file, "Input file")
             ->check(CLI::ExistingFile);
     app.add_option("-o,--output", config.output_file, "Output file");
     app.add_flag("-v,--verbose", config.verbose, "Enable verbose output");
     app.add_option("-q,--quality", config.quality, "Output quality (1-100)")
             ->check(CLI::Range(1, 100));
-
+    */
     // Parse command line
     try {
         app.parse(argc, argv);

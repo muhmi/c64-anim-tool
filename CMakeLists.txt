@@ -137,9 +137,12 @@ target_include_directories(stb INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src/third_p
 
 # Anim stuffs
 add_library(anim_lib
-        src/petscii/petscii.cpp
+        src/anim/CharsetReader.cpp
+        src/anim/PetsciiReader.cpp
         src/config/config.cpp
         src/anim/AnimSourceData.cpp
+        src/anim/CharsetReader.cpp
+        src/anim/CharsetReader.h
         # src/anim/ChannelCharacterRam.cpp
         # src/anim/ChannelScreenColor.cpp
         # src/anim/ChannelColorRAM.cpp

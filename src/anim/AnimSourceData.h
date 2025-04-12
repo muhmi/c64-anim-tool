@@ -5,10 +5,11 @@
 #include <bitset>
 #include <vector>
 
-namespace AnimTool::Anim {
+namespace AnimTool {
     struct Charset {
         uint8_t bitmap[2048]{};
         std::array<uint16_t, 256> usage_count{};
+        std::string source_filename;
     };
 
     class Char {
@@ -59,9 +60,6 @@ namespace AnimTool::Anim {
         [[nodiscard]] virtual std::string getName() const;
 
         [[nodiscard]] virtual Type getType() const = 0;
-
-        // returns a list of channel types this channel replaces
-        [[nodiscard]] virtual std::vector<Type> replacesChannels() const { return {}; };
     private:
         std::string source_name{};
     };
