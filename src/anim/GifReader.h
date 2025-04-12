@@ -40,10 +40,10 @@ namespace AnimTool {
          */
         [[nodiscard]] static std::unique_ptr<GifAnimation>
         readAnimation(const std::string &filename, const PixelConverter &paletteConverter,
-                      const uint8_t transparentColorIndex = 0);
+                      uint8_t transparentColorIndex = 0);
 
     private:
-        static GifFrame extractFrame(GifFileType *gif, int frameIndex, const uint8_t transparentColorIndex,
+        static GifFrame extractFrame(GifFileType *gif, int frameIndex, uint8_t transparentColorIndex,
                                      const PixelConverter &paletteConverter);
 
         // Get the delay time for a frame in milliseconds
