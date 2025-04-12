@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(c64-anim-tool VERSION 0.1.0 LANGUAGES CXX)
+project(c64-anim-tool VERSION 0.1.0 LANGUAGES CXX C)
 
 # Set C++20 as the standard
 set(CMAKE_CXX_STANDARD 20)
@@ -129,10 +129,28 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fmt)
 
-# Add a target for stb headers
-add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src/third_party/stb)
+# Fetch giflib
+FetchContent_Declare(
+        giflib
+        URL https://sourceforge.net/projects/giflib/files/giflib-5.2.1.tar.gz
+        URL_HASH SHA256=31da5562f44c5f15d63340a09a4fd62b48c45620cd302f77a6d9acf0077879bd
+)
 
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build giflib statically")
+FetchContent_GetProperties(giflib)
+if (NOT giflib_POPULATED)
+    FetchContent_Populate(giflib)
+
+    file(GLOB GIFLIB_SOURCES ${giflib_SOURCE_DIR}/*.c)
+
+    add_library(giflib STATIC ${GIFLIB_SOURCES})
+
+    target_include_directories(giflib PUBLIC
+            ${giflib_SOURCE_DIR}
+    )
+
+    target_compile_options(giflib PRIVATE ${EXTERNAL_WARNING_FLAGS})
+endif ()
 
 
 # Anim stuffs
@@ -158,6 +176,7 @@ target_include_directories(anim_lib PUBLIC
 target_link_libraries(anim_lib PUBLIC
         fmt::fmt
         yaml-cpp
+        giflib
 )
 
 if (BUILD_CLI)
