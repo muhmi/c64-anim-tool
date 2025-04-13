@@ -1,4 +1,5 @@
 #pragma once
+
 #include "AnimSourceData.h"
 
 namespace AnimTool::Anim {

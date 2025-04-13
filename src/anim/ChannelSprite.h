@@ -1,8 +1,13 @@
 #pragma once
+
 #include "AnimSourceData.h"
 
 namespace AnimTool::Anim {
-    class ChannelSprite : public AnimTool::Anim::SourceChannel {
+    struct SpriteData {
+        std::array<uint8_t, 64> data;
+    };
+
+    class ChannelSprite : public AnimTool::SourceChannel {
     public:
         struct Frame {
             std::bitset<8> sprite_enabled;

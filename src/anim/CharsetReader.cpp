@@ -5,15 +5,15 @@
 
 using namespace AnimTool;
 
-std::unique_ptr<Charset> AnimTool::CharsetReader::readCharset(const std::string &charset_filename) {
+Charset AnimTool::CharsetReader::readCharset(const std::string &charset_filename) {
 
     if (!charset_filename.ends_with(".bin") && !charset_filename.ends_with(".64c")) {
         throw std::invalid_argument(
                 fmt::format("Only .bin and .64c are supported, unable to load {}", charset_filename));
     }
 
-    auto charset = std::make_unique<Charset>();
-    charset->source_filename = charset_filename;
+    Charset charset;
+    charset.source_filename = charset_filename;
 
     std::ifstream file(charset_filename, std::ios::binary);
 
@@ -31,7 +31,7 @@ std::unique_ptr<Charset> AnimTool::CharsetReader::readCharset(const std::string 
     }
 
     // load full file contents as binary
-    file.read(reinterpret_cast<char *>(charset->bitmap), sizeof(charset->bitmap));
+    file.read(reinterpret_cast<char *>(charset.bitmap), sizeof(charset.bitmap));
 
     std::streamsize bytesRead = file.gcount();
     if (bytesRead == 0) {

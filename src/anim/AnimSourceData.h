@@ -38,10 +38,6 @@ namespace AnimTool {
         uint8_t col{};
     };
 
-    struct SpriteData {
-        std::array<uint8_t, 64> data;
-    };
-
     class SourceChannel {
     public:
         enum class Type : uint8_t {
@@ -60,6 +56,7 @@ namespace AnimTool {
         [[nodiscard]] virtual std::string getName() const;
 
         [[nodiscard]] virtual Type getType() const = 0;
+
     private:
         std::string source_name{};
     };

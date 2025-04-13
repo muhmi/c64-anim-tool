@@ -6,13 +6,12 @@
 #include <vector>
 #include <sstream>
 #include <stdexcept>
-#include <memory>
 
 using namespace AnimTool;
 
-std::unique_ptr<PetsciiAnim> AnimTool::PetsciiReader::readFrames(const std::string &petscii_c_filename) {
-    std::unique_ptr<PetsciiAnim> anim = std::make_unique<PetsciiAnim>();
-    anim->source_filename = petscii_c_filename;
+PetsciiAnim AnimTool::PetsciiReader::readFrames(const std::string &petscii_c_filename) {
+    PetsciiAnim anim;
+    anim.source_filename = petscii_c_filename;
 
     std::ifstream file(petscii_c_filename);
     if (!file.is_open()) {
@@ -108,7 +107,7 @@ std::unique_ptr<PetsciiAnim> AnimTool::PetsciiReader::readFrames(const std::stri
             }
         }
 
-        anim->frames.push_back(frame);
+        anim.frames.push_back(frame);
     }
 
     return anim;

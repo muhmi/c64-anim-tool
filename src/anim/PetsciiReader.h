@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <vector>
 
 namespace AnimTool {
@@ -23,9 +22,9 @@ namespace AnimTool {
          * Read .c files produced by Marq’s PETSCII editor
          *
          * @param petscii_c_filename path to .c file
-         * @return unique pointer to PetsciiAnim
+         * @return PetsciiAnim
          * @throws std::runtime_error If the file cannot be opened
          */
-        [[nodiscard]] static std::unique_ptr<PetsciiAnim> readFrames(const std::string &petscii_c_filename);
+        [[nodiscard]] static PetsciiAnim readFrames(const std::string &petscii_c_filename);
     };
 }

@@ -8,10 +8,10 @@ struct GifFileType;
 namespace AnimTool {
 
     struct GifFrame {
-        std::vector<uint8_t> pixels;  // Indexed frames based on
+        std::vector<uint8_t> pixels;
         int width{};
         int height{};
-        int delay_ms{};  // Delay in milliseconds before showing the next frame
+        int delay_ms{};
     };
 
     struct GifAnimation {
@@ -28,13 +28,13 @@ namespace AnimTool {
          *
          * @param filename Path to the GIF file to be loaded
          * @param bitmapConverter A BitmapConverter class to convert RGB to C64 palette index
-         * @return A unique pointer to GifAnimation
+         * @return A GifAnimation
          * @throws std::runtime_error If the file cannot be opened
          * @throws std::runtime_error If the file format is invalid
          * @throws std::runtime_error If memory allocation fails
          * @throws std::runtime_error If reading from the file fails
          */
-        [[nodiscard]] static std::unique_ptr<GifAnimation>
+        [[nodiscard]] static GifAnimation
         readAnimation(const std::string &filename, const BitmapConverter &bitmapConverter);
 
     private:

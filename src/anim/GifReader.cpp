@@ -8,7 +8,7 @@
 
 using namespace AnimTool;
 
-std::unique_ptr<GifAnimation>
+GifAnimation
 AnimTool::GifReader::readAnimation(const std::string &filename, const BitmapConverter &bitmapConverter) {
 
     GifFileType *gif = DGifOpenFileName(filename.c_str(), nullptr);
@@ -39,10 +39,10 @@ AnimTool::GifReader::readAnimation(const std::string &filename, const BitmapConv
         );
     }
 
-    auto animation = std::unique_ptr<GifAnimation>();
-    animation->source_filename = filename;
+    GifAnimation animation;
+    animation.source_filename = filename;
     for (int i = 0; i < frameCount; i++) {
-        animation->frames.push_back(extractFrame(gif, i, bitmapConverter));
+        animation.frames.push_back(extractFrame(gif, i, bitmapConverter));
     }
 
     return animation;
