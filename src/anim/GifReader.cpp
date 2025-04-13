@@ -1,4 +1,5 @@
 #include "GifReader.h"
+#include "BitmapConverter.h"
 #include "Defer.h"
 #include <gif_lib.h>
 #include <fmt/core.h>
@@ -8,7 +9,7 @@
 using namespace AnimTool;
 
 std::unique_ptr<GifAnimation>
-AnimTool::GifReader::readAnimation(const std::string &filename, const PixelConverter &paletteConverter, const uint8_t transparentColorIndex) {
+AnimTool::GifReader::readAnimation(const std::string &filename, const BitmapConverter &bitmapConverter) {
 
     GifFileType *gif = DGifOpenFileName(filename.c_str(), nullptr);
 
@@ -41,14 +42,14 @@ AnimTool::GifReader::readAnimation(const std::string &filename, const PixelConve
     auto animation = std::unique_ptr<GifAnimation>();
     animation->source_filename = filename;
     for (int i = 0; i < frameCount; i++) {
-        animation->frames.push_back(extractFrame(gif, i, transparentColorIndex, paletteConverter));
+        animation->frames.push_back(extractFrame(gif, i, bitmapConverter));
     }
 
     return animation;
 }
 
-GifFrame GifReader::extractFrame(GifFileType *gif, int frameIndex, const uint8_t transparentColorIndex,
-                                 const PixelConverter &paletteConverter) {
+GifFrame GifReader::extractFrame(GifFileType *gif, int frameIndex,
+                                 const BitmapConverter &bitmapConverter) {
     if (frameIndex < 0 || frameIndex >= gif->ImageCount) {
         throw std::runtime_error(
                 fmt::format("Invalid frame index: {}", frameIndex)
@@ -91,7 +92,7 @@ GifFrame GifReader::extractFrame(GifFileType *gif, int frameIndex, const uint8_t
         uint8_t colorIndex = image->RasterBits[i];
 
         if (colorIndex == transparentIndex) {
-            pixels.push_back(transparentColorIndex);
+            pixels.push_back(bitmapConverter.getBackgroundColorIndex());
             continue;
         }
 
@@ -102,7 +103,7 @@ GifFrame GifReader::extractFrame(GifFileType *gif, int frameIndex, const uint8_t
         uint8_t r = colorMap[i].Colors[colorIndex].Red;
         uint8_t g = colorMap[i].Colors[colorIndex].Green;
         uint8_t b = colorMap[i].Colors[colorIndex].Blue;
-        pixels.push_back(paletteConverter({r, g, b}));
+        pixels.push_back(bitmapConverter.convertRGBToPaletteIndex(r, g, b));
     }
 
     return GifFrame{
@@ -125,50 +126,4 @@ int GifReader::getFrameDelay(GifFileType *gif, int frameIndex) {
     }
 
     return 100;
-}
-
-const std::array<std::tuple<uint8_t, uint8_t, uint8_t>, 16> VIC_PALETTE =
-        {{
-                 {0, 0, 0},          // 00 black
-                 {255, 255, 255},    // 01 white
-                 {104, 55, 43},      // 02 red
-                 {112, 164, 178},    // 03 cyan
-                 {111, 61, 134},     // 04 purple
-                 {88, 141, 67},      // 05 green
-                 {53, 40, 121},      // 06 blue
-                 {184, 199, 111},    // 07 yellow
-                 {111, 79, 37},      // 08 orange
-                 {67, 57, 0},        // 09 brown
-                 {154, 103, 89},     // 10 light_red
-                 {68, 68, 68},       // 11 dark_gray
-                 {108, 108, 108},    // 12 gray
-                 {154, 210, 132},    // 13 light_green
-                 {108, 94, 181},     // 14 light_blue
-                 {149, 149, 149}     // 15 light_gray
-         }};
-
-GifReader::PixelConverter GifReader::MakeDefaultPixelConverter() {
-    return [palette = VIC_PALETTE](std::tuple<uint8_t, uint8_t, uint8_t> rgb) -> uint8_t {
-        double smallestError = 1000000.0;
-        uint8_t idx = 0;
-
-        auto [r, g, b] = rgb;
-
-        for (size_t i = 0; i < palette.size(); i++) {
-            auto [pr, pg, pb] = palette[i];
-
-            double cr = static_cast<double>(pr) - r;
-            double cg = static_cast<double>(pg) - g;
-            double cb = static_cast<double>(pb) - b;
-
-            double err = std::sqrt((cr * cr) + (cg * cg) + (cb * cb));
-
-            if (err < smallestError) {
-                smallestError = err;
-                idx = static_cast<uint8_t>(i);
-            }
-        }
-
-        return idx;
-    };
 }
