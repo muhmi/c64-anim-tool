@@ -8,15 +8,15 @@ struct GifFileType;
 namespace AnimTool {
 
     struct GifFrame {
-        std::vector<uint8_t> pixels;
-        int width{};
-        int height{};
-        int delay_ms{};
+        std::vector<uint8_t> m_pixels;
+        int m_width{};
+        int m_height{};
+        int m_delayMs{};
     };
 
     struct GifAnimation {
-        std::vector<GifFrame> frames;
-        std::string source_filename;
+        std::vector<GifFrame> m_frames;
+        std::string m_source_filename;
     };
 
     class BitmapConverter;

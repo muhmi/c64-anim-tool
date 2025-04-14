@@ -5,15 +5,16 @@
 
 namespace AnimTool {
     struct Frame {
-        uint8_t background_color{};
-        uint8_t foreground_color{};
-        uint8_t color_ram[1000]{};
-        uint8_t character_ram[1000]{};
+        uint8_t m_backgroundColor{};
+        uint8_t m_foregroundColor{};
+        uint8_t m_colorRam[1000]{};
+        uint8_t m_characterRam[1000]{};
+        int m_delayMs{};
     };
 
     struct PetsciiAnim {
-        std::vector<Frame> frames;
-        std::string source_filename;
+        std::vector<Frame> m_frames;
+        std::string m_sourceFilename;
     };
 
     class PetsciiReader {

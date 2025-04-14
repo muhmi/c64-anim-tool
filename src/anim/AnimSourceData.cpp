@@ -10,11 +10,11 @@
 using namespace AnimTool;
 
 uint8_t *Char::data() {
-    return &parentCharset->bitmap[index * 8];
+    return &m_parentCharset->m_bitmap[m_index * 8];
 }
 
 const uint8_t *Char::data() const {
-    return &parentCharset->bitmap[index * 8];
+    return &m_parentCharset->m_bitmap[m_index * 8];
 }
 
 void Char::clear() {
@@ -32,11 +32,11 @@ void Char::invert() {
 }
 
 uint16_t Char::useCount() const {
-    return parentCharset->usage_count[index];
+    return m_parentCharset->m_usageCount[m_index];
 }
 
 void Char::incUseCount() {
-    parentCharset->usage_count[index] += 1;
+    m_parentCharset->m_usageCount[m_index] += 1;
 }
 
 std::string SourceChannel::getName() const {

@@ -16,7 +16,7 @@ namespace AnimTool {
 
     class PeptoOldConverter final : public BitmapConverter {
     public:
-        PeptoOldConverter(uint8_t backgroundColor);
+        explicit PeptoOldConverter(uint8_t backgroundColor);
 
         [[nodiscard]] uint8_t convertRGBToPaletteIndex(uint8_t r, uint8_t g, uint8_t b) const override;
 

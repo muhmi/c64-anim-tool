@@ -2,18 +2,18 @@
 
 #include "AnimSourceData.h"
 
-namespace AnimTool::Anim {
+namespace AnimTool{
     class ChannelColorAnimation : public SourceChannel {
     public:
         struct Frame {
-            uint8_t area_index{};
-            uint16_t duration{};
+            uint8_t m_areaIndex{};
+            uint16_t m_delayMs{};
         };
 
         struct AnimatedArea {
-            std::vector<AnimTool::Anim::ScreenLocation> locations;
+            std::vector<AnimTool::ScreenLocation> m_locations;
         };
-        std::vector<AnimatedArea> areas;
+        std::vector<AnimatedArea> m_areas;
 
         [[nodiscard]] Type getType() const override { return Type::COLOR_ANIMATION; }
     };

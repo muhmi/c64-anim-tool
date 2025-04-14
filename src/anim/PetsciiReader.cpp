@@ -11,7 +11,7 @@ using namespace AnimTool;
 
 PetsciiAnim AnimTool::PetsciiReader::readFrames(const std::string &petscii_c_filename) {
     PetsciiAnim anim;
-    anim.source_filename = petscii_c_filename;
+    anim.m_sourceFilename = petscii_c_filename;
 
     std::ifstream file(petscii_c_filename);
     if (!file.is_open()) {
@@ -69,8 +69,8 @@ PetsciiAnim AnimTool::PetsciiReader::readFrames(const std::string &petscii_c_fil
             }
 
             if (colors.size() >= 2) {
-                frame.foreground_color = colors[0]; // border color in Python
-                frame.background_color = colors[1];
+                frame.m_foregroundColor = colors[0]; // border color in Python
+                frame.m_backgroundColor = colors[1];
             }
         }
 
@@ -102,12 +102,12 @@ PetsciiAnim AnimTool::PetsciiReader::readFrames(const std::string &petscii_c_fil
 
         if (data.size() >= 2000) {
             for (int j = 0; j < 1000; ++j) {
-                frame.character_ram[j] = data[j];
-                frame.color_ram[j] = data[j + 1000];
+                frame.m_characterRam[j] = data[j];
+                frame.m_colorRam[j] = data[j + 1000];
             }
         }
 
-        anim.frames.push_back(frame);
+        anim.m_frames.push_back(frame);
     }
 
     return anim;

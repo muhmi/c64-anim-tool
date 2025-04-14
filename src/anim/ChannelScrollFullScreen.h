@@ -2,7 +2,7 @@
 
 #include "AnimSourceData.h"
 
-namespace AnimTool::Anim {
+namespace AnimTool {
     class ChannelScrollFullScreen : public SourceChannel {
     public:
         enum class Direction : uint8_t {
@@ -12,10 +12,10 @@ namespace AnimTool::Anim {
             RIGHT
         };
         struct Frame {
-            bool wrap{};
-            uint16_t duration{};
+            bool m_wrap{};
+            uint16_t m_delayMs{};
         };
-        Direction direction{};
+        Direction m_direction{};
 
         [[nodiscard]] Type getType() const override { return Type::SCROLL_FULL_SCREEN; }
     };

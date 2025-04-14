@@ -7,14 +7,14 @@
 
 namespace AnimTool {
     struct Charset {
-        uint8_t bitmap[2048]{};
-        std::array<uint16_t, 256> usage_count{};
-        std::string source_filename;
+        uint8_t m_bitmap[2048]{};
+        std::array<uint16_t, 256> m_usageCount{};
+        std::string m_sourceFilename;
     };
 
     class Char {
     public:
-        Char(Charset *charset, uint8_t idx) : parentCharset(charset), index(idx) {}
+        Char(Charset *charset, uint8_t idx) : m_parentCharset(charset), m_index(idx) {}
 
         uint8_t *data();
 
@@ -29,13 +29,13 @@ namespace AnimTool {
         void incUseCount();
 
     private:
-        Charset *parentCharset;
-        uint8_t index;
+        Charset *m_parentCharset;
+        uint8_t m_index;
     };
 
     struct ScreenLocation {
-        uint8_t row{};
-        uint8_t col{};
+        uint8_t m_row{};
+        uint8_t m_col{};
     };
 
     class SourceChannel {

@@ -40,9 +40,9 @@ AnimTool::GifReader::readAnimation(const std::string &filename, const BitmapConv
     }
 
     GifAnimation animation;
-    animation.source_filename = filename;
+    animation.m_source_filename = filename;
     for (int i = 0; i < frameCount; i++) {
-        animation.frames.push_back(extractFrame(gif, i, bitmapConverter));
+        animation.m_frames.push_back(extractFrame(gif, i, bitmapConverter));
     }
 
     return animation;
@@ -107,10 +107,10 @@ GifFrame GifReader::extractFrame(GifFileType *gif, int frameIndex,
     }
 
     return GifFrame{
-            .pixels = std::move(pixels),
-            .width = width,
-            .height = height,
-            .delay_ms = getFrameDelay(gif, frameIndex)
+            .m_pixels = std::move(pixels),
+            .m_width = width,
+            .m_height = height,
+            .m_delayMs = getFrameDelay(gif, frameIndex)
     };
 }
 

@@ -13,7 +13,7 @@ Charset AnimTool::CharsetReader::readCharset(const std::string &charset_filename
     }
 
     Charset charset;
-    charset.source_filename = charset_filename;
+    charset.m_sourceFilename = charset_filename;
 
     std::ifstream file(charset_filename, std::ios::binary);
 
@@ -31,7 +31,7 @@ Charset AnimTool::CharsetReader::readCharset(const std::string &charset_filename
     }
 
     // load full file contents as binary
-    file.read(reinterpret_cast<char *>(charset.bitmap), sizeof(charset.bitmap));
+    file.read(reinterpret_cast<char *>(charset.m_bitmap), sizeof(charset.m_bitmap));
 
     std::streamsize bytesRead = file.gcount();
     if (bytesRead == 0) {
