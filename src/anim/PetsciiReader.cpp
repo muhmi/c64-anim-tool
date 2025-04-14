@@ -9,13 +9,13 @@
 
 using namespace AnimTool;
 
-PetsciiAnim AnimTool::PetsciiReader::readFrames(const std::string &petscii_c_filename) {
+PetsciiAnim AnimTool::PetsciiReader::readFrames(const std::string &filename) {
     PetsciiAnim anim;
-    anim.m_sourceFilename = petscii_c_filename;
+    anim.m_sourceFilename = filename;
 
-    std::ifstream file(petscii_c_filename);
+    std::ifstream file(filename);
     if (!file.is_open()) {
-        throw std::runtime_error(fmt::format("Failed to open file: {}", petscii_c_filename));
+        throw std::runtime_error(fmt::format("Failed to open file: {}", filename));
     }
 
     std::stringstream buffer;

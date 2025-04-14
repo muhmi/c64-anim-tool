@@ -1,7 +1,7 @@
 #include <string>
 
 namespace AnimTool {
-    struct Charset;
+    class Charset;
 
     class CharsetReader {
     public:
@@ -16,6 +16,6 @@ namespace AnimTool {
          * @throws std::runtime_error If reading from the file fails
          * @throws std::invalid_argument If the file extension is not supported
          * */
-        [[nodiscard]] static Charset readCharset(const std::string &charset_filename);
+        [[nodiscard]] static Charset readCharset(const std::string &ilename);
     };
 }

@@ -22,10 +22,10 @@ namespace AnimTool {
         /**
          * Read .c files produced by Marq’s PETSCII editor
          *
-         * @param petscii_c_filename path to .c file
+         * @param filename path to .c file
          * @return PetsciiAnim
          * @throws std::runtime_error If the file cannot be opened
          */
-        [[nodiscard]] static PetsciiAnim readFrames(const std::string &petscii_c_filename);
+        [[nodiscard]] static PetsciiAnim readFrames(const std::string &filename);
     };
 }
