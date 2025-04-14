@@ -26,10 +26,6 @@ namespace AnimTool {
             return hamming_distance_8bytes(data(), other.data());
         }
 
-        [[nodiscard]] uint16_t useCount() const;
-
-        void incUseCount();
-
         [[nodiscard]] size_t hash() const {
             size_t hash_value = 0;
             const uint8_t *bytes = data();
@@ -46,7 +42,7 @@ namespace AnimTool {
         bool operator!=(const Char &other) const {
             return distance(other) != 0;
         }
-
+        
     private:
         Charset *m_parentCharset;
         uint8_t m_index;
@@ -55,23 +51,23 @@ namespace AnimTool {
     class Charset final {
     public:
         uint8_t m_bitmap[2048]{};
-        std::array<uint16_t, 256> m_usageCount{};
         std::string m_sourceFilename;
 
         [[nodiscard]] size_t hash() const {
             size_t hash_value = fnv1a_hash(m_sourceFilename);
             size_t bitmap_hash = fnv1a_hash(m_bitmap, 2048);
-            size_t usage_hash = fnv1a_hash(m_usageCount.data(), m_usageCount.size() * sizeof(uint16_t));
 
             hash_value ^= bitmap_hash + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
-            hash_value ^= usage_hash + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
 
             return hash_value;
         }
 
+        Char operator[](uint8_t index) {
+            return {this, index};
+        }
+
         bool operator==(const Charset &other) const {
             if (m_sourceFilename != other.m_sourceFilename) return false;
-            if (m_usageCount != other.m_usageCount) return false;
             for (size_t idx = 0; idx < 2048; ++idx) {
                 if (m_bitmap[idx] != other.m_bitmap[idx])
                     return false;

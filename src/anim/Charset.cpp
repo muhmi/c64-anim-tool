@@ -23,11 +23,3 @@ void Char::invert() {
         ptr[i] = ~ptr[i];
     }
 }
-
-uint16_t Char::useCount() const {
-    return m_parentCharset->m_usageCount[m_index];
-}
-
-void Char::incUseCount() {
-    m_parentCharset->m_usageCount[m_index] += 1;
-}
