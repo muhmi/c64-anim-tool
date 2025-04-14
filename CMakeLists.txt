@@ -233,6 +233,7 @@ if (BUILD_TESTING)
     add_executable(all_tests
             src/config/test/test_config.cpp
             src/cli/test/test_cli.cpp
+            src/anim/test/char_distance.cpp
     )
     target_link_libraries(all_tests PRIVATE
             anim_lib
