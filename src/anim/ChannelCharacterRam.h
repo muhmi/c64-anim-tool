@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AnimSourceData.h"
+#include "Charset.h"
 #include "PetsciiReader.h"
 
 namespace AnimTool {

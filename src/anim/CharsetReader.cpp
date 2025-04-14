@@ -1,5 +1,5 @@
 #include "CharsetReader.h"
-#include "AnimSourceData.h"
+#include "Charset.h"
 #include "fmt/core.h"
 #include <fstream>
 

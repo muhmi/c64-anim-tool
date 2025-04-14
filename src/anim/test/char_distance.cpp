@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
-#include "anim/AnimSourceData.h"
+#include "anim/Charset.h"
 
 using namespace AnimTool;
 
@@ -8,9 +8,6 @@ TEST_CASE("Char distance calculation", "[char][distance]") {
     // Create a test charset with known data patterns
     Charset charset;
     charset.m_sourceFilename = "test.charset";
-
-    // Setup: We need to prepare the bitmap in the charset
-    // Assuming each Char is 8 bytes and is stored in the bitmap at index * 8
 
     // Set up pattern for char at index 0 (all zeros)
     for (int i = 0; i < 8; i++) {
