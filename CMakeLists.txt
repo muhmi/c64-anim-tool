@@ -164,6 +164,7 @@ add_library(anim_lib
         src/anim/GifReader.cpp
         src/anim/BitmapConverter.cpp
         src/anim/ChannelCharacterRam.cpp
+        src/anim/Utils.h
         # src/anim/ChannelCharacterRam.cpp
         # src/anim/ChannelScreenColor.cpp
         # src/anim/ChannelColorRAM.cpp
