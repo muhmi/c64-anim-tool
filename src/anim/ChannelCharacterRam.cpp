@@ -1,5 +1,7 @@
 #include "ChannelCharacterRam.h"
 
+#include <unordered_set>
+
 using namespace AnimTool;
 
 void AnimTool::ChannelCharacterRam::addFramesFromPetscii(const PetsciiAnim &anim, std::optional<Charset> charset) {
@@ -24,6 +26,15 @@ void AnimTool::ChannelCharacterRam::addFramesFromPetscii(const PetsciiAnim &anim
     }
 }
 
-void ChannelCharacterRam::reduceCharsets(int targetCharsetCount) {
-
+void ChannelCharacterRam::reduceCharsets_PreferFullCharsets(int targetCharsetCount) {
+    std::unordered_set<Char> all_chars;
+    for (auto& charset : m_charsets) {
+        for(uint8_t idx = 0; idx < 0xff; ++idx) {
+            all_chars.insert(charset[idx]);
+        }
+    }
+    int requiredCharsets = static_cast<int>(all_chars.size() / 0xff);
+    if (requiredCharsets <= targetCharsetCount) {
+        
+    }
 }

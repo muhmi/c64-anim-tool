@@ -16,7 +16,7 @@ namespace AnimTool {
 
         void addFramesFromPetscii(const PetsciiAnim& anim, std::optional<Charset> charset);
 
-        void reduceCharsets(int targetCharsetCount);
+        void reduceCharsets_PreferFullCharsets(int targetCharsetCount);
 
         [[nodiscard]] Type getType() const override { return Type::CHARACTER_RAM; }
     private:

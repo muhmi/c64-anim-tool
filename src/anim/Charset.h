@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include <bitset>
+#include <utility>
 #include <vector>
 
 namespace AnimTool {
@@ -12,7 +13,7 @@ namespace AnimTool {
 
     class Char final {
     public:
-        Char(Charset *charset, uint8_t idx) : m_parentCharset(charset), m_index(idx) {}
+        explicit Char(const uint8_t *bitmap, uint8_t idx);
 
         uint8_t *data();
 
@@ -42,43 +43,33 @@ namespace AnimTool {
         bool operator!=(const Char &other) const {
             return distance(other) != 0;
         }
-        
+
     private:
-        Charset *m_parentCharset;
-        uint8_t m_index;
+
+
+        uint8_t m_bitmap[8]{0, 0, 0, 0, 0, 0, 0, 0};
+        uint8_t m_index{0};
     };
 
     class Charset final {
     public:
-        uint8_t m_bitmap[2048]{};
+        explicit Charset(std::string sourceFilename) : m_sourceFilename(std::move(sourceFilename)) {}
+
+        uint8_t insert(const Char& character);
+
+        [[nodiscard]] size_t hash() const;
+
+        Char operator[](uint8_t index) const {
+            return m_characters[index];
+        }
+
+        bool operator==(const Charset &other) const;
+
+        bool operator!=(const Charset &other) const;
+
+    private:
+        std::vector<Char> m_characters;
         std::string m_sourceFilename;
-
-        [[nodiscard]] size_t hash() const {
-            size_t hash_value = fnv1a_hash(m_sourceFilename);
-            size_t bitmap_hash = fnv1a_hash(m_bitmap, 2048);
-
-            hash_value ^= bitmap_hash + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
-
-            return hash_value;
-        }
-
-        Char operator[](uint8_t index) {
-            return {this, index};
-        }
-
-        bool operator==(const Charset &other) const {
-            if (m_sourceFilename != other.m_sourceFilename) return false;
-            for (size_t idx = 0; idx < 2048; ++idx) {
-                if (m_bitmap[idx] != other.m_bitmap[idx])
-                    return false;
-            }
-            return true;
-        }
-
-        bool operator!=(const Charset &other) const {
-            return !(*this == other);
-        }
-
 
     };
 
