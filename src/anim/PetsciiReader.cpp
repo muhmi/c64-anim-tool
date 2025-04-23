@@ -1,11 +1,13 @@
 #include "PetsciiReader.h"
-#include "fmt/core.h"
+
 #include <fstream>
 #include <regex>
-#include <string>
-#include <vector>
 #include <sstream>
 #include <stdexcept>
+#include <string>
+#include <vector>
+
+#include "fmt/core.h"
 
 using namespace AnimTool;
 
@@ -69,7 +71,7 @@ PetsciiAnim AnimTool::PetsciiReader::readFrames(const std::string &filename) {
             }
 
             if (colors.size() >= 2) {
-                frame.m_foregroundColor = colors[0]; // border color in Python
+                frame.m_foregroundColor = colors[0];  // border color in Python
                 frame.m_backgroundColor = colors[1];
             }
         }

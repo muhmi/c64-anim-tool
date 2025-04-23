@@ -1,42 +1,36 @@
 #include "GifReader.h"
-#include "BitmapConverter.h"
-#include "Defer.h"
-#include <gif_lib.h>
+
 #include <fmt/core.h>
+#include <gif_lib.h>
+
 #include <algorithm>
 #include <stdexcept>
 
+#include "BitmapConverter.h"
+#include "Defer.h"
+
 using namespace AnimTool;
 
-GifAnimation
-AnimTool::GifReader::readAnimation(const std::string &filename, const BitmapConverter &bitmapConverter) {
-
+GifAnimation AnimTool::GifReader::readAnimation(const std::string &filename,
+                                                const BitmapConverter &bitmapConverter) {
     GifFileType *gif = DGifOpenFileName(filename.c_str(), nullptr);
 
     // Ensure we close the file when exiting scope
-    auto cleanup = makeDefer([gif]() {
-        DGifCloseFile(gif, nullptr);
-    });
+    auto cleanup = makeDefer([gif]() { DGifCloseFile(gif, nullptr); });
 
     if (!gif) {
-        throw std::runtime_error(
-                fmt::format("Failed to open GIF file: {} (Error: {})",
-                            filename, GifErrorString(D_GIF_ERR_OPEN_FAILED))
-        );
+        throw std::runtime_error(fmt::format("Failed to open GIF file: {} (Error: {})", filename,
+                                             GifErrorString(D_GIF_ERR_OPEN_FAILED)));
     }
 
     if (DGifSlurp(gif) != GIF_OK) {
-        throw std::runtime_error(
-                fmt::format("Failed to read GIF file: {} (Error: {})",
-                            filename, GifErrorString(gif->Error))
-        );
+        throw std::runtime_error(fmt::format("Failed to read GIF file: {} (Error: {})", filename,
+                                             GifErrorString(gif->Error)));
     }
 
     int frameCount = gif->ImageCount;
     if (frameCount <= 0) {
-        throw std::runtime_error(
-                fmt::format("No frames found in GIF file: {}", filename)
-        );
+        throw std::runtime_error(fmt::format("No frames found in GIF file: {}", filename));
     }
 
     GifAnimation animation;
@@ -51,9 +45,7 @@ AnimTool::GifReader::readAnimation(const std::string &filename, const BitmapConv
 GifFrame GifReader::extractFrame(GifFileType *gif, int frameIndex,
                                  const BitmapConverter &bitmapConverter) {
     if (frameIndex < 0 || frameIndex >= gif->ImageCount) {
-        throw std::runtime_error(
-                fmt::format("Invalid frame index: {}", frameIndex)
-        );
+        throw std::runtime_error(fmt::format("Invalid frame index: {}", frameIndex));
     }
 
     SavedImage *image = &gif->SavedImages[frameIndex];
@@ -64,8 +56,7 @@ GifFrame GifReader::extractFrame(GifFileType *gif, int frameIndex,
     int height = imageDesc->Height;
 
     // Find color map (local or global)
-    ColorMapObject *colorMap = imageDesc->ColorMap ?
-                               imageDesc->ColorMap : gif->SColorMap;
+    ColorMapObject *colorMap = imageDesc->ColorMap ? imageDesc->ColorMap : gif->SColorMap;
 
     if (!colorMap) {
         throw std::runtime_error("No color map found for frame");
@@ -75,9 +66,8 @@ GifFrame GifReader::extractFrame(GifFileType *gif, int frameIndex,
     int transparentIndex = -1;
     for (int i = 0; i < image->ExtensionBlockCount; i++) {
         ExtensionBlock *ext = &image->ExtensionBlocks[i];
-        if (ext->Function == GRAPHICS_EXT_FUNC_CODE &&
-            ext->ByteCount >= 4 &&
-            (ext->Bytes[0] & 0x01)) { // Has transparency
+        if (ext->Function == GRAPHICS_EXT_FUNC_CODE && ext->ByteCount >= 4 &&
+            (ext->Bytes[0] & 0x01)) {  // Has transparency
             transparentIndex = ext->Bytes[3];
             break;
         }
@@ -106,12 +96,10 @@ GifFrame GifReader::extractFrame(GifFileType *gif, int frameIndex,
         pixels.push_back(bitmapConverter.convertRGBToPaletteIndex(r, g, b));
     }
 
-    return GifFrame{
-            .m_pixels = std::move(pixels),
-            .m_width = width,
-            .m_height = height,
-            .m_delayMs = getFrameDelay(gif, frameIndex)
-    };
+    return GifFrame{.m_pixels = std::move(pixels),
+                    .m_width = width,
+                    .m_height = height,
+                    .m_delayMs = getFrameDelay(gif, frameIndex)};
 }
 
 int GifReader::getFrameDelay(GifFileType *gif, int frameIndex) {

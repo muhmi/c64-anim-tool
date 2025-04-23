@@ -1,15 +1,16 @@
 #include "CharsetReader.h"
+
+#include <fstream>
+
 #include "Charset.h"
 #include "fmt/core.h"
-#include <fstream>
 
 using namespace AnimTool;
 
 Charset AnimTool::CharsetReader::readCharset(const std::string &filename) {
-
     if (!filename.ends_with(".bin") && !filename.ends_with(".64c")) {
         throw std::invalid_argument(
-                fmt::format("Only .bin and .64c are supported, unable to load {}", filename));
+            fmt::format("Only .bin and .64c are supported, unable to load {}", filename));
     }
 
     Charset charset(filename);
@@ -40,7 +41,7 @@ Charset AnimTool::CharsetReader::readCharset(const std::string &filename) {
     auto charactersRead = static_cast<uint8_t>(static_cast<int>(bytesRead) / 8);
 
     for (uint8_t idx = 0; idx < charactersRead; ++idx) {
-        Char character(&bitmap[idx * 8], idx);
+        Char character(&bitmap[idx * 8]);
         charset.insert(character);
     }
 

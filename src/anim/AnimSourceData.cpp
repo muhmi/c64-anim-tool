@@ -1,4 +1,5 @@
 #include "AnimSourceData.h"
+
 #include <typeinfo>
 
 #ifdef __GNUC__  // GCC or Clang

@@ -2,26 +2,28 @@
 
 using namespace AnimTool;
 
-Char::Char(const uint8_t *bitmap, uint8_t idx) : m_index(idx) {
-    std::memcpy(m_bitmap, bitmap, 8);
-}
+const uint8_t BLANK_DATA[] = {0, 0, 0, 0, 0, 0, 0, 0};
+const uint8_t FULL_DATA[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
-uint8_t *Char::data() {
-    return m_bitmap;
-}
+Char Char::BLANK = Char(BLANK_DATA);
+Char Char::FULL = Char(FULL_DATA);
 
-const uint8_t *Char::data() const {
-    return m_bitmap;
-}
+Char::Char(const uint8_t *bitmap) { std::memcpy(m_bitmap, bitmap, 8); }
 
-void Char::clear() {
-    std::memset(m_bitmap, 0, 8);
-}
+uint8_t *Char::data() { return m_bitmap; }
+
+const uint8_t *Char::data() const { return m_bitmap; }
+
+void Char::clear() { std::memset(m_bitmap, 0, 8); }
 
 void Char::invert() {
-    for (int i = 0; i < 8; i++) {
-        m_bitmap[i] = ~m_bitmap[i];
+    for (unsigned char &i : m_bitmap) {
+        i = ~i;
     }
+}
+
+bool Char::isBlank() const {
+    return std::ranges::all_of(m_bitmap, [](uint8_t v) { return v == 0; });
 }
 
 size_t Charset::hash() const {
@@ -39,24 +41,19 @@ size_t Charset::hash() const {
 
 bool Charset::operator==(const Charset &other) const {
     // First check if filenames match
-    if (m_sourceFilename != other.m_sourceFilename)
-        return false;
+    if (m_sourceFilename != other.m_sourceFilename) return false;
 
     // Then check if they have the same number of characters
-    if (m_characters.size() != other.m_characters.size())
-        return false;
+    if (m_characters.size() != other.m_characters.size()) return false;
 
     // Finally check each character for equality
     for (size_t idx = 0; idx < m_characters.size(); ++idx) {
-        if (m_characters[idx] != other.m_characters[idx])
-            return false;
+        if (m_characters[idx] != other.m_characters[idx]) return false;
     }
     return true;
 }
 
-bool Charset::operator!=(const Charset &other) const {
-    return !(*this == other);
-}
+bool Charset::operator!=(const Charset &other) const { return !(*this == other); }
 
 uint8_t Charset::insert(const Char &character) {
     // Search for existing character
