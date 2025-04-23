@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
+#include <filesystem>
 #include <fstream>
 #include <string>
-#include <filesystem>
 
 #include "../config.h"
 
@@ -63,12 +63,11 @@ quality: 50
         load_yaml_config(yaml_file, config);
 
         REQUIRE(config.input_file == "partial_test.gif");
-        REQUIRE(config.output_file.empty()); // Not set in YAML
-        REQUIRE(config.verbose == false);  // Should keep default
-        REQUIRE(config.quality == 50);     // Should be overridden
+        REQUIRE(config.output_file.empty());  // Not set in YAML
+        REQUIRE(config.verbose == false);     // Should keep default
+        REQUIRE(config.quality == 50);        // Should be overridden
 
         // Clean up
         std::filesystem::remove(yaml_file);
     }
-
 }

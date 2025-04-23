@@ -11,21 +11,20 @@
 
 using namespace AnimTool;
 
-GifAnimation AnimTool::GifReader::readAnimation(const std::string &filename,
-                                                const BitmapConverter &bitmapConverter) {
+GifAnimation AnimTool::GifReader::readAnimation(const std::string &filename, const BitmapConverter &bitmapConverter) {
     GifFileType *gif = DGifOpenFileName(filename.c_str(), nullptr);
 
     // Ensure we close the file when exiting scope
     auto cleanup = makeDefer([gif]() { DGifCloseFile(gif, nullptr); });
 
     if (!gif) {
-        throw std::runtime_error(fmt::format("Failed to open GIF file: {} (Error: {})", filename,
-                                             GifErrorString(D_GIF_ERR_OPEN_FAILED)));
+        throw std::runtime_error(
+            fmt::format("Failed to open GIF file: {} (Error: {})", filename, GifErrorString(D_GIF_ERR_OPEN_FAILED)));
     }
 
     if (DGifSlurp(gif) != GIF_OK) {
-        throw std::runtime_error(fmt::format("Failed to read GIF file: {} (Error: {})", filename,
-                                             GifErrorString(gif->Error)));
+        throw std::runtime_error(
+            fmt::format("Failed to read GIF file: {} (Error: {})", filename, GifErrorString(gif->Error)));
     }
 
     int frameCount = gif->ImageCount;
@@ -42,8 +41,7 @@ GifAnimation AnimTool::GifReader::readAnimation(const std::string &filename,
     return animation;
 }
 
-GifFrame GifReader::extractFrame(GifFileType *gif, int frameIndex,
-                                 const BitmapConverter &bitmapConverter) {
+GifFrame GifReader::extractFrame(GifFileType *gif, int frameIndex, const BitmapConverter &bitmapConverter) {
     if (frameIndex < 0 || frameIndex >= gif->ImageCount) {
         throw std::runtime_error(fmt::format("Invalid frame index: {}", frameIndex));
     }

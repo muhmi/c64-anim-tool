@@ -1,4 +1,5 @@
 #include "config/config.h"
+
 #include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
 
@@ -25,11 +26,10 @@ void AnimTool::load_yaml_config(const std::string &config_path, AppConfig &confi
 
     if (yaml["include_paths"]) {
         config.include_paths.clear();
-        for (const auto &path: yaml["include_paths"]) {
+        for (const auto &path : yaml["include_paths"]) {
             config.include_paths.push_back(path.as<std::string>());
         }
     }
-
 }
 
 void AnimTool::print_config(const AppConfig &config) {
@@ -43,7 +43,7 @@ void AnimTool::print_config(const AppConfig &config) {
     if (config.include_paths.empty()) {
         fmt::print("none");
     } else {
-        for (const auto &path: config.include_paths) {
+        for (const auto &path : config.include_paths) {
             fmt::print("{} ", path);
         }
     }

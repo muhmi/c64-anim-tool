@@ -1,6 +1,8 @@
-#include <string>
-#include <CLI/CLI.hpp>
 #include <fmt/core.h>
+
+#include <CLI/CLI.hpp>
+#include <string>
+
 #include "config/config.h"
 
 int main(int argc, char **argv) {
@@ -10,8 +12,7 @@ int main(int argc, char **argv) {
     CLI::App app{"Anim tool"};
 
     // Config file option
-    app.add_option("--config", config_path, "Configuration file path")
-            ->check(CLI::ExistingFile);
+    app.add_option("--config", config_path, "Configuration file path")->check(CLI::ExistingFile);
 
     // Tool options
     /*

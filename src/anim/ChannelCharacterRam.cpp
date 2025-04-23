@@ -6,12 +6,10 @@
 
 using namespace AnimTool;
 
-void AnimTool::ChannelCharacterRam::addFramesFromPetscii(const PetsciiAnim &anim,
-                                                         std::optional<Charset> charset) {
+void AnimTool::ChannelCharacterRam::addFramesFromPetscii(const PetsciiAnim &anim, std::optional<Charset> charset) {
     size_t charset_index = 0;
     if (charset) {
-        if (auto it = std::find(m_charsets.begin(), m_charsets.end(), *charset);
-            it != m_charsets.end()) {
+        if (auto it = std::find(m_charsets.begin(), m_charsets.end(), *charset); it != m_charsets.end()) {
             charset_index = std::distance(m_charsets.begin(), it);
         } else {
             charset_index = m_charsets.size();
@@ -52,8 +50,7 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
         char_counts.emplace_back(chr, count);
     }
 
-    std::sort(char_counts.begin(), char_counts.end(),
-              [](const auto &a, const auto &b) { return a.second > b.second; });
+    std::sort(char_counts.begin(), char_counts.end(), [](const auto &a, const auto &b) { return a.second > b.second; });
 
     // Phase 1: Create new charsets with globally most used characters
     std::vector<Charset> new_charsets;
@@ -61,8 +58,7 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
 
     // Create target number of charsets with BLANK and FULL
     for (int i = 0; i < targetCharsetCount; i++) {
-        Charset new_charset(
-            fmt::format("generated_by_reduceCharsets_{}_{}", targetCharsetCount, i));
+        Charset new_charset(fmt::format("generated_by_reduceCharsets_{}_{}", targetCharsetCount, i));
         new_charset.insert(Char::BLANK);
         new_charset.insert(Char::FULL);
         new_charsets.push_back(new_charset);
@@ -185,8 +181,7 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
     // Phase 4: Create lookup tables for each original charset to find the closest matches in new
     // charsets
     std::vector<std::vector<std::vector<uint8_t>>> charset_mappings(
-        m_charsets.size(),
-        std::vector<std::vector<uint8_t>>(256, std::vector<uint8_t>(targetCharsetCount)));
+        m_charsets.size(), std::vector<std::vector<uint8_t>>(256, std::vector<uint8_t>(targetCharsetCount)));
 
     for (size_t old_charset_idx = 0; old_charset_idx < m_charsets.size(); old_charset_idx++) {
         const auto &old_charset = m_charsets[old_charset_idx];
@@ -226,8 +221,7 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
         // Find which group this frame belongs to
         int group_idx = 0;
         for (int g = 0; g < targetCharsetCount; g++) {
-            if (std::find(frame_groups[g].begin(), frame_groups[g].end(), i) !=
-                frame_groups[g].end()) {
+            if (std::find(frame_groups[g].begin(), frame_groups[g].end(), i) != frame_groups[g].end()) {
                 group_idx = g;
                 break;
             }
@@ -241,8 +235,7 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
         // Map each character to the closest match in new charset
         for (int j = 0; j < 1000; j++) {
             uint8_t old_char_idx = frame.m_characterRam[j];
-            new_frame.m_characterRam[j] =
-                charset_mappings[old_charset_idx][old_char_idx][group_idx];
+            new_frame.m_characterRam[j] = charset_mappings[old_charset_idx][old_char_idx][group_idx];
         }
 
         new_frames.push_back(new_frame);

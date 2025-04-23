@@ -105,10 +105,9 @@ TEST_CASE("Char distance calculation", "[char][distance]") {
         Char c2(pattern5);  // Pattern from pattern5
 
         // Direct call to the hamming distance function
-        uint16_t direct_distance =
-            hamming_distance_8bytes(c1.data(),  // Direct access to bitmap data
-                                    c2.data()   // Direct access to bitmap data
-            );
+        uint16_t direct_distance = hamming_distance_8bytes(c1.data(),  // Direct access to bitmap data
+                                                           c2.data()   // Direct access to bitmap data
+        );
 
         // Should match the value from the Char class method
         REQUIRE(c1.distance(c2) == direct_distance);

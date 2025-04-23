@@ -9,8 +9,7 @@ using namespace AnimTool;
 
 Charset AnimTool::CharsetReader::readCharset(const std::string &filename) {
     if (!filename.ends_with(".bin") && !filename.ends_with(".64c")) {
-        throw std::invalid_argument(
-            fmt::format("Only .bin and .64c are supported, unable to load {}", filename));
+        throw std::invalid_argument(fmt::format("Only .bin and .64c are supported, unable to load {}", filename));
     }
 
     Charset charset(filename);
