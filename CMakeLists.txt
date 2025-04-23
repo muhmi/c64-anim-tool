@@ -216,6 +216,7 @@ if (BUILD_TESTING)
             src/config/test/test_config.cpp
             src/cli/test/test_cli.cpp
             src/anim/test/char_distance.cpp
+            src/anim/test/charset_reduction.cpp
     )
     target_link_libraries(all_tests PRIVATE
             anim_lib

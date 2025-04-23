@@ -4,6 +4,10 @@
 #include "Charset.h"
 #include "PetsciiReader.h"
 
+namespace AnimToolTest {
+struct ChannelCharacterRamTest;
+}
+
 namespace AnimTool {
 
 class ChannelCharacterRam : public SourceChannel {
@@ -20,6 +24,7 @@ class ChannelCharacterRam : public SourceChannel {
 
     [[nodiscard]] Type getType() const override { return Type::CHARACTER_RAM; }
 
+    friend struct AnimToolTest::ChannelCharacterRamTest;
    private:
     std::vector<Frame> m_frames;
     std::vector<Charset> m_charsets;
