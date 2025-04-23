@@ -2,5 +2,6 @@
 # Google C++ style
 Language: Cpp
 BasedOnStyle: Google
-ColumnLimit: 100
+NamespaceIndentation: All
+ColumnLimit: 120
 IndentWidth: 4
