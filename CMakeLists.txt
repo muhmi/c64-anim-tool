@@ -129,6 +129,19 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fmt)
 
+# Fetch spdlog - DO NOT USE external fmt due to C++20 compatibility issues
+FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG v1.12.0  # Using a slightly older version for better compatibility
+)
+# Do NOT use external fmt for spdlog
+set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "Use internal fmt library for spdlog" FORCE)
+# Configure spdlog to be built as a static library
+set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "Build spdlog as a shared library" FORCE)
+FetchContent_MakeAvailable(spdlog)
+target_compile_options(spdlog PRIVATE ${EXTERNAL_WARNING_FLAGS})
+
 # Fetch giflib
 FetchContent_Declare(
         giflib
@@ -152,7 +165,6 @@ if (NOT giflib_POPULATED)
     target_compile_options(giflib PRIVATE ${EXTERNAL_WARNING_FLAGS})
 endif ()
 
-
 # Anim stuffs
 add_library(anim_lib
         src/anim/CharsetReader.cpp
@@ -167,6 +179,7 @@ add_library(anim_lib
         src/anim/Utils.h
         src/anim/Charset.cpp
         src/anim/Charset.h
+        src/anim/GlobalSingleton.h
         # src/anim/ChannelCharacterRam.cpp
         # src/anim/ChannelScreenColor.cpp
         # src/anim/ChannelColorRAM.cpp
@@ -183,6 +196,7 @@ target_link_libraries(anim_lib PUBLIC
         fmt::fmt
         yaml-cpp
         giflib
+        spdlog::spdlog
 )
 
 if (BUILD_CLI)
