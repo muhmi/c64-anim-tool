@@ -28,7 +28,8 @@ void AnimTool::ChannelCharacterRam::addFramesFromPetscii(const PetsciiAnim &anim
     }
 }
 
-void ChannelCharacterRam::reduceCharsets(int targetCharsetCount) {
+void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
+                                         const int characterSimilarityThresholdPercentage) {
     if (static_cast<int>(m_charsets.size()) <= targetCharsetCount) return;
 
     // Count character usage across all frames
@@ -72,19 +73,24 @@ void ChannelCharacterRam::reduceCharsets(int targetCharsetCount) {
     for (int i = 0; i < globalCharCount; i++) {
         const auto &ch = char_counts[i].first;
         for (auto &charset : new_charsets) {
-            if (charset.size() < maxCharsPerSet) {
+            if (static_cast<int>(charset.size()) < maxCharsPerSet) {
                 charset.insert(ch);
             }
         }
     }
 
     // Phase 2: Group frames into targetCharsetCount groups based on similarity
-    std::vector<std::vector<int>> frame_groups(targetCharsetCount);
+    //
+    // Idea is to try to keep frames with similar chars using same charsets
+    //
+    // How similar the frames need to be, is controlled by giving a percentage as arg
+    // `characterSimilarityThresholdPercentage`
 
-    // Initialize with first frame in first group
+    std::vector<std::vector<int>> frame_groups(targetCharsetCount);
     frame_groups[0].push_back(0);
 
-    // Simple greedy algorithm to group sequential frames
+    const int threshold = std::clamp(characterSimilarityThresholdPercentage * 10, 0, 1000);
+
     for (size_t i = 1; i < m_frames.size(); i++) {
         const auto &curr_frame = m_frames[i];
         const auto &prev_frame = m_frames[i - 1];
@@ -98,8 +104,8 @@ void ChannelCharacterRam::reduceCharsets(int targetCharsetCount) {
             }
         }
 
+        // Find a group with enough similar characters
         if (prev_group != -1) {
-            // Check if current frame uses similar characters to previous frame
             int same_chars = 0;
             for (int j = 0; j < 1000; j++) {
                 if (curr_frame.m_characterRam[j] == prev_frame.m_characterRam[j]) {
@@ -107,14 +113,13 @@ void ChannelCharacterRam::reduceCharsets(int targetCharsetCount) {
                 }
             }
 
-            // If frames are similar enough, keep them in the same group
-            if (same_chars > 800) {  // 80% similarity threshold
-                frame_groups[prev_group].push_back(i);
+            if (same_chars > threshold) {
+                frame_groups[prev_group].push_back(static_cast<int>(i));
                 continue;
             }
         }
 
-        // If we didn't continue, find the group with the smallest size
+        // Ok, just use the smallest group instead
         int min_group_size = std::numeric_limits<int>::max();
         int min_group_idx = 0;
 
@@ -125,7 +130,7 @@ void ChannelCharacterRam::reduceCharsets(int targetCharsetCount) {
             }
         }
 
-        frame_groups[min_group_idx].push_back(i);
+        frame_groups[min_group_idx].push_back(static_cast<int>(i));
     }
 
     // Phase 3: Populate each charset with characters specific to its frame group
@@ -149,8 +154,7 @@ void ChannelCharacterRam::reduceCharsets(int targetCharsetCount) {
             const auto &frame = m_frames[frame_idx];
             const auto &old_charset = m_charsets[frame.m_charsetIndex];
 
-            for (int i = 0; i < 1000; i++) {
-                uint8_t idx = frame.m_characterRam[i];
+            for (unsigned char idx : frame.m_characterRam) {
                 auto chr = old_charset[idx];
                 group_char_counts[chr]++;
             }

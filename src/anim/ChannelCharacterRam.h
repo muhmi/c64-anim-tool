@@ -16,7 +16,7 @@ class ChannelCharacterRam : public SourceChannel {
 
     void addFramesFromPetscii(const PetsciiAnim& anim, std::optional<Charset> charset);
 
-    void reduceCharsets(int targetCharsetCount);
+    void reduceCharsets(int targetCharsetCount, int characterSimilarityThresholdPercentage = 80);
 
     [[nodiscard]] Type getType() const override { return Type::CHARACTER_RAM; }
 
