@@ -56,6 +56,7 @@ namespace AnimTool {
         uint8_t insert(const Char &character);
 
         std::optional<uint8_t> indexOf(const Char &character) const;
+        uint8_t closestChar(const Char& character) const;
 
         [[nodiscard]] size_t size() const { return m_characters.size(); }
 

@@ -75,3 +75,18 @@ std::optional<uint8_t> Charset::indexOf(const Char &character) const {
     }
     return {};
 }
+
+uint8_t Charset::closestChar(const Char &character) const {
+    uint8_t best_idx = 0;
+    uint16_t min_distance = std::numeric_limits<uint16_t>::max();
+
+    for (size_t i = 0; i < m_characters.size(); i++) {
+        uint16_t dist = character.distance(m_characters[i]);
+        if (dist < min_distance) {
+            min_distance = dist;
+            best_idx = static_cast<uint8_t>(i);
+        }
+    }
+
+    return best_idx;
+}

@@ -231,22 +231,6 @@ void ChannelCharacterRam::reduceCharsets(const int maxCharsetCount) {
     // Step 6: Map frames to new charsets
     std::vector<Frame> new_frames;
 
-    // Helper function to find closest character in a charset
-    auto findClosestChar = [](const Char &target, const Charset &charset) -> uint8_t {
-        uint8_t best_idx = 0;
-        uint16_t min_distance = std::numeric_limits<uint16_t>::max();
-
-        for (size_t i = 0; i < charset.size(); i++) {
-            uint16_t dist = target.distance(charset[i]);
-            if (dist < min_distance) {
-                min_distance = dist;
-                best_idx = static_cast<uint8_t>(i);
-            }
-        }
-
-        return best_idx;
-    };
-
     for (size_t i = 0; i < m_frames.size(); i++) {
         const auto &frame = m_frames[i];
         const auto &old_charset = m_charsets[frame.m_charsetIndex];
@@ -271,8 +255,8 @@ void ChannelCharacterRam::reduceCharsets(const int maxCharsetCount) {
             if (auto new_idx = new_charsets[group_idx].indexOf(old_char); new_idx) {
                 new_frame.m_characterRam[j] = *new_idx;
             } else {
-                // If character not found in new charset, find closest match
-                new_frame.m_characterRam[j] = findClosestChar(old_char, new_charsets[group_idx]);
+                // If character not found in new charset, find the closest match
+                new_frame.m_characterRam[j] = new_charsets[group_idx].closestChar(old_char);
             }
         }
 
