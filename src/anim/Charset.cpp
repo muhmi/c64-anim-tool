@@ -67,3 +67,11 @@ uint8_t Charset::insert(const Char &character) {
     m_characters.push_back(character);
     return index;
 }
+
+std::optional<uint8_t> Charset::indexOf(const Char &character) const {
+    auto it = std::find(m_characters.begin(), m_characters.end(), character);
+    if (it != m_characters.end()) {
+        return static_cast<uint8_t>(std::distance(m_characters.begin(), it));
+    }
+    return {};
+}

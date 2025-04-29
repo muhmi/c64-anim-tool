@@ -26,11 +26,61 @@ void AnimTool::ChannelCharacterRam::addFramesFromPetscii(const PetsciiAnim &anim
     }
 }
 
-void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
-                                         const int characterSimilarityThresholdPercentage) {
-    if (static_cast<int>(m_charsets.size()) <= targetCharsetCount) return;
+void ChannelCharacterRam::reduceCharsets(const int maxCharsetCount) {
+    // Step 1: Collect all unique characters used across all frames
+    std::unordered_set<Char> all_characters;
+    all_characters.insert(Char::BLANK);
+    all_characters.insert(Char::FULL);
 
-    // Count character usage across all frames
+    for (const auto &frame : m_frames) {
+        const auto &charset = m_charsets[frame.m_charsetIndex];
+        for (unsigned char idx : frame.m_characterRam) {
+            all_characters.insert(charset[idx]);
+        }
+    }
+
+    const int uniqueCharCount = static_cast<int>(all_characters.size());
+
+    // Check if all characters can fit into a single charset
+    if (uniqueCharCount <= 256) {
+        // Simple case: All characters fit in one charset
+        Charset new_charset("generated_by_reduceCharsets");
+        new_charset.insert(Char::BLANK);
+        new_charset.insert(Char::FULL);
+
+        for (const auto &chr : all_characters) {
+            new_charset.insert(chr);
+        }
+
+        // Create new frames with remapped character indices
+        std::vector<Frame> new_frames;
+        for (const auto &frame : m_frames) {
+            const auto &old_charset = m_charsets[frame.m_charsetIndex];
+            Frame new_frame;
+            new_frame.m_charsetIndex = 0;
+            new_frame.m_delayMs = frame.m_delayMs;
+
+            for (int idx = 0; idx < 1000; ++idx) {
+                Char old_char = old_charset[frame.m_characterRam[idx]];
+                if (auto newIndex = new_charset.indexOf(old_char); newIndex) {
+                    new_frame.m_characterRam[idx] = *newIndex;
+                } else {
+                    // This shouldn't happen as we've added all chars, but just in case
+                    new_frame.m_characterRam[idx] = 0;  // Use BLANK as fallback
+                }
+            }
+            new_frames.push_back(new_frame);
+        }
+
+        // Replace old charsets and frames
+        m_charsets = {new_charset};
+        m_frames = std::move(new_frames);
+        return;
+    }
+
+    // Complex case: Need to distribute characters across multiple charsets
+
+    // Step 2: Count character usage to prioritize common characters
     std::unordered_map<Char, int> use_counts;
     use_counts[Char::BLANK] = 1;
     use_counts[Char::FULL] = 1;
@@ -52,55 +102,54 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
 
     std::sort(char_counts.begin(), char_counts.end(), [](const auto &a, const auto &b) { return a.second > b.second; });
 
-    // Phase 1: Create new charsets with globally most used characters
+    // Step 3: Create new charsets with globally most used characters
     std::vector<Charset> new_charsets;
-    int maxCharsPerSet = 256;  // C64 charset size
+    const int maxCharsPerSet = 256;  // C64 charset size
 
     // Create target number of charsets with BLANK and FULL
-    for (int i = 0; i < targetCharsetCount; i++) {
-        Charset new_charset(fmt::format("generated_by_reduceCharsets_{}_{}", targetCharsetCount, i));
+    for (int i = 0; i < maxCharsetCount; i++) {
+        Charset new_charset(fmt::format("generated_by_reduceCharsets_{}_{}", maxCharsetCount, i));
         new_charset.insert(Char::BLANK);
         new_charset.insert(Char::FULL);
         new_charsets.push_back(new_charset);
     }
 
     // Add the most globally used characters to ALL charsets first
+    // This ensures common characters are available in every charset
     int globalCharCount = std::min(static_cast<int>(char_counts.size()), 50);
-    for (int i = 0; i < globalCharCount; i++) {
+    for (int i = 0; i < globalCharCount && i < static_cast<int>(char_counts.size()); i++) {
         const auto &ch = char_counts[i].first;
         for (auto &charset : new_charsets) {
-            if (static_cast<int>(charset.size()) < maxCharsPerSet) {
+            if (charset.size() < maxCharsPerSet) {
                 charset.insert(ch);
             }
         }
     }
 
-    // Phase 2: Group frames into targetCharsetCount groups based on similarity
-    //
-    // Idea is to try to keep frames with similar chars using same charsets
-    //
-    // How similar the frames need to be, is controlled by giving a percentage as arg
-    // `characterSimilarityThresholdPercentage`
+    // Step 4: Group frames into maxCharsetCount groups
+    // Ideally, we want to keep frames with similar character usage together
+    std::vector<std::vector<int>> frame_groups(maxCharsetCount);
 
-    std::vector<std::vector<int>> frame_groups(targetCharsetCount);
-    frame_groups[0].push_back(0);
+    // Start with first frame in first group
+    if (!m_frames.empty()) {
+        frame_groups[0].push_back(0);
+    }
 
-    const int threshold = std::clamp(characterSimilarityThresholdPercentage * 10, 0, 1000);
-
+    // Group remaining frames based on similarity to previous frame or group size
     for (size_t i = 1; i < m_frames.size(); i++) {
         const auto &curr_frame = m_frames[i];
         const auto &prev_frame = m_frames[i - 1];
 
-        // Try to keep sequential frames together
+        // Try to keep sequential frames together if possible
         int prev_group = -1;
-        for (int g = 0; g < targetCharsetCount; g++) {
+        for (int g = 0; g < maxCharsetCount; g++) {
             if (!frame_groups[g].empty() && frame_groups[g].back() == static_cast<int>(i - 1)) {
                 prev_group = g;
                 break;
             }
         }
 
-        // Find a group with enough similar characters
+        // Find a group with similar character usage
         if (prev_group != -1) {
             int same_chars = 0;
             for (int j = 0; j < 1000; j++) {
@@ -109,17 +158,18 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
                 }
             }
 
-            if (same_chars > threshold) {
+            // If frames share more than 60% of their characters, keep them together
+            if (same_chars > 600) {
                 frame_groups[prev_group].push_back(static_cast<int>(i));
                 continue;
             }
         }
 
-        // Ok, just use the smallest group instead
+        // Otherwise, add to the smallest group to balance sizes
         int min_group_size = std::numeric_limits<int>::max();
         int min_group_idx = 0;
 
-        for (int g = 0; g < targetCharsetCount; g++) {
+        for (int g = 0; g < maxCharsetCount; g++) {
             if (static_cast<int>(frame_groups[g].size()) < min_group_size) {
                 min_group_size = static_cast<int>(frame_groups[g].size());
                 min_group_idx = g;
@@ -129,19 +179,19 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
         frame_groups[min_group_idx].push_back(static_cast<int>(i));
     }
 
-    // Phase 3: Populate each charset with characters specific to its frame group
+    // Step 5: Fill each charset with characters specific to its frame group
     std::unordered_map<Char, int> added_chars;
-    for (const auto &ch : char_counts) {
-        added_chars[ch.first] = 0;  // Mark all as not added yet
+    for (const auto &[chr, _] : use_counts) {
+        added_chars[chr] = 0;  // Mark all as not added yet
     }
 
     // Mark globally added characters
-    for (int i = 0; i < globalCharCount; i++) {
-        added_chars[char_counts[i].first] = targetCharsetCount;  // Added to all charsets
+    for (int i = 0; i < globalCharCount && i < static_cast<int>(char_counts.size()); i++) {
+        added_chars[char_counts[i].first] = maxCharsetCount;  // Added to all charsets
     }
 
     // For each group, add most frequent characters from its frames
-    for (int g = 0; g < targetCharsetCount; g++) {
+    for (int g = 0; g < maxCharsetCount; g++) {
         auto &charset = new_charsets[g];
         std::unordered_map<Char, int> group_char_counts;
 
@@ -159,7 +209,7 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
         // Sort characters by frequency in this group
         std::vector<std::pair<Char, int>> group_chars;
         for (const auto &[chr, count] : group_char_counts) {
-            if (added_chars[chr] < targetCharsetCount) {  // Skip if already in all charsets
+            if (added_chars[chr] < maxCharsetCount) {  // Skip if already in all charsets
                 group_chars.emplace_back(chr, count);
             }
         }
@@ -167,9 +217,9 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
         std::sort(group_chars.begin(), group_chars.end(),
                   [](const auto &a, const auto &b) { return a.second > b.second; });
 
-        // Add characters to this charset
-        for (const auto &[chr, count] : group_chars) {
-            if (static_cast<int>(charset.size()) < maxCharsPerSet) {
+        // Add characters to this charset until full
+        for (const auto &[chr, _] : group_chars) {
+            if (charset.size() < maxCharsPerSet) {
                 charset.insert(chr);
                 added_chars[chr]++;
             } else {
@@ -178,49 +228,32 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
         }
     }
 
-    // Phase 4: Create lookup tables for each original charset to find the closest matches in new
-    // charsets
-    std::vector<std::vector<std::vector<uint8_t>>> charset_mappings(
-        m_charsets.size(), std::vector<std::vector<uint8_t>>(256, std::vector<uint8_t>(targetCharsetCount)));
+    // Step 6: Map frames to new charsets
+    std::vector<Frame> new_frames;
 
-    for (size_t old_charset_idx = 0; old_charset_idx < m_charsets.size(); old_charset_idx++) {
-        const auto &old_charset = m_charsets[old_charset_idx];
+    // Helper function to find closest character in a charset
+    auto findClosestChar = [](const Char &target, const Charset &charset) -> uint8_t {
+        uint8_t best_idx = 0;
+        uint16_t min_distance = std::numeric_limits<uint16_t>::max();
 
-        for (int old_char_idx = 0; old_char_idx < 256; old_char_idx++) {
-            if (old_char_idx >= static_cast<int>(old_charset.size())) break;
-
-            auto old_char = old_charset[old_char_idx];
-
-            // Find the closest match in each new charset
-            for (int new_charset_idx = 0; new_charset_idx < targetCharsetCount; new_charset_idx++) {
-                const auto &new_charset = new_charsets[new_charset_idx];
-
-                uint8_t best_idx = 0;
-                uint16_t min_distance = std::numeric_limits<uint16_t>::max();
-
-                for (size_t j = 0; j < new_charset.size(); j++) {
-                    uint16_t dist = old_char.distance(new_charset[j]);
-                    if (dist < min_distance) {
-                        min_distance = dist;
-                        best_idx = j;
-                    }
-                }
-
-                charset_mappings[old_charset_idx][old_char_idx][new_charset_idx] = best_idx;
+        for (size_t i = 0; i < charset.size(); i++) {
+            uint16_t dist = target.distance(charset[i]);
+            if (dist < min_distance) {
+                min_distance = dist;
+                best_idx = static_cast<uint8_t>(i);
             }
         }
-    }
 
-    // Phase 5: Assign charsets to frames based on frame groups
-    std::vector<Frame> new_frames;
+        return best_idx;
+    };
 
     for (size_t i = 0; i < m_frames.size(); i++) {
         const auto &frame = m_frames[i];
-        int old_charset_idx = frame.m_charsetIndex;
+        const auto &old_charset = m_charsets[frame.m_charsetIndex];
 
         // Find which group this frame belongs to
         int group_idx = 0;
-        for (int g = 0; g < targetCharsetCount; g++) {
+        for (int g = 0; g < maxCharsetCount; g++) {
             if (std::find(frame_groups[g].begin(), frame_groups[g].end(), i) != frame_groups[g].end()) {
                 group_idx = g;
                 break;
@@ -232,16 +265,21 @@ void ChannelCharacterRam::reduceCharsets(const int targetCharsetCount,
         new_frame.m_charsetIndex = group_idx;
         new_frame.m_delayMs = frame.m_delayMs;
 
-        // Map each character to the closest match in new charset
+        // Map each character to new charset
         for (int j = 0; j < 1000; j++) {
-            uint8_t old_char_idx = frame.m_characterRam[j];
-            new_frame.m_characterRam[j] = charset_mappings[old_charset_idx][old_char_idx][group_idx];
+            Char old_char = old_charset[frame.m_characterRam[j]];
+            if (auto new_idx = new_charsets[group_idx].indexOf(old_char); new_idx) {
+                new_frame.m_characterRam[j] = *new_idx;
+            } else {
+                // If character not found in new charset, find closest match
+                new_frame.m_characterRam[j] = findClosestChar(old_char, new_charsets[group_idx]);
+            }
         }
 
         new_frames.push_back(new_frame);
     }
 
-    // Phase 6: Replace old charsets and frames with new ones
+    // Replace old charsets and frames with new ones
     m_charsets = std::move(new_charsets);
     m_frames = std::move(new_frames);
 }

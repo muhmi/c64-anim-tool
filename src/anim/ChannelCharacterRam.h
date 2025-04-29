@@ -20,7 +20,7 @@ namespace AnimTool {
 
         void addFramesFromPetscii(const PetsciiAnim& anim, std::optional<Charset> charset);
 
-        void reduceCharsets(int targetCharsetCount, int characterSimilarityThresholdPercentage = 80);
+        void reduceCharsets(int maxCharsetCount);
 
         [[nodiscard]] Type getType() const override { return Type::CHARACTER_RAM; }
 
