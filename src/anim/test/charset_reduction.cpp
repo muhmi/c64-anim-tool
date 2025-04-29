@@ -345,6 +345,7 @@ namespace AnimToolTest {
 
                 // Remember the delay values in original order
                 std::vector<uint16_t> original_delays;
+                original_delays.reserve(channel.m_frames.size());
                 for (const auto& frame : channel.m_frames) {
                     original_delays.push_back(frame.m_delayMs);
                 }
