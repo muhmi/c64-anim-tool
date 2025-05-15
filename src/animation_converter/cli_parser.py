@@ -200,6 +200,12 @@ def parse_arguments():
         default="*",
         help="Set anim start address, defaults to after charsets",
     )
+    parser.add_argument(
+        "--write-petmate",
+        type=bool,
+        default=False,
+        help="Write out a petmate file with petscii animation and charsets",
+    )
 
     args = parser.parse_args()
 

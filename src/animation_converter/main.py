@@ -187,6 +187,9 @@ def main():
     if args.skip_build == False:
         build(output_file_name, args.non_linear_prg)
 
+    if args.write_petmate == True:
+        petscii.write_petmate(screens, f"{output_file_name}.petmate", True)
+
     return 0
 
 

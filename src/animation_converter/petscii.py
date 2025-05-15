@@ -688,6 +688,104 @@ def read_petmate(file_path: str) -> List[PetsciiScreen]:
 
     return screens
 
+def write_petmate(screens: List[PetsciiScreen], output_file: str, use_custom_charset: bool = False) -> None:
+    """
+    Write a list of PetsciiScreen objects to a petmate file.
+    
+    Args:
+        screens: List of PetsciiScreen objects to write
+        output_file: Path to the output file
+        use_custom_charset: If True, create custom charsets; if False, use built-in "upper" charset
+    """
+    output = {
+        "version": 2,
+        "screens": list(range(len(screens))),
+        "framebufs": [],
+        "customFonts": {}
+    }
+    
+    # First pass: identify and deduplicate charsets if we're using custom charsets
+    custom_charsets = {}
+    charset_mapping = {}
+    
+    if use_custom_charset:
+        for screen in screens:
+            charset_key = id(screen.charset)
+            
+            if charset_key not in charset_mapping:
+                charset_name = f"charset_{len(charset_mapping)}"
+                charset_mapping[charset_key] = charset_name
+                custom_charsets[charset_name] = screen.charset
+    
+    # Second pass: create framebufs
+    for i, screen in enumerate(screens):
+        # Determine charset name - either custom or built-in
+        if use_custom_charset:
+            charset_key = id(screen.charset)
+            charset_name = charset_mapping[charset_key]
+        else:
+            charset_name = "upper"  # Default to built-in charset
+        
+        # Create the 2D framebuf array
+        framebuf = []
+        for row in range(25):
+            row_data = []
+            for col in range(40):
+                offset = row * 40 + col
+                if offset < len(screen.screen_codes) and offset < len(screen.color_data):
+                    entry = {
+                        "code": int(screen.screen_codes[offset]),
+                        "color": int(screen.color_data[offset])
+                    }
+                else:
+                    entry = {"code": 32, "color": 14}  # Space character with light blue color
+                row_data.append(entry)
+            framebuf.append(row_data)
+        
+        frame = {
+            "width": 40,
+            "height": 25,
+            "backgroundColor": int(screen.background_color) if screen.background_color is not None else 6,
+            "borderColor": int(screen.border_color) if screen.border_color is not None else 14,
+            "charset": charset_name,
+            "name": f"screen_{screen.screen_index:03d}",
+            "framebuf": framebuf
+        }
+        output["framebufs"].append(frame)
+    
+    # Process custom charsets according to WsCustomFontsV2 type
+    if use_custom_charset:
+        for name, charset in custom_charsets.items():
+            # Create the bits array
+            bits = []
+            for char in charset:
+                # For each character, extract 8 rows of bits as integers
+                for row in range(8):
+                    row_start = row * 8
+                    row_end = row_start + 8
+                    row_bits = char.data[row_start:row_end]
+                    row_int = int(row_bits.to01(), 2)
+                    bits.append(row_int)
+            
+            # Create charOrder array - maps integers 0-255 to their positions in the charset
+            # For a standard charset, this would just be [0, 1, 2, ..., 255]
+            charOrder = list(range(256))
+            
+            # Add to customFonts
+            output["customFonts"][name] = {
+                "name": name,
+                "font": {
+                    "bits": bits,
+                    "charOrder": charOrder
+                }
+            }
+    
+    # Write to file
+    with open(output_file, 'w') as f:
+        json.dump(output, f, separators=(',', ':'))
+    
+    charset_type = "custom" if use_custom_charset else "built-in 'upper'"
+    print(f"Wrote {len(screens)} screens to {output_file} using {charset_type} charset")
 
 def read_screens(
     filename,
