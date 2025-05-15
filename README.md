@@ -76,6 +76,8 @@ options:
                         Effect start address in hex
   --anim-start-address ANIM_START_ADDRESS
                         Set anim start address, defaults to after charsets
+  --write-petmate WRITE_PETMATE
+                        Write out a petmate file with petscii animation and charsets
 
 ```
 
