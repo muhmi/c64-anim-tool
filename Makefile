@@ -27,7 +27,6 @@ distribute: ## Create standalone exe
 		--add-data "bins:bins" \
 		--paths src \
 		--paths src/animation_converter \
-		--hidden-import=numba \
 		--bootloader-ignore-signals \
 		--noupx \
 		src/animation_converter/main.py
