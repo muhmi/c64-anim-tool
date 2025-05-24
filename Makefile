@@ -16,7 +16,7 @@ update-requirements: ## Update requirements.txt with installed packages
 
 format-python: ## Autoformat python code
 	@echo "$(COLOR_YELLOW)Formatting python files...$(COLOR_RESET)"
-	@black .
+	@black . --exclude .venv*
 	@isort .
 	@echo "$(COLOR_YELLOW)done.$(COLOR_RESET)"
 
