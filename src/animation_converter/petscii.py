@@ -47,6 +47,7 @@ _HAMMING_LOOKUP = None
 def init_hamming_lookup():
     """Initialize lookup table for byte hamming distances - much faster"""
     global _HAMMING_LOOKUP
+    print("Precalculating hamming lookup...")
     if _HAMMING_LOOKUP is None:
         _HAMMING_LOOKUP = {}
         for i in range(256):
