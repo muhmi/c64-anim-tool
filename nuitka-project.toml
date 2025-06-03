@@ -1,0 +1,64 @@
+[nuitka]
+# Basic settings
+main = "src/animation_converter/main.py"
+output-filename = "animation-tool"
+output-dir = "dist"
+
+# Build mode
+onefile = true
+standalone = true
+
+# Data inclusion (replaces --add-data)
+include-data-dir = [
+    "src/resources/test-program=src/resources/test-program",
+    "bins=bins"
+]
+
+# Plugins
+#enable-plugins = [
+#    "numpy",
+#    "multiprocessing",
+#]
+
+# Import following
+follow-imports = true
+assume-yes-for-downloads = true
+
+# Performance optimizations
+lto = "yes"
+jobs = "auto"
+
+# Python path
+python-path = [
+    "src",
+    "src/animation_converter"
+]
+
+# Platform-specific options
+[nuitka.windows]
+console-mode = "attach"
+# icon-from-ico = "icon.ico"
+
+[nuitka.macos]
+create-app-bundle = true
+# app-icon = "icon.icns"
+
+[nuitka.linux]
+# Linux-specific options can go here
+
+# Optimization levels for different builds
+[nuitka.profiles.fast]
+# Fast build for development
+lto = "no"
+optimization-level = "O1"
+
+[nuitka.profiles.release]
+# Optimized build for distribution
+lto = "yes"
+optimization-level = "O3"
+clang = true
+
+[nuitka.profiles.debug]
+# Debug build
+debug = true
+unstripped = true

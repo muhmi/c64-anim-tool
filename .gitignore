@@ -4,6 +4,7 @@ __pycache__/
 *.so
 .env
 .venv
+.venv-brew
 env/
 venv/
 ENV/
@@ -28,3 +29,4 @@ Thumbs.db
 *.prg
 *.code-workspace
 .idea/*
+*.prof

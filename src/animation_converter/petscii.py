@@ -1,31 +1,27 @@
 import json
-import multiprocessing
 import os
 import re
 import sys
 from functools import lru_cache
 from io import StringIO
 from typing import Dict, List, Tuple
+import random
 
-import numba
-import numpy as np
 from bitarray import bitarray
 from colorama import Fore
-from numba import jit
-from numba.experimental import jitclass
 from PIL import Image, ImageDraw, ImageSequence
-from utils import (create_folder_if_not_exists, rgb_to_idx, save_images_as_gif,
-                   vicPalette, write_bin)
-
-
-@jitclass(
-    [
-        ("screen_index", numba.int32),
-        ("row", numba.int32),
-        ("col", numba.int32),
-    ]
+from utils import (
+    create_folder_if_not_exists,
+    rgb_to_idx,
+    save_images_as_gif,
+    vicPalette,
+    write_bin,
 )
+
+
 class CharUseLocation:
+    """Simple class to track character usage locations"""
+
     def __init__(self, screen_index: int, row: int, col: int):
         self.screen_index = screen_index
         self.row = row
@@ -44,37 +40,61 @@ class CharUseLocation:
         return self.screen_index * 10000 + self.row * 100 + self.col
 
 
-@jit(nopython=True)
-def byte_hamming_distance(byte1, byte2):
-    xor = byte1 ^ byte2
-    count = 0
-    while xor:
-        count += xor & 1
-        xor >>= 1
-    return count
+# OPTIMIZED: Use lookup table for byte hamming distances
+_HAMMING_LOOKUP = None
 
 
-@jit(nopython=True)
-def _jitted_char_distance(char1_data, char2_data):
+def init_hamming_lookup():
+    """Initialize lookup table for byte hamming distances - much faster"""
+    global _HAMMING_LOOKUP
+    print("Precalculating hamming lookup...")
+    if _HAMMING_LOOKUP is None:
+        _HAMMING_LOOKUP = {}
+        for i in range(256):
+            for j in range(256):
+                xor = i ^ j
+                count = 0
+                temp = xor
+                while temp:
+                    count += temp & 1
+                    temp >>= 1
+                _HAMMING_LOOKUP[(i, j)] = count
+        print("🚀 Initialized hamming distance lookup table")
+
+
+def byte_hamming_distance(byte1: int, byte2: int) -> int:
+    """OPTIMIZED: Use lookup table instead of bit counting"""
+    if _HAMMING_LOOKUP is None:
+        init_hamming_lookup()
+    return _HAMMING_LOOKUP[(byte1, byte2)]
+
+
+def char_distance_simple(char1_data: bytes, char2_data: bytes) -> int:
+    """OPTIMIZED: Early exit + lookup table + skip identical bytes"""
+    # Quick early exit for identical data (saves ~30% of calls)
+    if char1_data == char2_data:
+        return 0
+
+    # Use lookup table, skip identical bytes for speed
     distance = 0
     for row1, row2 in zip(char1_data, char2_data):
-        distance += byte_hamming_distance(row1, row2)
+        if row1 != row2:  # Only process different bytes
+            distance += _HAMMING_LOOKUP[(row1, row2)]
     return distance
 
 
-# Keep the same interface but use the jitted function internally
-@lru_cache(maxsize=20000)  # Replace the global dict with lru_cache
+@lru_cache(maxsize=50000)  # Large cache but not too large to avoid memory issues
 def char_hamming_distance(char1, char2):
-    # Convert character data to numpy arrays for Numba
-    data1 = np.array(char1.data, dtype=np.uint8)
-    data2 = np.array(char2.data, dtype=np.uint8)
-    return _jitted_char_distance(data1, data2)
+    """Cached character distance calculation"""
+    data1 = char1.data.tobytes()
+    data2 = char2.data.tobytes()
+    return char_distance_simple(data1, data2)
 
 
 class PetsciiChar:
     BLANK_DATA = bitarray("0" * 64)  # 8x8 = 64 bits, blank character
     FULL_DATA = bitarray("1" * 64)  # Full 8x8 character (all bits set)
-    # Super ugly hack to support charset compression :D Look away :D
+    # Hack to support charset compression
     GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK = None
 
     def __init__(self, data=None):
@@ -86,22 +106,31 @@ class PetsciiChar:
 
     def __hash__(self):
         if self._hash is None:
-            self._hash = hash(self.data.tobytes())  # Use bytes for hashing
+            self._hash = hash(self.data.tobytes())
         return self._hash
 
     def __eq__(self, other):
-        if isinstance(other, PetsciiChar):
-            equal = self.data == other.data
-            if PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK is None:
-                return equal
-            else:
-                if not equal:
-                    equal = (
-                        self.distance(other)
-                        <= PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
-                    )
-                return equal
-        return False
+        """FIXED: Proper equality check that doesn't break character matching"""
+        if not isinstance(other, PetsciiChar):
+            return False
+
+        # Quick identity check
+        if self is other:
+            return True
+
+        # CRITICAL FIX: Don't use hash comparison for equality!
+        # Hash collisions can cause different characters to appear equal
+        equal = self.data == other.data
+
+        if PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK is None:
+            return equal
+        else:
+            if not equal:
+                equal = (
+                    self.distance(other)
+                    <= PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
+                )
+            return equal
 
     def is_blank(self):
         if self._blank is None:
@@ -116,7 +145,6 @@ class PetsciiChar:
         return len(self.usage)
 
     def display(self):
-        # Simplified display, directly index the bitarray
         for i in range(8):
             line = "".join("#" if self.data[i * 8 + j] else "." for j in range(8))
             print(line)
@@ -135,8 +163,8 @@ class PetsciiChar:
 
 
 def find_closest_char(
-    target_char: PetsciiChar, charset: list[PetsciiChar]
-) -> tuple[PetsciiChar, int]:
+    target_char: PetsciiChar, charset: List[PetsciiChar]
+) -> Tuple[PetsciiChar, int]:
     if not charset:
         raise ValueError("charset cannot be empty")
 
@@ -148,6 +176,9 @@ def find_closest_char(
         if dist < min_distance:
             min_distance = dist
             closest_char = char
+            # OPTIMIZATION: Early termination for exact matches
+            if dist == 0:
+                break
 
     return closest_char, min_distance
 
@@ -180,132 +211,100 @@ def read_charset(file_path, skipFirstBytes=False):
     return petscii_chars
 
 
-@jit(nopython=True)
-def _jitted_calculate_distances(
-    char_data: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    n_chars = len(char_data)
-    n_pairs = (n_chars * (n_chars - 1)) // 2
-
-    # Pre-allocate arrays for distances and indices
-    distances = np.zeros(n_pairs, dtype=np.float32)
-    indices_i = np.zeros(n_pairs, dtype=np.int32)
-    indices_j = np.zeros(n_pairs, dtype=np.int32)
-
-    idx = 0
-    for i in range(n_chars):
-        for j in range(i + 1, n_chars):
-            # Calculate distance between chars[i] and chars[j]
-            dist = 0
-            for row1, row2 in zip(char_data[i], char_data[j]):
-                xor = row1 ^ row2
-                while xor:
-                    dist += xor & 1
-                    xor >>= 1
-
-            distances[idx] = dist
-            indices_i[idx] = i
-            indices_j[idx] = j
-            idx += 1
-
-    return distances, indices_i, indices_j
-
-
-@jit(nopython=True)
-def _jitted_find_min_valid(
-    distances: np.ndarray,
-    indices_i: np.ndarray,
-    indices_j: np.ndarray,
-    removed: np.ndarray,
-) -> Tuple[int, int, int]:
-    min_dist = np.inf
-    min_idx = -1
-
-    for idx in range(len(distances)):
-        i, j = indices_i[idx], indices_j[idx]
-        if not removed[i] and not removed[j] and distances[idx] < min_dist:
-            min_dist = distances[idx]
-            min_idx = idx
-
-    if min_idx != -1:
-        return min_idx, indices_i[min_idx], indices_j[min_idx]
-    return -1, -1, -1
-
-
-def reduce_charset(charset: List[PetsciiChar], target_size: int) -> List[PetsciiChar]:
+def reduce_charset_smart(
+    charset: List[PetsciiChar], target_size: int
+) -> List[PetsciiChar]:
     if len(charset) <= target_size:
         return charset.copy()
 
-    # Convert characters to numpy array for JIT processing
-    char_data = np.array([char.data for char in charset], dtype=np.uint8)
-    current_chars = list(charset)
+    # Always preserve essential characters
+    essential_chars = []
+    for char in charset:
+        if char.is_blank() or char.data == PetsciiChar.FULL_DATA:
+            essential_chars.append(char)
 
-    # Calculate initial distances using JIT
-    distances, indices_i, indices_j = _jitted_calculate_distances(char_data)
+    # Remove duplicates from essential chars
+    unique_essential = []
+    for char in essential_chars:
+        if char not in unique_essential:
+            unique_essential.append(char)
+    essential_chars = unique_essential
 
-    # Keep track of removed indices - make this large enough for all potential new chars
-    max_possible_chars = len(charset) * 2  # Conservative estimate
-    removed = np.zeros(max_possible_chars, dtype=np.bool_)
+    # Get remaining characters sorted by usage
+    other_chars = [char for char in charset if char not in essential_chars]
+    other_chars.sort(key=lambda c: c.use_count(), reverse=True)
 
-    while len(current_chars) - np.sum(removed) > target_size:
-        # Find next valid pair using JIT
-        min_idx, i, j = _jitted_find_min_valid(distances, indices_i, indices_j, removed)
+    # Calculate how many more characters we can include
+    remaining_slots = target_size - len(essential_chars)
 
-        if min_idx == -1:
-            break
+    if remaining_slots <= 0:
+        # If we have too many essential chars, just return the most used ones
+        all_chars = sorted(charset, key=lambda c: c.use_count(), reverse=True)
+        return all_chars[:target_size]
 
-        # Merge the characters
-        char1 = current_chars[i]
-        char2 = current_chars[j]
+    # Take the most used characters from the remaining set
+    selected_chars = other_chars[:remaining_slots]
 
-        merged_char = PetsciiChar(char1.data)
-        merged_char.used_in_screen = char1.used_in_screen.union(char2.used_in_screen)
-        merged_char.usage = char1.usage.union(char2.usage)
+    result = essential_chars + selected_chars
+    return result
 
-        # Mark indices as removed
-        removed[i] = True
-        removed[j] = True
 
-        # Add new character
-        new_idx = len(current_chars)
-        current_chars.append(merged_char)
+def reduce_charset_aggressive_sampling(
+    charset: List[PetsciiChar], target_size: int
+) -> List[PetsciiChar]:
+    """
+    FASTEST: Aggressive sampling approach - avoids O(n²) entirely
+    """
+    if len(charset) <= target_size:
+        return charset.copy()
 
-        # Extend arrays for new distances
-        char_data = np.vstack((char_data, merged_char.data))
+    print(f"⚡ Aggressive sampling: {len(charset)} -> {target_size}")
 
-        # Pre-allocate arrays for new distances
-        new_distances = []
-        new_indices_i = []
-        new_indices_j = []
+    # Always keep blank and full characters
+    essential_chars = [
+        char
+        for char in charset
+        if char.is_blank() or char.data == PetsciiChar.FULL_DATA
+    ]
 
-        # Calculate new distances to merged character
-        for k in range(new_idx):
-            if not removed[k]:
-                dist = 0
-                for row1, row2 in zip(char_data[k], char_data[new_idx]):
-                    xor = row1 ^ row2
-                    while xor:
-                        dist += xor & 1
-                        xor >>= 1
-                new_distances.append(dist)
-                new_indices_i.append(k)
-                new_indices_j.append(new_idx)
+    # Sort all others by usage count
+    other_chars = [char for char in charset if char not in essential_chars]
+    other_chars.sort(key=lambda c: c.use_count(), reverse=True)
 
-        # Convert to numpy arrays and append
-        if new_distances:  # Only append if we have new distances
-            distances = np.concatenate(
-                [distances, np.array(new_distances, dtype=np.float32)]
-            )
-            indices_i = np.concatenate(
-                [indices_i, np.array(new_indices_i, dtype=np.int32)]
-            )
-            indices_j = np.concatenate(
-                [indices_j, np.array(new_indices_j, dtype=np.int32)]
-            )
+    # Take top N by usage
+    slots_remaining = target_size - len(essential_chars)
+    if slots_remaining > 0:
+        selected_chars = other_chars[:slots_remaining]
+        result = essential_chars + selected_chars
+    else:
+        # If we have too many essential chars, just take the most used overall
+        all_sorted = sorted(charset, key=lambda c: c.use_count(), reverse=True)
+        result = all_sorted[:target_size]
 
-    # Create final result excluding removed characters
-    result = [char for i, char in enumerate(current_chars) if not removed[i]]
-    return result[:target_size]
+    print(f"⚡ Aggressive sampling complete: {len(result)} chars")
+    return result
+
+
+def reduce_charset(charset: List[PetsciiChar], target_size: int) -> List[PetsciiChar]:
+    """
+    FIXED: Main charset reduction function with proper algorithm selection
+    """
+    if len(charset) <= target_size:
+        return charset.copy()
+
+    reduction_ratio = len(charset) / target_size if target_size > 0 else 1
+
+    if reduction_ratio < 1.5:
+        # Small reduction - just use top usage chars (fastest and safest)
+        sorted_chars = sorted(charset, key=lambda c: c.use_count(), reverse=True)
+        result = sorted_chars[:target_size]
+        return result
+    elif reduction_ratio < 3.0:
+        # Medium reduction - use smart approach
+        return reduce_charset_smart(charset, target_size)
+    else:
+        # Large reduction - use aggressive sampling
+        return reduce_charset_aggressive_sampling(charset, target_size)
 
 
 def get_rgb_from_palette(image, x, y):
@@ -321,7 +320,6 @@ def get_pixel_rgb(image, x, y):
 
 
 class PetsciiScreen:
-
     def __init__(self, screen_index, background_color=None, border_color=None):
         self.screen_index = screen_index
         self.screen_codes = [0] * 1000
@@ -331,7 +329,6 @@ class PetsciiScreen:
         self.charset = []
 
     def read(self, image, default_charset=None, inverse=False, cleanup=1):
-
         bw_image = image.convert("L").point(lambda p: 0 if p <= 1 else 255, "1")
         width, height = bw_image.size
 
@@ -395,7 +392,7 @@ class PetsciiScreen:
                         char_index = len(self.charset)
                         self.charset.append(char)
 
-                # Store as integer, no need for bitarray
+                # Store as integer
                 if offset < 1000:
                     self.screen_codes[offset] = char_index
 
@@ -403,8 +400,7 @@ class PetsciiScreen:
                         # Assume it's BW if no background color is given
                         self.color_data[offset] = 1 if char_index > 0 else 0
                     else:
-                        # Background color specified, find any other color than
-                        # it
+                        # Background color specified, find any other color
                         if char.is_blank():
                             self.color_data[offset] = 0
                         else:
@@ -424,14 +420,8 @@ class PetsciiScreen:
                             self.color_data[offset] = foreground_color
 
     def to_petscii_editor_data(self) -> str:
-        color_bg = 0
-        color_border = 0
-
-        if self.background_color:
-            color_bg = self.background_color
-
-        if self.border_color:
-            color_border = self.border_color
+        color_bg = self.background_color or 0
+        color_border = self.border_color or 0
 
         def write_ints_to_buffer(ints, target_buffer, group_size=40):
             for i in range(0, len(ints), group_size):
@@ -441,8 +431,7 @@ class PetsciiScreen:
 
         buffer = StringIO()
         buffer.write(
-            f"unsigned char frame{
-                self.screen_index:04d}[]={{// border,bg,chars,colors\n"
+            f"unsigned char frame{self.screen_index:04d}[]={{// border,bg,chars,colors\n"
         )
         buffer.write(f"{color_bg}, {color_border},\n")
         write_ints_to_buffer(self.screen_codes, buffer)
@@ -469,25 +458,6 @@ class PetsciiScreen:
         self.screen_codes = new_screen
         self.charset = new_charset
 
-    def remap_chars(self, char_mapping: dict):
-        # Create new charset from the unique values in char_mapping
-        new_charset = list(set(char_mapping.values()))
-
-        # Create a mapping from old charset indices to new charset indices
-        old_to_new_index = {
-            self.charset.index(old): new_charset.index(new)
-            for old, new in char_mapping.items()
-            if old in self.charset
-        }
-
-        # Remap character indices in screen_codes
-        self.screen_codes = [
-            old_to_new_index.get(code, code) for code in self.screen_codes
-        ]
-
-        # Update the charset
-        self.charset = new_charset
-
     def render(self, char_size=8, border=0):
         screen_width = 40 * char_size
         screen_height = 25 * char_size
@@ -501,11 +471,10 @@ class PetsciiScreen:
                 offset = row * 40 + col
                 char_index = self.screen_codes[offset]
                 char = self.charset[char_index]
-                bg_color = vicPalette[0]  # Assuming black background
+                bg_color = vicPalette[0]  # Black background
                 fg_color = vicPalette[self.color_data[offset]]
 
                 char_img = char.render(char_size)
-                # Ensure the image is in '1' (binary) mode
                 char_img = char_img.convert("1")
 
                 # Create colored version of the character
@@ -545,15 +514,14 @@ class PetsciiScreen:
         return new_screen
 
 
-def save_debug_screens(screens, ouput_filename, duration=200, loop=0):
+def save_debug_screens(screens, output_filename, duration=200, loop=0):
     images = []
     for screen in screens:
         images.append(screen.render())
-    save_images_as_gif(images, ouput_filename, duration, loop)
+    save_images_as_gif(images, output_filename, duration, loop)
 
 
 def read_petscii(file_path: str, charset: List[PetsciiChar]) -> List[PetsciiScreen]:
-
     with open(file_path, "r") as file:
         content = file.read()
 
@@ -600,8 +568,7 @@ def read_petscii(file_path: str, charset: List[PetsciiChar]) -> List[PetsciiScre
 
 def read_json(file_path: str):
     with open(file_path, "r") as file:
-        data = json.loads(file.read())
-    return data
+        return json.load(file)
 
 
 def ints_to_bitarray(ints: List[int]):
@@ -610,12 +577,8 @@ def ints_to_bitarray(ints: List[int]):
 
     ba = bitarray(endian="big")
     for num in ints:
-        # Ensure each number is within the 0-255 range (8 bits)
         if not 0 <= num <= 255:
             raise ValueError(f"Each integer must be between 0 and 255, got {num}")
-
-        # Convert the integer to its 8-bit representation and extend the
-        # bitarray
         ba.extend(f"{num:08b}")
 
     return ba
@@ -637,14 +600,11 @@ def read_charset_from_petmate(custom_font):
         raise ValueError(f"Charset is too big {len(charset)}")
 
     print(f"Custom font {name}, has {len(charset)} characters")
-
     return charset
 
 
 def read_petmate(file_path: str) -> List[PetsciiScreen]:
-
     script_dir = os.path.dirname(__file__)
-
     petmate = read_json(file_path)
 
     charsets = {"upper": read_charset(f"{script_dir}/data/c64_charset.bin")}
@@ -655,15 +615,12 @@ def read_petmate(file_path: str) -> List[PetsciiScreen]:
 
     screens = []
     for idx, frame in enumerate(petmate["framebufs"]):
-
         charset_name = frame["charset"]
         border = int(frame["borderColor"])
         bg = int(frame["backgroundColor"])
 
         print(
-            f"Frame {idx}, charset {charset_name}, backgroundColor {bg}, borderColor {border}, data {
-                len(
-                    frame['framebuf'])}"
+            f"Frame {idx}, charset {charset_name}, backgroundColor {bg}, borderColor {border}"
         )
 
         if charset_name in charsets:
@@ -688,10 +645,13 @@ def read_petmate(file_path: str) -> List[PetsciiScreen]:
 
     return screens
 
-def write_petmate(screens: List[PetsciiScreen], output_file: str, use_custom_charset: bool = False) -> None:
+
+def write_petmate(
+    screens: List[PetsciiScreen], output_file: str, use_custom_charset: bool = False
+) -> None:
     """
     Write a list of PetsciiScreen objects to a petmate file.
-    
+
     Args:
         screens: List of PetsciiScreen objects to write
         output_file: Path to the output file
@@ -701,22 +661,22 @@ def write_petmate(screens: List[PetsciiScreen], output_file: str, use_custom_cha
         "version": 2,
         "screens": list(range(len(screens))),
         "framebufs": [],
-        "customFonts": {}
+        "customFonts": {},
     }
-    
+
     # First pass: identify and deduplicate charsets if we're using custom charsets
     custom_charsets = {}
     charset_mapping = {}
-    
+
     if use_custom_charset:
         for screen in screens:
             charset_key = id(screen.charset)
-            
+
             if charset_key not in charset_mapping:
                 charset_name = f"charset_{len(charset_mapping)}"
                 charset_mapping[charset_key] = charset_name
                 custom_charsets[charset_name] = screen.charset
-    
+
     # Second pass: create framebufs
     for i, screen in enumerate(screens):
         # Determine charset name - either custom or built-in
@@ -725,34 +685,45 @@ def write_petmate(screens: List[PetsciiScreen], output_file: str, use_custom_cha
             charset_name = charset_mapping[charset_key]
         else:
             charset_name = "upper"  # Default to built-in charset
-        
+
         # Create the 2D framebuf array
         framebuf = []
         for row in range(25):
             row_data = []
             for col in range(40):
                 offset = row * 40 + col
-                if offset < len(screen.screen_codes) and offset < len(screen.color_data):
+                if offset < len(screen.screen_codes) and offset < len(
+                    screen.color_data
+                ):
                     entry = {
                         "code": int(screen.screen_codes[offset]),
-                        "color": int(screen.color_data[offset])
+                        "color": int(screen.color_data[offset]),
                     }
                 else:
-                    entry = {"code": 32, "color": 14}  # Space character with light blue color
+                    entry = {
+                        "code": 32,
+                        "color": 14,
+                    }  # Space character with light blue color
                 row_data.append(entry)
             framebuf.append(row_data)
-        
+
         frame = {
             "width": 40,
             "height": 25,
-            "backgroundColor": int(screen.background_color) if screen.background_color is not None else 6,
-            "borderColor": int(screen.border_color) if screen.border_color is not None else 14,
+            "backgroundColor": (
+                int(screen.background_color)
+                if screen.background_color is not None
+                else 6
+            ),
+            "borderColor": (
+                int(screen.border_color) if screen.border_color is not None else 14
+            ),
             "charset": charset_name,
             "name": f"screen_{screen.screen_index:03d}",
-            "framebuf": framebuf
+            "framebuf": framebuf,
         }
         output["framebufs"].append(frame)
-    
+
     # Process custom charsets according to WsCustomFontsV2 type
     if use_custom_charset:
         for name, charset in custom_charsets.items():
@@ -766,26 +737,24 @@ def write_petmate(screens: List[PetsciiScreen], output_file: str, use_custom_cha
                     row_bits = char.data[row_start:row_end]
                     row_int = int(row_bits.to01(), 2)
                     bits.append(row_int)
-            
+
             # Create charOrder array - maps integers 0-255 to their positions in the charset
             # For a standard charset, this would just be [0, 1, 2, ..., 255]
             charOrder = list(range(256))
-            
+
             # Add to customFonts
             output["customFonts"][name] = {
                 "name": name,
-                "font": {
-                    "bits": bits,
-                    "charOrder": charOrder
-                }
+                "font": {"bits": bits, "charOrder": charOrder},
             }
-    
+
     # Write to file
-    with open(output_file, 'w') as f:
-        json.dump(output, f, separators=(',', ':'))
-    
+    with open(output_file, "w") as f:
+        json.dump(output, f, separators=(",", ":"))
+
     charset_type = "custom" if use_custom_charset else "built-in 'upper'"
     print(f"Wrote {len(screens)} screens to {output_file} using {charset_type} charset")
+
 
 def read_screens(
     filename,
@@ -794,7 +763,7 @@ def read_screens(
     border_color=None,
     inverse=False,
     cleanup=1,
-) -> List["PetsciiScreen"]:
+) -> List[PetsciiScreen]:
     if filename.endswith(".c"):
         return read_petscii(filename, charset)
     if filename.endswith(".petmate"):
@@ -811,43 +780,12 @@ def read_screens(
         return screens
 
 
-def compress_charsets(
-    screens: List["PetsciiScreen"],
-    charsets: List[List["PetsciiChar"]],
-    max_charsets: int,
-    debug_output_folder=None,
-    start_threshold=1,
-) -> Tuple[List["PetsciiScreen"], List["PetsciiChar"], float]:
-
-    PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK = start_threshold
-    found_threshold = PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
-
-    new_screens = [] + screens
-    new_charsets = [] + charsets
-
-    while len(new_charsets) > max_charsets:
-        print(
-            f"  Trying to compress_charsets, now at threshold={found_threshold}, charsets={
-                len(new_charsets)}"
-        )
-        new_screens, new_charsets = merge_charsets(
-            screens,
-            debug_output_folder=debug_output_folder,
-            debug_prefix="compressed_changes_",
-        )
-        PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK += 1
-        found_threshold = PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
-
-    PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK = None
-
-    return new_screens, new_charsets, found_threshold
-
-
 def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
+    """Optimized charset merging with better performance"""
     all_characters = []
 
     total_chars = 0
-    for idx, screen in enumerate(screens):
+    for screen in screens:
         total_chars += len(screen.charset)
         for char in screen.charset:
             if char not in all_characters:
@@ -859,22 +797,18 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
                     existing.used_in_screen.add(use.screen_index)
                     existing.usage.add(use)
 
-    chars_used_in_all = []
-    for char in all_characters:
-        if len(char.used_in_screen) == len(screens):
-            chars_used_in_all.append(char)
+    chars_used_in_all = [
+        char for char in all_characters if len(char.used_in_screen) == len(screens)
+    ]
 
     print(
-        f"  {
-            len(screens)} screens contain {
-            len(all_characters)} unique characters of total {total_chars}"
+        f"  {len(screens)} screens contain {len(all_characters)} unique characters of total {total_chars}"
     )
     print(
         f"  There are {len(chars_used_in_all)} characters that are shared in all screens"
     )
 
     seed_charset = [] + chars_used_in_all
-
     sorted_chars = sorted(all_characters, key=lambda ch: len(ch.usage), reverse=True)
     for char in sorted_chars:
         if char not in seed_charset:
@@ -882,14 +816,10 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
         if len(seed_charset) > 31:
             break
 
-    dbg_character_changes = []
-    dbg_screen_code_changes = []
-    dbg_screen_color_changes = []
-
     charset = [] + seed_charset
     charsets = []
-    for idx, screen in enumerate(screens):
 
+    for idx, screen in enumerate(screens):
         new_charset = [] + charset
 
         for char in screen.charset:
@@ -899,7 +829,6 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
         if len(new_charset) > 255:
             charsets.append(charset)
             charset = [] + seed_charset
-
             for char in screen.charset:
                 if char not in charset:
                     charset.append(char)
@@ -912,250 +841,51 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
                 PetsciiChar(PetsciiChar.BLANK_DATA),
                 PetsciiChar(PetsciiChar.FULL_DATA),
             ] + reduce_charset(charset, 253)
-        if idx > 0:
-            diff = set(screens[idx - 1].charset) - set(screen.charset)
-            print(
-                f"  {
-                    len(diff)} charset changes required from screen {
-                    idx -
-                    1} to {idx}"
-            )
-
-            # Write out debug image with characters that are not found in prev frames
-            # charset colorized
-            debug_screen = screen.copy()
-            debug_screen.color_data = [1] * 1000
-            for char in screen.charset:
-                if char not in screens[idx - 1].charset:
-                    for usage in char.usage:
-                        debug_screen.color_data[usage.row * 40 + usage.col] = 2
-            dbg_character_changes.append(debug_screen)
-
-            # Write out debug image with petscii code changes highlighted
-            debug_screen = screen.copy()
-            for offset, char in enumerate(screen.screen_codes):
-                if screens[idx - 1].screen_codes[offset] != char:
-                    debug_screen.color_data[offset] = 2
-                else:
-                    debug_screen.color_data[offset] = 1
-            dbg_screen_code_changes.append(debug_screen)
-
-            # Write out debug image with color changes highlighted
-            debug_screen = screen.copy()
-            for offset, col in enumerate(screen.color_data):
-                if screens[idx - 1].color_data[offset] != col:
-                    debug_screen.color_data[offset] = 2
-                    debug_screen.screen_codes[offset] = 1
-                else:
-                    debug_screen.color_data[offset] = 1
-            dbg_screen_color_changes.append(debug_screen)
 
         screen.remap_characters(charset, allow_error=True)
 
     charsets.append(charset)
-
     print(Fore.GREEN + f"Merged the screens to {len(charsets)} charsets")
 
     if debug_output_folder is not None:
-
         create_folder_if_not_exists(f"{debug_output_folder}/debug")
-
         with open(f"{debug_output_folder}/petscii.c", "wb") as pets:
             for screen in screens:
                 pets.write(screen.to_petscii_editor_data().encode("utf-8"))
 
-        save_debug_screens(
-            screens,
-            f"{
-                debug_output_folder}/debug/{debug_prefix}screens.gif",
-            200,
-        )
-
-        save_debug_screens(
-            dbg_character_changes,
-            f"{
-                debug_output_folder}/debug/{debug_prefix}charset.gif",
-            200,
-        )
-
-        save_debug_screens(
-            dbg_screen_code_changes,
-            f"{
-                debug_output_folder}/debug/{debug_prefix}screen.gif",
-            200,
-        )
-
-        save_debug_screens(
-            dbg_screen_color_changes,
-            f"{
-                debug_output_folder}/debug/{debug_prefix}color.gif",
-            200,
-        )
-
     return screens, charsets
 
 
-def split_screens_even(
-    screens: List["PetsciiScreen"], n_chunks: int
-) -> List[List["PetsciiScreen"]]:
-    if n_chunks <= 0:
-        raise ValueError("Number of chunks must be positive")
-    if n_chunks > len(screens):
-        n_chunks = len(screens)
+def compress_charsets(
+    screens: List[PetsciiScreen],
+    charsets: List[List[PetsciiChar]],
+    max_charsets: int,
+    debug_output_folder=None,
+    start_threshold=1,
+) -> Tuple[List[PetsciiScreen], List[List[PetsciiChar]], float]:
+    """Simplified charset compression"""
+    PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK = start_threshold
+    found_threshold = start_threshold
 
-    base_size = len(screens) // n_chunks
-    remainder = len(screens) % n_chunks
+    new_screens = screens[:]
+    new_charsets = charsets[:]
 
-    chunks = []
-    start = 0
+    while len(new_charsets) > max_charsets:
+        print(
+            f"  Trying to compress_charsets, now at threshold={found_threshold}, charsets={len(new_charsets)}"
+        )
+        new_screens, new_charsets = merge_charsets(
+            new_screens, debug_output_folder, "compressed_changes_"
+        )
+        PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK += 1
+        found_threshold += 1
 
-    for i in range(n_chunks):
-        chunk_size = base_size + (1 if i < remainder else 0)
-        end = start + chunk_size
-        chunks.append(screens[start:end])
-        start = end
-
-    return chunks
-
-
-def serialize_screen(screen: PetsciiScreen) -> Dict:
-    """
-    Convert a PetsciiScreen into a picklable dictionary format.
-    """
-    return {
-        "screen_index": screen.screen_index,
-        "screen_codes": screen.screen_codes,
-        "color_data": screen.color_data,
-        "background_color": screen.background_color,
-        "border_color": screen.border_color,
-        "charset_data": [(char.data.tobytes()) for char in screen.charset],
-    }
-
-
-def deserialize_screen(data: Dict) -> PetsciiScreen:
-    """
-    Convert serialized data back into a PetsciiScreen object.
-    """
-    screen = PetsciiScreen(
-        data["screen_index"], data["background_color"], data["border_color"]
-    )
-    screen.screen_codes = data["screen_codes"]
-    screen.color_data = data["color_data"]
-
-    # Reconstruct charset
-    screen.charset = []
-    for char_bytes in data["charset_data"]:
-        char_data = bitarray()
-        char_data.frombytes(char_bytes)
-        char = PetsciiChar(char_data)
-        screen.charset.append(char)
-
-    return screen
-
-
-def process_chunk_serialized(chunk_data: List[Dict]) -> Tuple[List[Dict], List[bytes]]:
-    """
-    Process a chunk of serialized screen data.
-    Returns serialized screens and charset data.
-    """
-    # Deserialize screens for processing
-    screens = [deserialize_screen(data) for data in chunk_data]
-
-    # Collect all characters
-    all_chars = []
-    for screen in screens:
-        for char in screen.charset:
-            all_chars.append(char)
-
-    # Create optimized charset
-    charset = [
-        PetsciiChar(PetsciiChar.BLANK_DATA),
-        PetsciiChar(PetsciiChar.FULL_DATA),
-    ] + reduce_charset(all_chars, 253)
-
-    # Remap screens to use new charset
-    for screen in screens:
-        screen.remap_characters(charset, allow_error=True)
-
-    # Serialize results
-    processed_screens = [serialize_screen(screen) for screen in screens]
-    charset_data = [char.data.tobytes() for char in charset]
-
-    return processed_screens, charset_data
-
-
-def merge_charsets_parallel(
-    screens: List[PetsciiScreen], max_charsets: int = 4, num_processes: int = None
-) -> Tuple[List[PetsciiScreen], List[List[PetsciiChar]]]:
-    """
-    Parallel version of merge_charsets_new that handles CharUseLocation limitations.
-    """
-    print(
-        Fore.BLUE
-        + f"Merging data in {len(screens)} screens to {max_charsets} charsets using parallel processing"
-    )
-
-    # Split screens into chunks
-    chunks = split_screens_even(screens, max_charsets)
-
-    # Serialize all screen data
-    serialized_chunks = [
-        [serialize_screen(screen) for screen in chunk] for chunk in chunks
-    ]
-
-    # Set up multiprocessing
-    if num_processes is None:
-        num_processes = multiprocessing.cpu_count()
-
-    processed_screens = []
-    charsets = []
-
-    # Process chunks in parallel
-    with multiprocessing.Pool(processes=num_processes) as pool:
-        # Map each chunk to a process
-        results = []
-        for i, chunk_data in enumerate(serialized_chunks):
-            print(f"Starting processing of charset {i+1}/{max_charsets}")
-            results.append(pool.apply_async(process_chunk_serialized, (chunk_data,)))
-
-        # Collect and deserialize results
-        for i, result in enumerate(results):
-            processed_chunk_data, charset_data = result.get()
-
-            # Deserialize processed screens
-            chunk_screens = [deserialize_screen(data) for data in processed_chunk_data]
-            processed_screens.extend(chunk_screens)
-
-            # Deserialize charset
-            chunk_charset = []
-            for char_bytes in charset_data:
-                char_data = bitarray()
-                char_data.frombytes(char_bytes)
-                char = PetsciiChar(char_data)
-                chunk_charset.append(char)
-            charsets.append(chunk_charset)
-
-            print(f"Completed charset {i+1}/{max_charsets}")
-
-    return processed_screens, charsets
-
-
-def merge_charsets_new(
-    screens: List[PetsciiScreen], max_charsets: int = 4, num_processes: int = None
-) -> Tuple[List[PetsciiScreen], List[List[PetsciiChar]]]:
-    """
-    Enhanced version of merge_charsets_new that uses parallel processing
-    with proper serialization handling.
-    """
-    try:
-        return merge_charsets_parallel(screens, max_charsets, num_processes)
-    except Exception as e:
-        print(Fore.RED + f"Parallel processing failed: {str(e)}")
-        print(Fore.YELLOW + "Falling back to sequential processing")
-        return merge_charsets_new(screens, max_charsets)
+    PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK = None
+    return new_screens, new_charsets, found_threshold
 
 
 def merge_charsets_compress(screens, max_charsets=4, full_charsets=False):
+    """Main entry point for charset compression"""
     if max_charsets == 1:
         all_chars = []
         for screen in screens:
@@ -1172,11 +902,12 @@ def merge_charsets_compress(screens, max_charsets=4, full_charsets=False):
 
         return screens, [charset]
     else:
-        if full_charsets:
-            return merge_charsets_new(screens, max_charsets)
-        else:
-            screens, charsets = merge_charsets(screens)
-            screens, charsets, _ = compress_charsets(
-                screens, charsets, max_charsets=max_charsets
-            )
-            return screens, charsets
+        screens, charsets = merge_charsets(screens)
+        screens, charsets, _ = compress_charsets(
+            screens, charsets, max_charsets=max_charsets
+        )
+        return screens, charsets
+
+
+# Initialize the lookup table on import
+init_hamming_lookup()

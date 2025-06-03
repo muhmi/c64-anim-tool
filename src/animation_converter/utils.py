@@ -80,17 +80,20 @@ def copy_file(source_path, destination_folder):
 
 
 def get_resource_path(relative_path):
-    if getattr(sys, "frozen", False):
+    if "__compiled__" in globals():
+        # Running inside nuitka
+        base_path = Path(os.path.dirname(__file__))
+    elif getattr(sys, "frozen", False):
         # Running in PyInstaller bundle
         base_path = Path(sys._MEIPASS)
     else:
         # Running in normal Python environment
         base_path = Path(__file__).parent.parent.parent
 
-    # test_path = base_path / relative_path
-    # print(f"Path: {test_path}")
-    # print(f"Path exists: {test_path.exists()}")
-    # print(f"Contents: {list(test_path.glob('*'))}")
+    test_path = base_path / relative_path
+    print(f"Path: {test_path}")
+    print(f"Path exists: {test_path.exists()}")
+    print(f"Contents: {list(test_path.glob('*'))}")
 
     return base_path / relative_path
 
