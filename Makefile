@@ -50,7 +50,6 @@ distribute: ## Create standalone exe with Nuitka (optimized)
 		--include-data-dir=bins=bins \
 		--follow-imports \
 		--lto=yes \
-		--jobs=auto \
 		--show-progress \
 		--assume-yes-for-downloads \
 		--warn-implicit-exceptions \
