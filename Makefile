@@ -28,8 +28,8 @@ update-requirements: ## Update requirements.txt with installed packages
 
 format-python: ## Autoformat python code
 	@echo "$(COLOR_YELLOW)Formatting python files...$(COLOR_RESET)"
-	@black .
-	@isort .
+	@black . --extend-exclude="/\.venv[^/]*/"
+	@isort . --skip-glob=".venv*"
 	@echo "$(COLOR_YELLOW)done.$(COLOR_RESET)"
 
 test-nuitka: ## Test if Nuitka is working
