@@ -1,22 +1,17 @@
 import json
 import os
+import random
 import re
 import sys
 from functools import lru_cache
 from io import StringIO
 from typing import Dict, List, Tuple
-import random
 
 from bitarray import bitarray
 from colorama import Fore
 from PIL import Image, ImageDraw, ImageSequence
-from utils import (
-    create_folder_if_not_exists,
-    rgb_to_idx,
-    save_images_as_gif,
-    vicPalette,
-    write_bin,
-)
+from utils import (create_folder_if_not_exists, rgb_to_idx, save_images_as_gif,
+                   vicPalette, write_bin)
 
 
 class CharUseLocation:
@@ -326,6 +321,7 @@ class PetsciiScreen:
         self.color_data = [0] * 1000
         self.background_color = background_color
         self.border_color = border_color
+        self.duration = 40
         self.charset = []
 
     def read(self, image, default_charset=None, inverse=False, cleanup=1):
@@ -499,6 +495,7 @@ class PetsciiScreen:
         # Copy screen_codes and color_data
         new_screen.screen_codes = self.screen_codes.copy()
         new_screen.color_data = self.color_data.copy()
+        new_screen.duration = self.duration
 
         # Deep copy of charset
         new_screen.charset = [PetsciiChar(char.data.copy()) for char in self.charset]
@@ -772,7 +769,10 @@ def read_screens(
         screens = []
         img = Image.open(filename)
         for idx, frame in enumerate(ImageSequence.Iterator(img)):
+            duration = frame.info.get("duration", 40)
+            print(f"Frame {idx}: {duration}ms")
             screen = PetsciiScreen(idx, background_color, border_color)
+            screen.duration = duration
             screen.read(frame, charset, inverse, cleanup)
             screens.append(screen)
         if len(screens) == 1:

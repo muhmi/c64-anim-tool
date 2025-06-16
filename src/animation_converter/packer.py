@@ -119,6 +119,7 @@ class Packer:
         self.EFFECT_START_ADDRESS = 0x3000
         self.ANIM_START_ADDRESS = "*"
         self.COLOR_ANIM_SLOWDOWN = 0
+        self.ANIM_FORCE_FRAME_DELAY = None
         self.FILL_COLOR_MIN_SEQ_LEN = 10
         self.FILL_COLOR_MAX_SEQ_LEN = 127
 
@@ -139,6 +140,7 @@ class Packer:
         self.OP_CLEAR_COLOR = self.add_op("player_op_clear_color")
         self.OP_FULL_SCREEN_2x2_BLOCKS = self.add_op("player_op_fullscreen_2x2_blocks")
         self.OP_PER_ROW_CHANGES = self.add_op("player_op_per_row_changes")
+        self.OP_FRAME_DURATION = self.add_op("player_set_frame_duration")
 
         for macro_block in self.get_macro_blocks():
             for block in self.get_blocks(macro_block):
@@ -392,6 +394,7 @@ class Packer:
         screens: List[PetsciiScreen],
         charsets: List[List[int]],
         use_color=False,
+        anim_slowdown_frames=None,  # Force anim to run at constant frame delay
         allow_debug_output=False,
     ):
         anim_stream = []
@@ -403,6 +406,7 @@ class Packer:
         self.OPS_USED = set()
         self.USED_BLOCKS = set()
         self.USED_MACRO_BLOCKS = set()
+        self.ANIM_FORCE_FRAME_DELAY = anim_slowdown_frames
 
         for idx, screen in enumerate(screens):
             for macro_block in self.get_macro_blocks():
@@ -427,6 +431,13 @@ class Packer:
                             self.USED_MACRO_BLOCKS.add(macro_block)
 
         for idx, screen in enumerate(screens):
+            if self.ANIM_FORCE_FRAME_DELAY is None:
+                # Varying per frame duration
+                anim_stream.append(self.OP_FRAME_DURATION)
+                anim_stream.append(screen.duration // 20)
+            else:
+                pass  # Frame duration is fixed
+
             if screen.border_color is not None and prev_border != screen.border_color:
                 anim_stream.append(self.OP_SET_BORDER)
                 anim_stream.append(screen.border_color)
@@ -555,6 +566,8 @@ class Packer:
                                 else:
                                     color[screen_offset] = read_next_byte()
                 return False
+            elif op_code == self.OP_FRAME_DURATION:
+                read_next_byte()  # read frame duration, ignore it here
 
             elif op_code == self.OP_SET_DEST_PTR:
                 block_idx = read_next_byte()
@@ -697,7 +710,6 @@ class Packer:
         screens: List[PetsciiScreen],
         charsets: List[List[PetsciiChar]],
         output_folder: str,
-        anim_slowdown_frames: int,
         use_color: bool = False,
         optimize_player: bool = True,
     ):
@@ -812,7 +824,8 @@ class Packer:
             "remove_unused_blocks": optimize_player,
             "FILL_RLE_TEMPLATE_HELPER": self.FILL_RLE_TEMPLATE_HELPER,
             "PLAYER_RLE_END_MARKER": self.RLE_END_MARKER,
-            "TEST_SLOWDOWN": anim_slowdown_frames,
+            "ANIM_FORCE_FRAME_DELAY": self.ANIM_FORCE_FRAME_DELAY,
+            "FRAME_DURATIONS": self.FRAME_DURATIONS,
             "test_music": test_music_filename,
             "ops_in_use": self.OPS_USED,
             "bit_mask": bit_mask,

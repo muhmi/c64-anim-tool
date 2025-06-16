@@ -98,7 +98,7 @@ def parse_arguments():
     parser.add_argument(
         "--anim-slowdown-frames",
         type=int,
-        default=0,
+        default=None,
         help="Slowdown test animation by given frames",
     )
     parser.add_argument(

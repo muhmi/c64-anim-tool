@@ -141,7 +141,9 @@ def main():
 
         packer = Packer(block_size=block_size)
         set_packer_options(anim_change_index, output_file_name, packer, args)
-        anim_stream = packer.pack(screens, charsets, args.use_color)
+        anim_stream = packer.pack(
+            screens, charsets, args.use_color, args.anim_slowdown_frames
+        )
 
         if smallest_size is None or len(anim_stream) < smallest_size:
             smallest_size = len(anim_stream)
@@ -150,7 +152,11 @@ def main():
     packer = Packer(block_size=selected_block_size)
     set_packer_options(anim_change_index, output_file_name, packer, args)
     anim_stream = packer.pack(
-        screens, charsets, args.use_color, allow_debug_output=False
+        screens,
+        charsets,
+        args.use_color,
+        args.anim_slowdown_frames,
+        allow_debug_output=False,
     )
 
     print(
@@ -159,13 +165,7 @@ def main():
 
     utils.write_bin(f"{build_folder}/anim.bin", anim_stream)
 
-    packer.write_player(
-        screens,
-        charsets,
-        build_folder,
-        args.anim_slowdown_frames,
-        args.use_color,
-    )
+    packer.write_player(screens, charsets, build_folder)
 
     print("Writing charsets")
     for idx, charset in enumerate(charsets):
