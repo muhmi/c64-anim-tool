@@ -8,10 +8,16 @@ output-dir = "dist"
 onefile = true
 standalone = true
 
-# Data inclusion (replaces --add-data)
+# Data inclusion - use explicit files instead of directories for binaries
 include-data-dir = [
-    "src/resources/test-program=src/resources/test-program",
-    "bins=bins"
+    "src/resources/test-program=src/resources/test-program"
+]
+
+# Explicitly include all platform binaries
+include-data-files = [
+    "bins/linux/64tass=bins/linux/64tass",
+    "bins/macos/64tass=bins/macos/64tass", 
+    "bins/windows/64tass.exe=bins/windows/64tass.exe"
 ]
 
 # Plugins

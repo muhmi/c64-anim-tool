@@ -3,7 +3,7 @@ COLOR_GREEN=\033[32m
 COLOR_YELLOW=\033[33m
 MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
-.PHONY: help update-requirements format-python distribute distribute-fast distribute-debug distribute-pyinstaller clean test-nuitka check-python
+.PHONY: help update-requirements format-python distribute distribute-fast distribute-debug distribute-pyinstaller clean test-nuitka check-python check-bins
 
 help:
 	@echo "$(COLOR_YELLOW)Available targets:$(COLOR_RESET)"
@@ -19,6 +19,15 @@ check-python: ## Check if Python is compatible with Nuitka
 		echo "  - Homebrew: brew install python"; \
 		echo "  - python.org: https://www.python.org/downloads/macos/"; \
 		echo "  - pyenv: pyenv install 3.11.7"; \
+	fi
+
+check-bins: ## Check bins directory structure
+	@echo "$(COLOR_YELLOW)Checking bins directory...$(COLOR_RESET)"
+	@if [ -d "bins" ]; then \
+		echo "$(COLOR_GREEN)bins directory found$(COLOR_RESET)"; \
+		find bins -type f -exec ls -la {} \; | while read line; do echo "  $$line"; done; \
+	else \
+		echo "$(COLOR_YELLOW)WARNING: bins directory not found!$(COLOR_RESET)"; \
 	fi
 
 update-requirements: ## Update requirements.txt with installed packages
@@ -40,6 +49,7 @@ test-nuitka: ## Test if Nuitka is working
 distribute: ## Create standalone exe with Nuitka (optimized)
 	@echo "$(COLOR_YELLOW)Building animation-tool with Nuitka...$(COLOR_RESET)"
 	@$(MAKE) check-python
+	@$(MAKE) check-bins
 	@mkdir -p dist
 	@PYTHONPATH=src:src/animation_converter python -m nuitka \
 		--onefile \
@@ -47,7 +57,9 @@ distribute: ## Create standalone exe with Nuitka (optimized)
 		--output-filename=animation-tool \
 		--output-dir=dist \
 		--include-data-dir=src/resources/test-program=src/resources/test-program \
-		--include-data-dir=bins=bins \
+		--include-data-files=bins/linux/64tass=bins/linux/64tass \
+		--include-data-files=bins/macos/64tass=bins/macos/64tass \
+		--include-data-files=bins/windows/64tass.exe=bins/windows/64tass.exe \
 		--follow-imports \
 		--lto=yes \
 		--show-progress \
@@ -60,24 +72,31 @@ distribute: ## Create standalone exe with Nuitka (optimized)
 distribute-fast: ## Create standalone exe with Nuitka (fast build)
 	@echo "$(COLOR_YELLOW)Building animation-tool with Nuitka (fast build)...$(COLOR_RESET)"
 	@$(MAKE) check-python
+	@$(MAKE) check-bins
 	@mkdir -p dist
+	@echo "$(COLOR_YELLOW)Explicitly checking files before build:$(COLOR_RESET)"
+	@ls -la bins/linux/64tass bins/macos/64tass bins/windows/64tass.exe
 	@PYTHONPATH=src:src/animation_converter python -m nuitka \
 		--onefile \
 		--standalone \
 		--output-filename=animation-tool \
 		--output-dir=dist \
 		--include-data-dir=src/resources/test-program=src/resources/test-program \
-		--include-data-dir=bins=bins \
+		--include-data-files=bins/linux/64tass=bins/linux/64tass \
+		--include-data-files=bins/macos/64tass=bins/macos/64tass \
+		--include-data-files=bins/windows/64tass.exe=bins/windows/64tass.exe \
 		--enable-plugin=numpy \
 		--enable-plugin=multiprocessing \
 		--follow-imports \
 		--assume-yes-for-downloads \
+		--verbose \
 		src/animation_converter/main.py
 	@echo "$(COLOR_GREEN)Fast build complete: dist/animation-tool$(COLOR_RESET)"
 
 distribute-debug: ## Create debug build with Nuitka
 	@echo "$(COLOR_YELLOW)Building animation-tool with Nuitka (debug)...$(COLOR_RESET)"
 	@$(MAKE) check-python
+	@$(MAKE) check-bins
 	@mkdir -p dist
 	@PYTHONPATH=src:src/animation_converter python -m nuitka \
 		--onefile \
@@ -85,7 +104,9 @@ distribute-debug: ## Create debug build with Nuitka
 		--output-filename=animation-tool-debug \
 		--output-dir=dist \
 		--include-data-dir=src/resources/test-program=src/resources/test-program \
-		--include-data-dir=bins=bins \
+		--include-data-files=bins/linux/64tass=bins/linux/64tass \
+		--include-data-files=bins/macos/64tass=bins/macos/64tass \
+		--include-data-files=bins/windows/64tass.exe=bins/windows/64tass.exe \
 		--enable-plugin=numpy \
 		--enable-plugin=multiprocessing \
 		--follow-imports \

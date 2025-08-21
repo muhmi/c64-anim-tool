@@ -1,4 +1,5 @@
 import os
+import platform
 import subprocess
 
 import utils
@@ -9,7 +10,42 @@ def get_build_path():
 
 
 def get_c64tass_path():
-    return utils.get_resource_path(os.path.join("bins", "macos", "64tass"))
+    """Get the correct 64tass binary path based on the current operating system."""
+    system = platform.system().lower()
+
+    # Map platform.system() output to our directory names
+    if system == "darwin":
+        platform_dir = "macos"
+        binary_name = "64tass"
+    elif system == "linux":
+        platform_dir = "linux"
+        binary_name = "64tass"
+    elif system == "windows":
+        platform_dir = "windows"
+        binary_name = "64tass.exe"
+    else:
+        # Fallback to linux for unknown systems
+        print(f"Warning: Unknown platform '{system}', defaulting to linux binary")
+        platform_dir = "linux"
+        binary_name = "64tass"
+
+    binary_path = utils.get_resource_path(
+        os.path.join("bins", platform_dir, binary_name)
+    )
+
+    # Verify the binary exists
+    if not os.path.exists(binary_path):
+        raise FileNotFoundError(f"64tass binary not found at {binary_path}")
+
+    # Make sure the binary is executable on Unix-like systems
+    if platform_dir in ["macos", "linux"]:
+        try:
+            os.chmod(binary_path, 0o755)
+        except PermissionError:
+            print(f"Warning: Could not make {binary_path} executable")
+
+    print(f"Using 64tass binary: {binary_path}")
+    return binary_path
 
 
 def clean_build():
