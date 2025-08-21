@@ -23,6 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install build dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-make
+
       - name: Build 64tass (Linux/macOS)
         if: matrix.os != 'windows-latest'
         working-directory: ./external-sources/64tass
@@ -35,11 +42,11 @@ jobs:
       - name: Build 64tass (Windows)
         if: matrix.os == 'windows-latest'
         working-directory: ./external-sources/64tass
-        shell: cmd
+        shell: msys2 {0}
         run: |
-          make
-          mkdir ..\..\bins\${{ matrix.platform_name }}
-          copy ${{ matrix.binary_name }} ..\..\bins\${{ matrix.platform_name }}\
+          make CC=gcc TARGET=64tass.exe
+          mkdir -p ../../bins/${{ matrix.platform_name }}
+          cp 64tass.exe ../../bins/${{ matrix.platform_name }}/
 
       - name: Upload platform binary
         uses: actions/upload-artifact@v4
