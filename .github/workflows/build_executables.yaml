@@ -6,12 +6,25 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            platform_name: ubuntu
+            binary_name: animation-tool
+          - os: macos-latest
+            platform_name: macos
+            binary_name: animation-tool
+          - os: windows-latest
+            platform_name: windows
+            binary_name: animation-tool.exe
 
     steps:
     - uses: actions/checkout@v4
@@ -27,18 +40,103 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
-    - name: Build with Make
+    - name: Build with Make (Linux/macOS)
+      if: matrix.os != 'windows-latest'
+      run: make distribute
+
+    - name: Build with Make (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: cmd
       run: make distribute
 
     - name: Prepare artifacts
+      shell: bash
       run: |
-        mkdir -p ${{ matrix.os == 'ubuntu-latest' && 'ubuntu' || 'macos' }}
-        cp dist/animation-tool ${{ matrix.os == 'ubuntu-latest' && 'ubuntu' || 'macos' }}/
+        mkdir -p ${{ matrix.platform_name }}
+        if [ "${{ matrix.os }}" == "windows-latest" ]; then
+          cp dist/${{ matrix.binary_name }} ${{ matrix.platform_name }}/
+        else
+          cp dist/animation-tool ${{ matrix.platform_name }}/
+        fi
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: animation-tool-${{ matrix.os }}
         path: |
-          ${{ matrix.os == 'ubuntu-latest' && 'ubuntu' || 'macos' }}/*
+          ${{ matrix.platform_name }}/*
           README.md
+
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Debug artifact structure
+        run: |
+          echo "Artifact structure:"
+          find release-assets -type f -ls
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release-files
+          # Copy and rename files for release
+          cp release-assets/animation-tool-ubuntu-latest/ubuntu/animation-tool release-files/animation-tool-linux
+          cp release-assets/animation-tool-macos-latest/macos/animation-tool release-files/animation-tool-macos
+          cp release-assets/animation-tool-windows-latest/windows/animation-tool.exe release-files/animation-tool-windows.exe
+
+          # Copy README if available
+          if [ -f "release-assets/animation-tool-ubuntu-latest/README.md" ]; then
+            cp release-assets/animation-tool-ubuntu-latest/README.md release-files/
+          fi
+
+          echo "Release files:"
+          ls -la release-files/
+
+      - name: Get version info
+        id: version
+        run: |
+          # Try to get version from your project (adjust this based on your versioning)
+          if [ -f "version.txt" ]; then
+            VERSION=$(cat version.txt)
+          elif [ -f "setup.py" ] && grep -q "version=" setup.py; then
+            VERSION=$(grep "version=" setup.py | cut -d'"' -f2)
+          else
+            VERSION="v$(date +'%Y.%m.%d')"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=release-$VERSION-$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          name: "Animation Tool ${{ steps.version.outputs.version }}"
+          body: |
+            🎬 **C64 Animation Tool Release**
+
+            Automated build from main branch
+
+            **Commit:** ${{ github.sha }}
+            **Build Date:** $(date +'%Y-%m-%d %H:%M:%S UTC')
+
+            **Downloads:**
+            - 🐧 **Linux**: animation-tool-linux
+            - 🍎 **macOS**: animation-tool-macos
+            - 🪟 **Windows**: animation-tool-windows.exe
+
+            Each archive contains the animation-tool executable and README.md
+          files: |
+            release-files/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
