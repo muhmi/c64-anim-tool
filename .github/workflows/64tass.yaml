@@ -82,6 +82,22 @@ jobs:
         with:
           path: release-assets
       
+      - name: Debug artifact structure
+        run: |
+          echo "Artifact structure:"
+          find release-assets -type f -ls
+      
+      - name: Prepare release files
+        run: |
+          mkdir -p release-files
+          # Copy and rename files for release
+          cp release-assets/64tass-Linux/64tass release-files/64tass-linux
+          cp release-assets/64tass-Darwin/64tass release-files/64tass-macos
+          cp release-assets/64tass-Windows/64tass.exe release-files/64tass-windows.exe
+          
+          echo "Release files:"
+          ls -la release-files/
+      
       - name: Create release tag
         id: tag
         run: |
@@ -99,11 +115,11 @@ jobs:
             Built from commit: ${{ github.sha }}
             
             **Downloads:**
-            - Linux: 64tass-Linux.zip
-            - macOS: 64tass-Darwin.zip  
-            - Windows: 64tass-Windows.zip
+            - Linux: 64tass-linux
+            - macOS: 64tass-macos  
+            - Windows: 64tass-windows.exe
           files: |
-            release-assets/**/*
+            release-files/*
           draft: false
           prerelease: false
         env:
