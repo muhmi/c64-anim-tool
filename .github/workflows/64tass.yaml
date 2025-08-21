@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
             binary_name: 64tass
@@ -16,11 +16,15 @@ jobs:
           - os: macos-latest
             binary_name: 64tass
             platform_name: Darwin
+          - os: windows-latest
+            binary_name: 64tass.exe
+            platform_name: Windows
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build 64tass
+      - name: Build 64tass (Linux/macOS)
+        if: matrix.os != 'windows-latest'
         working-directory: ./external-sources/64tass
         shell: bash
         run: |
@@ -28,9 +32,58 @@ jobs:
           mkdir -p ../../bins/${{ matrix.platform_name }}
           cp ${{ matrix.binary_name }} ../../bins/${{ matrix.platform_name }}/
 
+      - name: Build 64tass (Windows)
+        if: matrix.os == 'windows-latest'
+        working-directory: ./external-sources/64tass
+        shell: cmd
+        run: |
+          make
+          mkdir ..\..\bins\${{ matrix.platform_name }}
+          copy ${{ matrix.binary_name }} ..\..\bins\${{ matrix.platform_name }}\
+
       - name: Upload platform binary
         uses: actions/upload-artifact@v4
         with:
           name: 64tass-${{ matrix.platform_name }}
           path: bins/${{ matrix.platform_name }}/${{ matrix.binary_name }}
           retention-days: 90
+
+  create-release:
+    needs: build-64tass
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+      
+      - name: Create release tag
+        id: tag
+        run: |
+          TAG_NAME="64tass-$(date +'%Y%m%d-%H%M%S')"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.tag_name }}
+          name: "64tass Build ${{ steps.tag.outputs.tag_name }}"
+          body: |
+            Automated build of 64tass
+            
+            Built from commit: ${{ github.sha }}
+            
+            **Downloads:**
+            - Linux: 64tass-Linux.zip
+            - macOS: 64tass-Darwin.zip  
+            - Windows: 64tass-Windows.zip
+          files: |
+            release-assets/**/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
