@@ -3,6 +3,9 @@ name: Build 64tass
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-64tass:
     runs-on: ${{ matrix.os }}
