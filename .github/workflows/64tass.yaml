@@ -47,20 +47,15 @@ jobs:
         working-directory: ./external-sources/64tass
         shell: msys2 {0}
         run: |
-          # Debug: check what's available
-          echo "PATH: $PATH"
-          which make || echo "make not found"
-          which gcc || echo "gcc not found"
-
-          # Try using the Windows-specific Makefile
+          # Build using Makefile.win but override problematic flags
           if [ -f "Makefile.win" ]; then
-            echo "Using Makefile.win"
-            make -f Makefile.win
+            echo "Using Makefile.win with 64-bit settings"
+            make -f Makefile.win CC=gcc CFLAGS="-O2 -W -Wall -Wextra -Wwrite-strings -Wshadow -fstrict-aliasing -Wstrict-aliasing=2"
           else
             echo "Using default Makefile"
             make CC=gcc TARGET=64tass.exe
           fi
-
+          
           mkdir -p ../../bins/${{ matrix.platform_name }}
           cp 64tass.exe ../../bins/${{ matrix.platform_name }}/
 
@@ -75,21 +70,21 @@ jobs:
     needs: build-64tass
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
-
+    
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: release-assets
-
+      
       - name: Create release tag
         id: tag
         run: |
           TAG_NAME="64tass-$(date +'%Y%m%d-%H%M%S')"
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-
+      
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -97,12 +92,12 @@ jobs:
           name: "64tass Build ${{ steps.tag.outputs.tag_name }}"
           body: |
             Automated build of 64tass
-
+            
             Built from commit: ${{ github.sha }}
-
+            
             **Downloads:**
             - Linux: 64tass-Linux.zip
-            - macOS: 64tass-Darwin.zip
+            - macOS: 64tass-Darwin.zip  
             - Windows: 64tass-Windows.zip
           files: |
             release-assets/**/*
