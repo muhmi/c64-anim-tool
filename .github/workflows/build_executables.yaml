@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '.github/**'
   workflow_dispatch:
 
 permissions:
@@ -129,7 +131,6 @@ jobs:
             - 🐧 **Linux**: animation-tool-linux
             - 🍎 **macOS**: animation-tool-macos
             - 🪟 **Windows**: animation-tool-windows.exe
-            Each archive contains the animation-tool executable and README.md
           files: |
             release-files/*
           draft: false
