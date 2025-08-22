@@ -122,17 +122,13 @@ jobs:
           name: "Animation Tool ${{ steps.version.outputs.version }}"
           body: |
             🎬 **C64 Animation Tool Release**
-
             Automated build from main branch
-
             **Commit:** ${{ github.sha }}
-            **Build Date:** $(date +'%Y-%m-%d %H:%M:%S UTC')
-
+            **Build Date:** ${{ github.event.head_commit.timestamp }}
             **Downloads:**
             - 🐧 **Linux**: animation-tool-linux
             - 🍎 **macOS**: animation-tool-macos
             - 🪟 **Windows**: animation-tool-windows.exe
-
             Each archive contains the animation-tool executable and README.md
           files: |
             release-files/*
