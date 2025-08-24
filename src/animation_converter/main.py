@@ -95,6 +95,11 @@ def main():
             screens, args.offset_color_frames
         )
 
+    if args.anim_slowdown_table:
+        args.anim_slowdown_table = utils.parse_int_table(args.anim_slowdown_table)
+        print(f"Reading animation frame slowdown from table, {args.anim_slowdown_table}")
+        args.anim_slowdown_frames = args.anim_slowdown_table[0]
+
     if args.randomize_color_frames:
         print(f"Randomizing color frames with seed {args.randomize_color_frames}")
         screens = color_data_utils.randomize_color_frames(

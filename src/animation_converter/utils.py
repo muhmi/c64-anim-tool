@@ -126,6 +126,25 @@ def locations_with_same_color(screen_for_color_data):
                 points[color] = [y * 40 + x]
     return points
 
+def parse_int_table(value):
+    """
+    Parse a list of values given from CLI or YAML.
+    Supports:
+        - single integer
+        - a string with comma separated list of integers
+        - a list of integers or strings
+    """
+    if isinstance(value, list):
+        return [int(x) for x in value]
+
+    if isinstance(value, (str, int)):
+        str_value = str(value)
+        if ',' in str_value:
+            return [int(x.strip()) for x in str_value.split(',')]
+        else:
+            return [int(str_value)]
+
+    raise ValueError(f"Unsupported type for anim_slowdown_frames: {type(value)}")
 
 class Size2D(NamedTuple):
     x: int
