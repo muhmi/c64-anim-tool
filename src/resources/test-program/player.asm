@@ -1,13 +1,14 @@
 {# This is a template file used by packer.py to create the animation player #}
 ; These must be defined by user:
 .weak
-ANIM_LOCATION                = $8000
-SET_CHARSET_CALLBACK         = $0000
-RESTART_CALLBACK             = $0000
-UNPACK_BUFFER_LOCATION       = $4400
-COLOR_UNPACK_BUFFER_LOCATION = $4800
-PLAYER_BORDER_COLOR_VAR      = $d020
-PLAYER_BACKGROUND_COLOR_VAR  = $d021
+ANIM_LOCATION                     = $8000
+SET_CHARSET_CALLBACK              = player_op_error
+RESTART_CALLBACK                  = player_op_error
+PLAYER_SET_ANIM_SLOWDOWN_CALLBACK = player_op_error
+UNPACK_BUFFER_LOCATION            = $4400
+COLOR_UNPACK_BUFFER_LOCATION      = $4800
+PLAYER_BORDER_COLOR_VAR           = $d020
+PLAYER_BACKGROUND_COLOR_VAR       = $d021
 .endweak
 
 ; Constants
@@ -130,6 +131,12 @@ player_block_tab_hi
 {% endif %}
 {% endfor %}
 
+{% if "player_set_anim_slowndown" in ops_in_use %}
+player_set_anim_slowndown
+	#player_read_next_byte
+	jsr PLAYER_SET_ANIM_SLOWDOWN_CALLBACK
+	rts
+{% endif %}
 
 {% if "player_op_per_row_changes" in ops_in_use %}
 row = player_row

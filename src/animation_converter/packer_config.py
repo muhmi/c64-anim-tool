@@ -1,6 +1,6 @@
 import petscii
 import utils
-from utils import locations_with_same_color
+from utils import locations_with_same_color, parse_int_table
 
 
 def parse_address(address: str):
@@ -53,3 +53,5 @@ def set_packer_options(anim_change_index, output_file_name, packer_to_setup, arg
         packer_to_setup.FILL_COLOR_MIN_SEQ_LEN = args.color_anim_min_seq_len
     if args.color_anim_max_seq_len:
         packer_to_setup.FILL_COLOR_MAX_SEQ_LEN = args.color_anim_max_seq_len
+    if args.anim_slowdown_table:
+        packer_to_setup.ANIM_SLOWDOWN_TABLE = args.anim_slowdown_table

@@ -1,11 +1,13 @@
 {# This is a template file used by packer.py to create the test setup for animation player #}
-SET_CHARSET_CALLBACK         = test_setcharset_index  ; Used by player to signal that we need to change charset when we swap frame
-RESTART_CALLBACK             = test_anim_restarted    ;
-UNPACK_BUFFER_LOCATION       = $0400                  ; Memory address used by player to unpack the frames
-COLOR_UNPACK_BUFFER_LOCATION = $0800                  ; Memory address used by player to unpack the color frames
-SCREEN1_LOCATION             = $4400
-SCREEN2_LOCATION             = $4800
-EFFECT_LOCATION				 = {{ effect_start_address }}
+SET_CHARSET_CALLBACK              = test_setcharset_index  ; Used by player to signal that we need to change charset when we swap frame
+PLAYER_SET_ANIM_SLOWDOWN_CALLBACK = test_set_anim_slowdown ; Used by player to set anim frame slowdown counter
+RESTART_CALLBACK                  = test_anim_restarted    ;
+UNPACK_BUFFER_LOCATION            = $0400                  ; Memory address used by player to unpack the frames
+COLOR_UNPACK_BUFFER_LOCATION      = $0800                  ; Memory address used by player to unpack the color frames
+SCREEN1_LOCATION                  = $4400
+SCREEN2_LOCATION                  = $4800
+EFFECT_LOCATION				      = {{ effect_start_address }}
+
 
 ; Player will now write color changes for border and background to these locations
 PLAYER_BORDER_COLOR_VAR      = test_border_color
@@ -153,6 +155,7 @@ setup_raster_irq .macro
 ; Variables
 {% if TEST_SLOWDOWN > 0 %}
 test_slowdown                 .byte {{ TEST_SLOWDOWN - 1 }}
+test_slowndown_frames         .byte {{ TEST_SLOWDOWN }}
 {% endif %}
 {% if color_anim_slowdown > 0 %}
 test_color_slowdown			  .byte 1
@@ -180,6 +183,13 @@ start
 	lda #255
 	sta test_background_color
 	sta test_border_color
+
+{% if TEST_SLOWDOWN > 0 %}
+	lda #{{ TEST_SLOWDOWN - 1 }}
+	sta test_slowdown
+	lda #{{ TEST_SLOWDOWN }}
+	sta test_slowndown_frames
+{% endif %}
 
 	#screen_off
 	#set_vic_bank 2
@@ -233,7 +243,7 @@ forever
 
 	inc test_slowdown
 	lda test_slowdown
-	cmp #{{ TEST_SLOWDOWN }}
+	cmp test_slowndown_frames
 	bne +
 	lda #0
 	sta test_slowdown
@@ -350,7 +360,7 @@ test_raster_irq .block
 	{% if TEST_SLOWDOWN > 0 %}
 	inc test_slowdown
 	lda test_slowdown
-	cmp #{{ TEST_SLOWDOWN }}
+	cmp test_slowndown_frames
 	bne exit
 	lda #0
 	sta test_slowdown
@@ -621,6 +631,13 @@ test_set_scrolly
 	rts
 
 {% endif %}
+
+test_set_anim_slowdown
+{% if TEST_SLOWDOWN > 0 %}
+	; Update slowdown value we compare our frame counter against
+	sta test_slowndown_frames
+{% endif %}
+	rts
 
 
 test_copy_to_screen1

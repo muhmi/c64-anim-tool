@@ -26,7 +26,7 @@ def load_config_file(file_path: str) -> Dict[str, Any]:
 
 def resolve_file_paths(config_data: Dict[str, Any], config_dir: str, script_dir: str, cwd: str) -> Dict[str, Any]:
     """Resolve file paths in config data, trying multiple base directories."""
-    
+
     def resolve_single_path(value: str) -> str:
         if os.path.isabs(value):
             return value
@@ -48,18 +48,18 @@ def resolve_file_paths(config_data: Dict[str, Any], config_dir: str, script_dir:
 
         # If not found, return the config-relative path as fallback
         return config_relative
-    
+
     def resolve_path_value(value):
         if isinstance(value, str) and ("/" in value or "\\" in value):
             return resolve_single_path(value)
         elif isinstance(value, list):
             return [resolve_single_path(item) if isinstance(item, str) and ("/" in item or "\\" in item) else item for item in value]
         return value
-    
+
     resolved_config = {}
     for key, value in config_data.items():
         resolved_config[key] = resolve_path_value(value)
-    
+
     return resolved_config
 
 
@@ -67,7 +67,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Convert PNG/GIF to C64 PETSCII + charset."
     )
-    
+
     # Make config required and input_files optional
     parser.add_argument(
         "--config",
@@ -75,16 +75,16 @@ def parse_arguments():
         required=True,
         help="Path to config file (YAML) - required",
     )
-    
+
     # Make input_files optional - can be overridden by config or used as fallback
     parser.add_argument(
-        "input_files", 
-        type=str, 
+        "input_files",
+        type=str,
         nargs="*",  # Changed from "+" to "*" to make it optional
         help="Input .c, PNG or GIF files (optional if defined in config)",
         default=[]
     )
-    
+
     # All other arguments remain the same
     parser.add_argument(
         "--charset",
@@ -150,6 +150,12 @@ def parse_arguments():
         type=int,
         default=0,
         help="Slowdown test animation by given frames",
+    )
+    parser.add_argument(
+        "--anim-slowdown-table",
+        type=int,
+        default=0,
+        help="Slowdown test animation by given frames, using this table",
     )
     parser.add_argument(
         "--offset-color-frames",
@@ -297,7 +303,7 @@ def parse_arguments():
     for key, value in config_data.items():
         if key in ['input_files', 'input-files']:
             continue  # Already handled above
-            
+
         # Convert snake_case config keys to dash-style argument names
         arg_key = convert_arg_name(key, to_snake=False)
         # Remove leading dashes if present in the key
