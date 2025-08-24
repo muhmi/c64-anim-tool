@@ -13,14 +13,26 @@ Small & crappy animation tool extracted from stereo demo by phonics.
 Run `animation-tool --help` to get a list of options:
 ```bash
 $ animation-tool --help
+Precalculating hamming lookup...
+🚀 Initialized hamming distance lookup table
+usage: animation-tool [-h] --config CONFIG [--charset CHARSET] [--cleanup CLEANUP] [--color-data COLOR_DATA] [--use-color] [--scroll SCROLL] [--scroll-disable-repeat]
+                      [--limit-charsets LIMIT_CHARSETS] [--full-charsets] [--start-threshold START_THRESHOLD] [--border-color BORDER_COLOR] [--background-color BACKGROUND_COLOR]
+                      [--anim-slowdown-frames ANIM_SLOWDOWN_FRAMES] [--offset-color-frames OFFSET_COLOR_FRAMES] [--randomize-color-frames RANDOMIZE_COLOR_FRAMES] [--disable-rle DISABLE_RLE]
+                      [--inverse INVERSE] [--per-row-mode PER_ROW_MODE] [--init-color-between-anims INIT_COLOR_BETWEEN_ANIMS] [--color-animation COLOR_ANIMATION]
+                      [--color-animation-slowdown COLOR_ANIMATION_SLOWDOWN] [--color-anim-min-seq-len COLOR_ANIM_MIN_SEQ_LEN] [--color-anim-max-seq-len COLOR_ANIM_MAX_SEQ_LEN]
+                      [--color-animation-palette COLOR_ANIMATION_PALETTE] [--music MUSIC] [--template-dir TEMPLATE_DIR] [--output-sources OUTPUT_SOURCES]
+                      [--allow-reorder-frames ALLOW_REORDER_FRAMES] [--non-linear-prg NON_LINEAR_PRG] [--skip-build SKIP_BUILD] [--effect-start-address EFFECT_START_ADDRESS]
+                      [--anim-start-address ANIM_START_ADDRESS] [--write-petmate WRITE_PETMATE]
+                      [input_files ...]
+
 Convert PNG/GIF to C64 PETSCII + charset.
 
 positional arguments:
-  input_files           Input .c, PNG or GIF files.
+  input_files           Input .c, PNG or GIF files (optional if defined in config)
 
 options:
   -h, --help            show this help message and exit
-  --config CONFIG       Path to config file (YAML)
+  --config CONFIG       Path to config file (YAML) - required
   --charset CHARSET     Use this charset instead (.64c or .bin)
   --cleanup CLEANUP     Remove characters with under N pixels
   --color-data COLOR_DATA
@@ -79,6 +91,7 @@ options:
   --write-petmate WRITE_PETMATE
                         Write out a petmate file with petscii animation and charsets
 
+
 ```
 
 ### Generate .prg from GIF animation
@@ -101,6 +114,8 @@ animation-tool test-data/cubez/cubez-24.c --use-color --anim-slowdown-frames=5 -
 Instead of giving all options directly on commandline you can provide a YAML file with options.
 Example config:
 ```yaml
+input_files:
+  - credits.gif
 anim_slowdown_frames: 10
 color_animation: ./warning.c
 color_animation_palette: 1,2,3,4,5,4,3,2,1
