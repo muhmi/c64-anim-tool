@@ -13,16 +13,14 @@ Small & crappy animation tool extracted from stereo demo by phonics.
 Run `animation-tool --help` to get a list of options:
 ```bash
 $ animation-tool --help
-Precalculating hamming lookup...
-🚀 Initialized hamming distance lookup table
 usage: animation-tool [-h] --config CONFIG [--charset CHARSET] [--cleanup CLEANUP] [--color-data COLOR_DATA] [--use-color] [--scroll SCROLL] [--scroll-disable-repeat]
                       [--limit-charsets LIMIT_CHARSETS] [--full-charsets] [--start-threshold START_THRESHOLD] [--border-color BORDER_COLOR] [--background-color BACKGROUND_COLOR]
-                      [--anim-slowdown-frames ANIM_SLOWDOWN_FRAMES] [--offset-color-frames OFFSET_COLOR_FRAMES] [--randomize-color-frames RANDOMIZE_COLOR_FRAMES] [--disable-rle DISABLE_RLE]
-                      [--inverse INVERSE] [--per-row-mode PER_ROW_MODE] [--init-color-between-anims INIT_COLOR_BETWEEN_ANIMS] [--color-animation COLOR_ANIMATION]
-                      [--color-animation-slowdown COLOR_ANIMATION_SLOWDOWN] [--color-anim-min-seq-len COLOR_ANIM_MIN_SEQ_LEN] [--color-anim-max-seq-len COLOR_ANIM_MAX_SEQ_LEN]
-                      [--color-animation-palette COLOR_ANIMATION_PALETTE] [--music MUSIC] [--template-dir TEMPLATE_DIR] [--output-sources OUTPUT_SOURCES]
-                      [--allow-reorder-frames ALLOW_REORDER_FRAMES] [--non-linear-prg NON_LINEAR_PRG] [--skip-build SKIP_BUILD] [--effect-start-address EFFECT_START_ADDRESS]
-                      [--anim-start-address ANIM_START_ADDRESS] [--write-petmate WRITE_PETMATE]
+                      [--anim-slowdown-frames ANIM_SLOWDOWN_FRAMES] [--anim-slowdown-table ANIM_SLOWDOWN_TABLE] [--offset-color-frames OFFSET_COLOR_FRAMES]
+                      [--randomize-color-frames RANDOMIZE_COLOR_FRAMES] [--disable-rle DISABLE_RLE] [--inverse INVERSE] [--per-row-mode PER_ROW_MODE]
+                      [--init-color-between-anims INIT_COLOR_BETWEEN_ANIMS] [--color-animation COLOR_ANIMATION] [--color-animation-slowdown COLOR_ANIMATION_SLOWDOWN]
+                      [--color-anim-min-seq-len COLOR_ANIM_MIN_SEQ_LEN] [--color-anim-max-seq-len COLOR_ANIM_MAX_SEQ_LEN] [--color-animation-palette COLOR_ANIMATION_PALETTE] [--music MUSIC]
+                      [--template-dir TEMPLATE_DIR] [--output-sources OUTPUT_SOURCES] [--allow-reorder-frames ALLOW_REORDER_FRAMES] [--non-linear-prg NON_LINEAR_PRG] [--skip-build SKIP_BUILD]
+                      [--effect-start-address EFFECT_START_ADDRESS] [--anim-start-address ANIM_START_ADDRESS] [--write-petmate WRITE_PETMATE]
                       [input_files ...]
 
 Convert PNG/GIF to C64 PETSCII + charset.
@@ -52,6 +50,8 @@ options:
                         Assume image background is this color
   --anim-slowdown-frames ANIM_SLOWDOWN_FRAMES
                         Slowdown test animation by given frames
+  --anim-slowdown-table ANIM_SLOWDOWN_TABLE
+                        Slowdown test animation by given frames, using this table
   --offset-color-frames OFFSET_COLOR_FRAMES
                         Offset color frames by given value, can be negative
   --randomize-color-frames RANDOMIZE_COLOR_FRAMES
@@ -90,7 +90,6 @@ options:
                         Set anim start address, defaults to after charsets
   --write-petmate WRITE_PETMATE
                         Write out a petmate file with petscii animation and charsets
-
 
 ```
 
