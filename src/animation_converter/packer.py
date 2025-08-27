@@ -735,7 +735,7 @@ class Packer:
         # write a tester for the player
         charset_files = []
         for idx, _ in enumerate(charsets):
-            offset = 0x5800 + (idx * 0x800)
+            offset = 0x5000 + (idx * 0x800)
             charset_files.append((f"charset_{idx}.bin", hex(offset)[2:]))
 
         charset = charsets[0]

@@ -694,7 +694,7 @@ or_value
 	sta $d018
 	rts
 helper_table
-.byte 6, 8, 10, 12, 14
+.byte 4, 6, 8, 10, 12, 14
 .endblock
 EFFECT_END_LOCATION=*
 {% if only_per_row_mode %}
