@@ -764,6 +764,10 @@ class Packer:
         if test_music:
             test_music_filename = os.path.basename(test_music)
 
+        test_music_address = "$1000"
+        if test_music_filename.endswith(".prg"):
+            test_music_address = "$1000-2"
+
         last_used_op_code = 0
         for k, v in self.OP_CODES.items():
             if v not in self.OPS_USED:
@@ -836,6 +840,7 @@ class Packer:
             "PLAYER_RLE_END_MARKER": self.RLE_END_MARKER,
             "TEST_SLOWDOWN": anim_slowdown_frames,
             "test_music": test_music_filename,
+            "test_music_address": test_music_address,
             "ops_in_use": self.OPS_USED,
             "bit_mask": bit_mask,
             "offset_from_macro": offset_from_macro_all,

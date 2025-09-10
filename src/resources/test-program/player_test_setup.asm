@@ -125,7 +125,7 @@ setup_raster_irq .macro
 .endmacro
 
 {% if test_music %}
-* = $1000
+* = {{test_music_address}}
 	.binary	"{{test_music}}"
 {% endif %}
 
