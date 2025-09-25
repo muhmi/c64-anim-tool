@@ -39,7 +39,7 @@ class CharUseLocation:
         return self.screen_index * 10000 + self.row * 100 + self.col
 
 
-# OPTIMIZED: Use lookup table for byte hamming distances
+# Lookup table for byte hamming distances
 _HAMMING_LOOKUP = {}
 _HAMMING_LOOKUP_INITIALIZED = False
 
@@ -121,8 +121,6 @@ class PetsciiChar:
         if self is other:
             return True
 
-        # CRITICAL FIX: Don't use hash comparison for equality!
-        # Hash collisions can cause different characters to appear equal
         equal = self.data == other.data
 
         if PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK is None:
