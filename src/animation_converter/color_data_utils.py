@@ -7,7 +7,7 @@ from petscii import PetsciiScreen
 def offset_color_frames(screens: List[PetsciiScreen], offset: int):
     color_datas = []
     for screen in screens:
-        color_datas.append([] + screen.color_data)
+        color_datas.append([*screen.color_data])
     index = offset % len(screens)
     offset_screens = []
     for screen in screens:
@@ -21,7 +21,7 @@ def offset_color_frames(screens: List[PetsciiScreen], offset: int):
 def randomize_color_frames(screens: List[PetsciiScreen], seed: int):
     color_datas = []
     for screen in screens:
-        color_datas.append([] + screen.color_data)
+        color_datas.append([*screen.color_data])
 
     random.Random(seed).shuffle(color_datas)
 
@@ -35,10 +35,10 @@ def generate_color_fill_code(
     fill_blocks, min_sequence_length=10, max_sequence_length=120
 ):
     def find_sequences(numbers):
-        sequences = []
+        found_sequences = []
         current_seq = []
 
-        for i, num in enumerate(numbers):
+        for _i, num in enumerate(numbers):
             if not current_seq:
                 current_seq = [num]
             elif num == current_seq[-1] + 1:
@@ -48,20 +48,20 @@ def generate_color_fill_code(
                 else:
                     # Current sequence has reached max length, store it and start new
                     if len(current_seq) >= min_sequence_length:
-                        sequences.append(current_seq)
+                        found_sequences.append(current_seq)
                     current_seq = [num]
             else:
                 if len(current_seq) >= min_sequence_length:
-                    sequences.append(current_seq)
+                    found_sequences.append(current_seq)
                 current_seq = [num]
 
         if current_seq and len(current_seq) >= min_sequence_length:
-            sequences.append(current_seq)
+            found_sequences.append(current_seq)
 
-        return sequences
+        return found_sequences
 
-    def remove_sequences_from_list(numbers, sequences):
-        flat_seq = [num for seq in sequences for num in seq]
+    def remove_sequences_from_list(numbers, in_sequences):
+        flat_seq = [num for seq in in_sequences for num in seq]
         return [num for num in numbers if num not in flat_seq]
 
     result = []

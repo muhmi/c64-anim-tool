@@ -1,7 +1,8 @@
-from collections import defaultdict
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List, Set, Tuple
 
 from petscii import PetsciiScreen
+
+MIN_SCREENS_TO_REORDER = 2
 
 
 def calc_shared_chars(screen1: PetsciiScreen, screen2: PetsciiScreen) -> int:
@@ -31,7 +32,7 @@ def reorder_screens_by_similarity(screens: List[PetsciiScreen]) -> List[PetsciiS
     Returns:
         List of PetsciiScreen objects in optimized order
     """
-    if len(screens) <= 2:
+    if len(screens) <= MIN_SCREENS_TO_REORDER:
         return screens
 
     # Build adjacency matrix of shared character counts

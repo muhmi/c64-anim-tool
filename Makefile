@@ -1,9 +1,10 @@
 COLOR_RESET=\033[0m
 COLOR_GREEN=\033[32m
 COLOR_YELLOW=\033[33m
+COLOR_RED=\033[31m
 MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
-.PHONY: help update-requirements format-python distribute distribute-fast distribute-debug distribute-pyinstaller clean test-nuitka check-python check-bins
+.PHONY: help update-requirements format-python lint-python check-python distribute distribute-fast distribute-debug distribute-pyinstaller clean test-nuitka check-python check-bins
 
 help:
 	@echo "$(COLOR_YELLOW)Available targets:$(COLOR_RESET)"
@@ -35,11 +36,70 @@ update-requirements: ## Update requirements.txt with installed packages
 	@pip freeze > requirements.txt
 	@echo "$(COLOR_GREEN)requirements.txt updated.$(COLOR_RESET)"
 
-format-python: ## Autoformat python code
-	@echo "$(COLOR_YELLOW)Formatting python files...$(COLOR_RESET)"
-	@black .
-	@isort .
-	@echo "$(COLOR_YELLOW)done.$(COLOR_RESET)"
+lint-python: ## Lint Python code with Ruff
+	@echo "$(COLOR_YELLOW)Linting Python files with Ruff...$(COLOR_RESET)"
+	@if command -v ruff >/dev/null 2>&1; then \
+		ruff check .; \
+		if [ $$? -eq 0 ]; then \
+			echo "$(COLOR_GREEN)✓ All linting checks passed!$(COLOR_RESET)"; \
+		else \
+			echo "$(COLOR_RED)✗ Linting issues found$(COLOR_RESET)"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "$(COLOR_RED)Ruff not installed. Installing...$(COLOR_RESET)"; \
+		pip install ruff; \
+		ruff check .; \
+	fi
+
+format-python: ## Format Python code with Black and fix with Ruff
+	@echo "$(COLOR_YELLOW)Formatting Python files...$(COLOR_RESET)"
+	@if command -v black >/dev/null 2>&1; then \
+		echo "$(COLOR_YELLOW)Running Black formatter...$(COLOR_RESET)"; \
+		black .; \
+	else \
+		echo "$(COLOR_RED)Black not installed. Installing...$(COLOR_RESET)"; \
+		pip install black; \
+		black .; \
+	fi
+	@if command -v ruff >/dev/null 2>&1; then \
+		echo "$(COLOR_YELLOW)Running Ruff auto-fixes...$(COLOR_RESET)"; \
+		ruff check --fix .; \
+	else \
+		echo "$(COLOR_RED)Ruff not installed. Installing...$(COLOR_RESET)"; \
+		pip install ruff; \
+		ruff check --fix .; \
+	fi
+	@echo "$(COLOR_GREEN)✓ Code formatting complete!$(COLOR_RESET)"
+
+check-format: ## Check if code is properly formatted (CI-friendly)
+	@echo "$(COLOR_YELLOW)Checking code formatting...$(COLOR_RESET)"
+	@if command -v black >/dev/null 2>&1; then \
+		black --check --diff .; \
+		if [ $$? -ne 0 ]; then \
+			echo "$(COLOR_RED)✗ Code is not formatted with Black$(COLOR_RESET)"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "$(COLOR_RED)Black not installed!$(COLOR_RESET)"; \
+		exit 1; \
+	fi
+	@if command -v ruff >/dev/null 2>&1; then \
+		ruff check .; \
+		if [ $$? -ne 0 ]; then \
+			echo "$(COLOR_RED)✗ Ruff checks failed$(COLOR_RESET)"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "$(COLOR_RED)Ruff not installed!$(COLOR_RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(COLOR_GREEN)✓ All formatting checks passed!$(COLOR_RESET)"
+
+install-dev-tools: ## Install development tools (Black, Ruff)
+	@echo "$(COLOR_YELLOW)Installing development tools...$(COLOR_RESET)"
+	@pip install black ruff
+	@echo "$(COLOR_GREEN)Development tools installed!$(COLOR_RESET)"
 
 test-nuitka: ## Test if Nuitka is working
 	@echo "$(COLOR_YELLOW)Testing Nuitka installation...$(COLOR_RESET)"
@@ -136,6 +196,17 @@ clean: ## Clean build artifacts
 	@find . -name "*.pyc" -delete
 	@find . -name "*.pyo" -delete
 	@find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+	@find . -name ".ruff_cache" -type d -exec rm -rf {} + 2>/dev/null || true
 	@echo "$(COLOR_GREEN)Clean complete$(COLOR_RESET)"
+
+# Convenience aliases and compound targets
+format: format-python ## Alias for format-python
+lint: lint-python ## Alias for lint-python
+
+pre-build: lint-python format-python ## Run linting and formatting before build
+	@echo "$(COLOR_GREEN)✓ Pre-build checks complete!$(COLOR_RESET)"
+
+ci-check: check-format lint-python ## CI-friendly checks (no auto-fixes)
+	@echo "$(COLOR_GREEN)✓ All CI checks passed!$(COLOR_RESET)"
 
 .DEFAULT_GOAL := help

@@ -75,6 +75,7 @@ def build(output_file_name, non_linear_prg=False):
 
     result = subprocess.run(
         command,
+        check=False,
         capture_output=True,
         text=True,
     )

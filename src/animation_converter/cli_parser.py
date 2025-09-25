@@ -1,10 +1,9 @@
 import argparse
 import os
-from timeit import default_number
-from typing import Any, Dict, List
+from typing import Any, Dict
 
-import yaml
 from colorama import Fore
+import yaml
 
 
 def convert_arg_name(name: str, to_snake: bool = True) -> str:
@@ -18,13 +17,15 @@ def convert_arg_name(name: str, to_snake: bool = True) -> str:
 def load_config_file(file_path: str) -> Dict[str, Any]:
     print(Fore.GREEN + f"Reading config from {file_path}")
     if file_path.endswith((".yml", ".yaml")):
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             return yaml.safe_load(f)
     else:
         raise ValueError("Config file must be YAML (.yml/.yaml)")
 
 
-def resolve_file_paths(config_data: Dict[str, Any], config_dir: str, script_dir: str, cwd: str) -> Dict[str, Any]:
+def resolve_file_paths(
+    config_data: Dict[str, Any], config_dir: str, script_dir: str, cwd: str
+) -> Dict[str, Any]:
     """Resolve file paths in config data, trying multiple base directories."""
 
     def resolve_single_path(value: str) -> str:
@@ -53,7 +54,14 @@ def resolve_file_paths(config_data: Dict[str, Any], config_dir: str, script_dir:
         if isinstance(value, str) and ("/" in value or "\\" in value):
             return resolve_single_path(value)
         elif isinstance(value, list):
-            return [resolve_single_path(item) if isinstance(item, str) and ("/" in item or "\\" in item) else item for item in value]
+            return [
+                (
+                    resolve_single_path(item)
+                    if isinstance(item, str) and ("/" in item or "\\" in item)
+                    else item
+                )
+                for item in value
+            ]
         return value
 
     resolved_config = {}
@@ -82,7 +90,7 @@ def parse_arguments():
         type=str,
         nargs="*",  # Changed from "+" to "*" to make it optional
         help="Input .c, PNG or GIF files (optional if defined in config)",
-        default=[]
+        default=[],
     )
 
     # All other arguments remain the same
@@ -282,26 +290,32 @@ def parse_arguments():
         # CLI input files provided, use them (but still apply config for other settings)
         final_input_files = args.input_files
         print(Fore.YELLOW + f"Using input files from command line: {final_input_files}")
-    elif 'input_files' in config_data or 'input-files' in config_data:
+    elif "input_files" in config_data or "input-files" in config_data:
         # Input files defined in config
-        config_input_files = config_data.get('input_files') or config_data.get('input-files')
+        config_input_files = config_data.get("input_files") or config_data.get(
+            "input-files"
+        )
         if isinstance(config_input_files, str):
             final_input_files = [config_input_files]
         elif isinstance(config_input_files, list):
             final_input_files = config_input_files
         else:
-            raise ValueError("input_files in config must be a string or list of strings")
+            raise ValueError(
+                "input_files in config must be a string or list of strings"
+            )
         print(Fore.GREEN + f"Using input files from config: {final_input_files}")
     else:
-        raise ValueError("No input files specified. Either provide them as command line arguments or define 'input_files' in your config file.")
+        raise ValueError(
+            "No input files specified. Either provide them as command line arguments or define 'input_files' in your config file."
+        )
 
     # Convert config to dict and update with command line arguments
     args_dict = vars(args)
-    args_dict['input_files'] = final_input_files
+    args_dict["input_files"] = final_input_files
 
     # Only update values that weren't explicitly set in command line
     for key, value in config_data.items():
-        if key in ['input_files', 'input-files']:
+        if key in ["input_files", "input-files"]:
             continue  # Already handled above
 
         # Convert snake_case config keys to dash-style argument names
@@ -311,9 +325,12 @@ def parse_arguments():
         # Convert back to snake_case for argparse
         arg_key = convert_arg_name(arg_key, to_snake=True)
 
-        if arg_key in args_dict and arg_key != "config":
-            if args_dict[arg_key] == parser.get_default(arg_key):
-                args_dict[arg_key] = value
+        if (
+            arg_key in args_dict
+            and arg_key != "config"
+            and args_dict[arg_key] == parser.get_default(arg_key)
+        ):
+            args_dict[arg_key] = value
 
     # Convert back to Namespace
     args = argparse.Namespace(**args_dict)
@@ -345,7 +362,7 @@ def validate_config_against_parser(
 
     # Check each config key against valid arguments
     invalid_keys = []
-    for key in config_data.keys():
+    for key in config_data:
         arg_key = convert_arg_name(key, to_snake=True)
         if arg_key not in valid_args:
             invalid_keys.append(key)

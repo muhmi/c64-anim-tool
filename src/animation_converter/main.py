@@ -2,16 +2,16 @@ import multiprocessing
 import os
 import sys
 
-import color_data_utils
-import colorama
-import petscii
-import utils
 from anim_reorder import reorder_screens_by_similarity
 from build_utils import build, clean_build, get_build_path
 from cli_parser import parse_arguments
+import color_data_utils
+import colorama
 from colorama import Fore
 from packer import Packer
 from packer_config import set_packer_options
+import petscii
+import utils
 from utils import Size2D
 
 
@@ -48,13 +48,13 @@ def main():
         print(
             Fore.BLUE
             + f"Processing {
-                input_file}, writing output to folder {
-                build_folder}"
+            input_file}, writing output to folder {
+            build_folder}"
         )
 
         if default_charset is None and (input_file.endswith(".c")):
             script_dir = os.path.dirname(__file__)
-            print(f"No default charset provided, using c64_charset.bin")
+            print("No default charset provided, using c64_charset.bin")
             default_charset = petscii.read_charset(f"{script_dir}/data/c64_charset.bin")
 
         if not os.path.exists(input_file):
@@ -87,7 +87,7 @@ def main():
         )
         for idx, screen in enumerate(screens):
             color_frame = idx % len(color_data_frames)
-            screen.color_data = [] + color_data_frames[color_frame].color_data
+            screen.color_data = [*color_data_frames[color_frame].color_data]
 
     if args.offset_color_frames:
         print(f"Offsetting color frames by {args.offset_color_frames}")
@@ -97,7 +97,9 @@ def main():
 
     if args.anim_slowdown_table:
         args.anim_slowdown_table = utils.parse_int_table(args.anim_slowdown_table)
-        print(f"Reading animation frame slowdown from table, {args.anim_slowdown_table}")
+        print(
+            f"Reading animation frame slowdown from table, {args.anim_slowdown_table}"
+        )
         args.anim_slowdown_frames = args.anim_slowdown_table[0]
 
     if args.randomize_color_frames:
@@ -107,7 +109,7 @@ def main():
         )
 
     if default_charset is None:
-        print(f"Remove duplicate characters")
+        print("Remove duplicate characters")
         screens, charsets = petscii.merge_charsets(screens, build_folder)
 
     for idx, screen in enumerate(screens):
@@ -116,7 +118,7 @@ def main():
     if args.limit_charsets:
         if len(charsets) > args.limit_charsets:
             screens, charsets = petscii.merge_charsets_compress(
-                screens, args.limit_charsets, args.full_charsets
+                screens, args.limit_charsets
             )
         else:
             print(f"No need to limit charsets, already at {len(charsets)}")
@@ -178,7 +180,7 @@ def main():
         petscii.write_charset(
             charset,
             f"{
-                build_folder}/charset_{idx}.bin",
+            build_folder}/charset_{idx}.bin",
         )
 
     if args.output_sources:
@@ -189,10 +191,10 @@ def main():
             if os.path.isfile(file_path):
                 utils.copy_file(file_path, args.output_sources)
 
-    if args.skip_build == False:
+    if not args.skip_build:
         build(output_file_name, args.non_linear_prg)
 
-    if args.write_petmate == True:
+    if args.write_petmate:
         petscii.write_petmate(screens, f"{output_file_name}.petmate", True)
 
     return 0
