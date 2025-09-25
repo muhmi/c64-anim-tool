@@ -113,7 +113,7 @@ jobs:
           find release-assets -type f -ls
 
       - name: Get version info
-        id: version
+        id: version_info
         run: |
           # Generate consistent version info (avoid date differences between jobs)
           if [ -f "version.txt" ]; then
@@ -158,7 +158,7 @@ jobs:
 
             # Create zip file with tag name from previous step
             cd "temp-$platform"
-            zip -r "../release-files/animation-tool-$platform-${{ steps.version.outputs.tag_name }}.zip" .
+            zip -r "../release-files/animation-tool-$platform-${{ steps.version_info.outputs.tag_name }}.zip" .
             cd ..
             rm -rf "temp-$platform"
           done
@@ -183,8 +183,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.version.outputs.tag_name }}
-          name: "Animation Tool ${{ steps.version.outputs.version_number }}"
+          tag_name: ${{ steps.version_info.outputs.tag_name }}
+          name: "Animation Tool ${{ steps.version_info.outputs.version_number }}"
           body: |
             🎬 **C64 Animation Tool Release**
 
