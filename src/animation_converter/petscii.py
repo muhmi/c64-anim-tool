@@ -2,7 +2,6 @@ import json
 import os
 import re
 import sys
-from functools import lru_cache
 from io import StringIO
 from typing import List, Tuple
 
@@ -88,7 +87,6 @@ def char_distance_simple(char1_data: bytes, char2_data: bytes) -> int:
     return distance
 
 
-@lru_cache(maxsize=50000)  # Large cache but not too large to avoid memory issues
 def char_hamming_distance(char1, char2):
     """Cached character distance calculation"""
     data1 = char1.data.tobytes()
