@@ -41,14 +41,16 @@ class CharUseLocation:
 
 
 # OPTIMIZED: Use lookup table for byte hamming distances
-_HAMMING_LOOKUP = None
+_HAMMING_LOOKUP = {}
+_HAMMING_LOOKUP_INITIALIZED = False
 
 
 def init_hamming_lookup():
     """Initialize lookup table for byte hamming distances - much faster"""
     global _HAMMING_LOOKUP
+    global _HAMMING_LOOKUP_INITIALIZED
     print("Precalculating hamming lookup...")
-    if _HAMMING_LOOKUP is None:
+    if _HAMMING_LOOKUP_INITIALIZED is False:
         _HAMMING_LOOKUP = {}
         for i in range(256):
             for j in range(256):
@@ -60,17 +62,20 @@ def init_hamming_lookup():
                     temp >>= 1
                 _HAMMING_LOOKUP[(i, j)] = count
         print("🚀 Initialized hamming distance lookup table")
+        _HAMMING_LOOKUP_INITIALIZED = True
 
 
 def byte_hamming_distance(byte1: int, byte2: int) -> int:
     """OPTIMIZED: Use lookup table instead of bit counting"""
-    if _HAMMING_LOOKUP is None:
+    if _HAMMING_LOOKUP_INITIALIZED is False:
         init_hamming_lookup()
     return _HAMMING_LOOKUP[(byte1, byte2)]
 
 
 def char_distance_simple(char1_data: bytes, char2_data: bytes) -> int:
     """OPTIMIZED: Early exit + lookup table + skip identical bytes"""
+    if _HAMMING_LOOKUP_INITIALIZED is False:
+        init_hamming_lookup()
     # Quick early exit for identical data (saves ~30% of calls)
     if char1_data == char2_data:
         return 0
@@ -907,7 +912,3 @@ def merge_charsets_compress(screens, max_charsets=4, full_charsets=False):
             screens, charsets, max_charsets=max_charsets
         )
         return screens, charsets
-
-
-# Initialize the lookup table on import
-init_hamming_lookup()
