@@ -4,7 +4,7 @@ class RLECodec:
         if not data:
             return []
 
-        encoded = []
+        result = []
         count = 1
         current = data[0]
 
@@ -12,25 +12,25 @@ class RLECodec:
             if value == current and count < 64:
                 count += 1
             else:
-                encoded.extend([count, current])
+                result.extend([count, current])
                 count = 1
                 current = value
 
-        encoded.extend([count, current])
-        return encoded
+        result.extend([count, current])
+        return result
 
     @staticmethod
     def decode(encoded_data):
         if len(encoded_data) % 2 != 0:
             raise ValueError("Encoded data must have an even number of elements")
 
-        decoded = []
+        result = []
         for i in range(0, len(encoded_data), 2):
             count = encoded_data[i]
             value = encoded_data[i + 1]
-            decoded.extend([value] * count)
+            result.extend([value] * count)
 
-        return decoded
+        return result
 
 
 if __name__ == "__main__":
