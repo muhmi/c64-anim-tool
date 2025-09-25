@@ -7,7 +7,7 @@ from petscii import PetsciiScreen
 def offset_color_frames(screens: List[PetsciiScreen], offset: int):
     color_datas = []
     for screen in screens:
-        color_datas.append([] + screen.color_data)
+        color_datas.append([*screen.color_data])
     index = offset % len(screens)
     offset_screens = []
     for screen in screens:
@@ -21,7 +21,7 @@ def offset_color_frames(screens: List[PetsciiScreen], offset: int):
 def randomize_color_frames(screens: List[PetsciiScreen], seed: int):
     color_datas = []
     for screen in screens:
-        color_datas.append([] + screen.color_data)
+        color_datas.append([*screen.color_data])
 
     random.Random(seed).shuffle(color_datas)
 
@@ -38,7 +38,7 @@ def generate_color_fill_code(
         found_sequences = []
         current_seq = []
 
-        for i, num in enumerate(numbers):
+        for _i, num in enumerate(numbers):
             if not current_seq:
                 current_seq = [num]
             elif num == current_seq[-1] + 1:

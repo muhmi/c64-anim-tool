@@ -2,8 +2,8 @@ import argparse
 import os
 from typing import Any, Dict
 
-import yaml
 from colorama import Fore
+import yaml
 
 
 def convert_arg_name(name: str, to_snake: bool = True) -> str:
@@ -17,7 +17,7 @@ def convert_arg_name(name: str, to_snake: bool = True) -> str:
 def load_config_file(file_path: str) -> Dict[str, Any]:
     print(Fore.GREEN + f"Reading config from {file_path}")
     if file_path.endswith((".yml", ".yaml")):
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             return yaml.safe_load(f)
     else:
         raise ValueError("Config file must be YAML (.yml/.yaml)")
@@ -325,9 +325,12 @@ def parse_arguments():
         # Convert back to snake_case for argparse
         arg_key = convert_arg_name(arg_key, to_snake=True)
 
-        if arg_key in args_dict and arg_key != "config":
-            if args_dict[arg_key] == parser.get_default(arg_key):
-                args_dict[arg_key] = value
+        if (
+            arg_key in args_dict
+            and arg_key != "config"
+            and args_dict[arg_key] == parser.get_default(arg_key)
+        ):
+            args_dict[arg_key] = value
 
     # Convert back to Namespace
     args = argparse.Namespace(**args_dict)
@@ -359,7 +362,7 @@ def validate_config_against_parser(
 
     # Check each config key against valid arguments
     invalid_keys = []
-    for key in config_data.keys():
+    for key in config_data:
         arg_key = convert_arg_name(key, to_snake=True)
         if arg_key not in valid_args:
             invalid_keys.append(key)

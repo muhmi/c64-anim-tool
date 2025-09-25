@@ -6,7 +6,7 @@ from utils import locations_with_same_color
 def parse_address(address: str):
     if address[0] == "$":
         return to_asm_hex(int(f"0x{address[1:]}", 16))
-    if len(address) > 2 and address[0] == "0" and address[1] == "x":
+    if len(address) > 2 and address[0] == "0" and address[1] == "x":  # noqa: PLR2004
         return to_asm_hex(int(address, 16))
     return to_asm_hex(int(address))
 
@@ -44,9 +44,8 @@ def set_packer_options(anim_change_index, output_file_name, packer_to_setup, arg
         packer_to_setup.SCROLL_DISABLE_REPEAT = True
     if args.effect_start_address:
         packer_to_setup.EFFECT_START_ADDRESS = parse_address(args.effect_start_address)
-    if args.anim_start_address:
-        if args.anim_start_address != "*":
-            packer_to_setup.ANIM_START_ADDRESS = parse_address(args.anim_start_address)
+    if args.anim_start_address and args.anim_start_address != "*":
+        packer_to_setup.ANIM_START_ADDRESS = parse_address(args.anim_start_address)
     if args.color_animation_slowdown:
         packer_to_setup.COLOR_ANIM_SLOWDOWN = args.color_animation_slowdown
     if args.color_anim_min_seq_len:

@@ -1,18 +1,26 @@
-import os
-import sys
 from io import StringIO
 from itertools import islice
+import os
+import sys
 from typing import List
 
+import color_data_utils
 from colorama import Fore
 from jinja2 import Environment, FileSystemLoader
-
-import color_data_utils
-import utils
 from petscii import PetsciiChar, PetsciiScreen
 from rle_codec import RLECodec
 from scroller import find_areas_with_content
+import utils
 from utils import Block, Size2D
+
+PACKER_MAX_OP_CODES = 255
+RLE_END_MARKER = 255
+SCREEN_WIDTH = 40
+SCREEN_HEIGHT = 25
+MAX_SCREEN_OFFSET = 1000
+MIN_COMPRESSION_RUN_LENGTH = 3
+PER_ROW_END_LINE_MARKER = 200
+PER_ROW_CODE_OFFSET = 100
 
 
 class Packer:
@@ -41,7 +49,7 @@ class Packer:
 
         self.OP_CODES = {}
         self.NAME_TO_OP_CODE = {}
-        for op in range(0, 256):
+        for op in range(256):
             self.OP_CODES[op] = "player_op_error"
         self.player_next_free_op = 0
 
@@ -149,18 +157,16 @@ class Packer:
 
         for block in self.ALL_BLOCKS:
             sz = len(self.offsets(block))
-            if sz > 0:
-                if sz not in self.BLOCK_OFFSETS_SIZES:
-                    self.BLOCK_OFFSETS_SIZES.add(sz)
-                    self.FILL_OP_CODES.append(self.add_op(f"player_op_fill{sz}"))
-                    self.FILL_SAME_VALUE_OP_CODES.append(
-                        self.add_op(f"player_op_fill_same{sz}")
-                    )
+            if sz > 0 and sz not in self.BLOCK_OFFSETS_SIZES:
+                self.BLOCK_OFFSETS_SIZES.add(sz)
+                self.FILL_OP_CODES.append(self.add_op(f"player_op_fill{sz}"))
+                self.FILL_SAME_VALUE_OP_CODES.append(
+                    self.add_op(f"player_op_fill_same{sz}")
+                )
 
         self.USED_BLOCKS = set()
-        self.RLE_END_MARKER = 255
 
-        if self.player_next_free_op > 255:
+        if self.player_next_free_op >= PACKER_MAX_OP_CODES:
             print(
                 f"Player op code count is too high! {
                 self.player_next_free_op}"
@@ -181,8 +187,8 @@ class Packer:
 
     def get_macro_blocks(self):
         blocks = []
-        for macro_y in range(0, 25, self.Y_STEP):
-            for macro_x in range(0, 40, self.X_STEP):
+        for macro_y in range(0, SCREEN_HEIGHT, self.Y_STEP):
+            for macro_x in range(0, SCREEN_WIDTH, self.X_STEP):
                 macro_block = Block(macro_x, macro_y, self.X_STEP, self.Y_STEP)
                 blocks.append(macro_block)
         return blocks
@@ -193,7 +199,7 @@ class Packer:
         blocks = []
         for y in range(macro_y, macro_y + self.Y_STEP, self.BLOCK_SIZE.y):
             for x in range(macro_x, macro_x + self.X_STEP, self.BLOCK_SIZE.x):
-                if x > 40 or y > 25:
+                if x > SCREEN_WIDTH or y > SCREEN_HEIGHT:
                     continue
                 block = Block(x, y, self.BLOCK_SIZE.x, self.BLOCK_SIZE.y)
                 blocks.append(block)
@@ -204,22 +210,16 @@ class Packer:
         offsets = []
         for y in range(block.y, block.y + block.height):
             for x in range(block.x, block.x + block.width):
-                offset = y * 40 + x
-                if offset < 1000:
+                offset = y * SCREEN_WIDTH + x
+                if offset < MAX_SCREEN_OFFSET:
                     offsets.append(offset)
         return offsets
 
     def is_block_same(self, screen1: List[int], screen2: List[int], block: Block):
-        for offset in self.offsets(block):
-            if screen1[offset] != screen2[offset]:
-                return False
-        return True
+        return all(screen1[offset] == screen2[offset] for offset in self.offsets(block))
 
     def has_data(self, screen1: List[int], block: Block):
-        for offset in self.offsets(block):
-            if screen1[offset] != 0:
-                return False
-        return True
+        return all(screen1[offset] == 0 for offset in self.offsets(block))
 
     def read_block(self, screen: List[int], block: Block):
         data = []
@@ -234,7 +234,7 @@ class Packer:
         chunks = 1
 
         for value in screen[1:]:
-            if value == current and count < 254:
+            if value == current and count < RLE_END_MARKER:
                 count += 1
             else:
                 if count in self.USED_RLE_COUNTS:
@@ -252,16 +252,16 @@ class Packer:
 
         anim_stream = [self.NAME_TO_OP_CODE[op_name]]
         anim_stream.extend(encoded)
-        anim_stream.append(self.RLE_END_MARKER)
+        anim_stream.append(RLE_END_MARKER)
 
         return anim_stream
 
     def diff_frames_per_row(self, screen1: List[int], screen2: List[int]):
         def build_change_list(frame_a, frame_b):
             diff = []
-            for y in range(0, 25):
-                for x in range(0, 40):
-                    offset = y * 40 + x
+            for y in range(SCREEN_HEIGHT):
+                for x in range(SCREEN_WIDTH):
+                    offset = y * SCREEN_WIDTH + x
                     a = frame_a[offset]
                     b = frame_b[offset]
                     if a != b:
@@ -270,11 +270,9 @@ class Packer:
 
         changes = build_change_list(screen1, screen2)
 
-        end_line_marker = 200
-
         anim_stream = [self.OP_PER_ROW_CHANGES]
 
-        for y in range(25):
+        for y in range(SCREEN_HEIGHT):
             row_changes = sorted((c for c in changes if c[1] == y), key=lambda c: c[0])
 
             if len(row_changes) > 0:
@@ -288,14 +286,14 @@ class Packer:
                         i + 1 < len(row_changes)
                         and row_changes[i + 1][0] == row_changes[i][0] + 1
                         and row_changes[i + 1][2] == row_changes[i][2]
-                        and run_length < 80
+                        and run_length < SCREEN_WIDTH * 2
                     ):
                         i += 1
                         run_length += 1
 
-                    if run_length > 3:
+                    if run_length > MIN_COMPRESSION_RUN_LENGTH:
                         # Write compressed form: count, x, character
-                        anim_stream.append((100 + run_length))
+                        anim_stream.append(PER_ROW_CODE_OFFSET + run_length)
                         anim_stream.append(row_changes[run_start][0])
                         anim_stream.append(row_changes[run_start][2])
                         i += 1  # move to the next change not part of the current run
@@ -307,7 +305,7 @@ class Packer:
                         i += 1
 
             # End of line marker
-            anim_stream.append(end_line_marker)
+            anim_stream.append(PER_ROW_END_LINE_MARKER)
 
         return anim_stream
 
@@ -357,7 +355,7 @@ class Packer:
         if self.ONLY_PER_ROW_MODE:
             return self.diff_frames_per_row(screen1, screen2)
 
-        if len(self.ALL_BLOCKS) > 255:
+        if len(self.ALL_BLOCKS) > PACKER_MAX_OP_CODES:
             anim_stream = self.diff_frames_macro(screen1, screen2)
         else:
             for block_index, block in enumerate(self.ALL_BLOCKS):
@@ -410,21 +408,21 @@ class Packer:
         for idx, screen in enumerate(screens):
             for macro_block in self.get_macro_blocks():
                 for block in self.get_blocks(macro_block):
-                    screen1 = [0] * 1000
+                    screen1 = [0] * MAX_SCREEN_OFFSET
                     if idx > 0:
                         screen1 = screens[idx - 1].screen_codes
 
-                    screen2 = screens[idx].screen_codes
+                    screen2 = screen.screen_codes
                     if not self.is_block_same(screen1, screen2, block):
                         self.USED_BLOCKS.add(block)
                         self.USED_MACRO_BLOCKS.add(macro_block)
 
                     if use_color:
-                        screen1 = [0] * 1000
+                        screen1 = [0] * MAX_SCREEN_OFFSET
                         if idx > 0:
                             screen1 = screens[idx - 1].color_data
 
-                        screen2 = screens[idx].color_data
+                        screen2 = screen.color_data
                         if not self.is_block_same(screen1, screen2, block):
                             self.USED_BLOCKS.add(block)
                             self.USED_MACRO_BLOCKS.add(macro_block)
@@ -457,7 +455,7 @@ class Packer:
                     prev_charset = current_charset
 
             if not self.USE_ONLY_COLOR:
-                prev_petscii = [0] * 1000
+                prev_petscii = [0] * MAX_SCREEN_OFFSET
                 if idx > 0:
                     prev_petscii = screens[idx - 1].screen_codes
                 changes = self.diff_frames(prev_petscii, screen.screen_codes, use_color)
@@ -465,7 +463,7 @@ class Packer:
 
             if use_color:
                 anim_stream.append(self.OP_SET_COLOR_MODE)
-                prev_color = [0] * 1000
+                prev_color = [0] * MAX_SCREEN_OFFSET
                 if idx > 0:
                     prev_color = screens[idx - 1].color_data
 
@@ -473,14 +471,11 @@ class Packer:
                 anim_stream.extend(changes)
 
                 anim_stream.append(self.OP_SET_SCREEN_MODE)
-            else:
-                if self.INIT_COLOR_MEM_BETWEEN_ANIMATIONS:
-                    if idx in self.ANIM_CHANGE_SCREEN_INDEXES:
-                        print(
-                            f"frame {idx}, clear color memory to {screen.color_data[0]}"
-                        )
-                        anim_stream.append(self.OP_CLEAR_COLOR)
-                        anim_stream.append(screen.color_data[0])
+            elif self.INIT_COLOR_MEM_BETWEEN_ANIMATIONS:
+                if idx in self.ANIM_CHANGE_SCREEN_INDEXES:
+                    print(f"frame {idx}, clear color memory to {screen.color_data[0]}")
+                    anim_stream.append(self.OP_CLEAR_COLOR)
+                    anim_stream.append(screen.color_data[0])
 
             if len(self.ANIM_SLOWDOWN_TABLE) > 0:
                 slowdown = self.ANIM_SLOWDOWN_TABLE[current_anim_frame_slowdown_idx]
@@ -497,35 +492,33 @@ class Packer:
         self.OPS_USED.add(self.OP_CODES[self.OP_RESTART])
 
         offset = 0
-        screen = [0] * 1000
-        color = [0] * 1000
-        for idx in range(0, len(screens)):
+        screen = [0] * MAX_SCREEN_OFFSET
+        color = [0] * MAX_SCREEN_OFFSET
+        for idx in range(len(screens)):
             screen, color, offset = self.unpack(anim_stream, offset, screen, color)
 
-            if not self.USE_ONLY_COLOR:
-                if screen != screens[idx].screen_codes:
-                    print(Fore.RED + "ERROR: Packer & unpacker dont work together!!!")
-                    print(f"SCREEN DATA IS BROKEN AT FRAME {idx}")
-                    print("unpacked:")
-                    self.print_list(screen)
-                    print("expected:")
-                    self.print_list(screens[idx].screen_codes)
-                    sys.exit(1)
+            if not self.USE_ONLY_COLOR and screen != screens[idx].screen_codes:
+                print(Fore.RED + "ERROR: Packer & unpacker dont work together!!!")
+                print(f"SCREEN DATA IS BROKEN AT FRAME {idx}")
+                print("unpacked:")
+                self.print_list(screen)
+                print("expected:")
+                self.print_list(screens[idx].screen_codes)
+                sys.exit(1)
 
-            if use_color:
-                if color != screens[idx].color_data:
-                    print(Fore.RED + "ERROR: Packer & unpacker dont work together!!!")
-                    print(f"COLOR DATA IS BROKEN AT FRAME {idx}")
-                    print("unpacked:")
-                    self.print_list(color)
-                    print("expected:")
-                    self.print_list(screens[idx].color_data)
-                    sys.exit(1)
+            if use_color and color != screens[idx].color_data:
+                print(Fore.RED + "ERROR: Packer & unpacker dont work together!!!")
+                print(f"COLOR DATA IS BROKEN AT FRAME {idx}")
+                print("unpacked:")
+                self.print_list(color)
+                print("expected:")
+                self.print_list(screens[idx].color_data)
+                sys.exit(1)
 
         return anim_stream
 
     @staticmethod
-    def print_list(ints, group_size=40):
+    def print_list(ints, group_size=SCREEN_WIDTH):
         for i in range(0, len(ints), group_size):
             group = ints[i : i + group_size]
             line = ",".join(f"{num:4d}" for num in group)
@@ -612,7 +605,7 @@ class Packer:
                 screen_offset = 0
                 while True:
                     count = read_next_byte()
-                    if count == self.RLE_END_MARKER:
+                    if count == RLE_END_MARKER:
                         break
                     value = read_next_byte()
                     decoded = [value] * count
@@ -624,19 +617,19 @@ class Packer:
                         screen_offset += 1
 
             elif op_code == self.OP_PER_ROW_CHANGES:
-                for y in range(25):
+                for y in range(SCREEN_HEIGHT):
                     code = read_next_byte()
-                    if code == 200:
+                    if code == PER_ROW_END_LINE_MARKER:
                         continue
 
-                    while code != 200:
-                        if code > 100:
-                            count = code - 100
+                    while code != PER_ROW_END_LINE_MARKER:
+                        if code > PER_ROW_CODE_OFFSET:
+                            count = code - PER_ROW_CODE_OFFSET
                             xpos = read_next_byte()
                             value = read_next_byte()
                             for idx in range(count):
-                                screen_offset = y * 40 + xpos + idx
-                                if screen_offset < 1000:
+                                screen_offset = y * SCREEN_WIDTH + xpos + idx
+                                if screen_offset < MAX_SCREEN_OFFSET:
                                     if writing_screen:
                                         screen[screen_offset] = value
                                     else:
@@ -644,8 +637,8 @@ class Packer:
                         else:
                             xpos = code
                             value = read_next_byte()
-                            screen_offset = y * 40 + xpos
-                            if screen_offset < 1000:
+                            screen_offset = y * SCREEN_WIDTH + xpos
+                            if screen_offset < MAX_SCREEN_OFFSET:
                                 if writing_screen:
                                     screen[screen_offset] = value
                                 else:
@@ -656,28 +649,27 @@ class Packer:
             elif op_code == self.OP_CLEAR:
                 value = read_next_byte()
                 if writing_screen:
-                    screen = [value] * 1000
+                    screen = [value] * MAX_SCREEN_OFFSET
                 else:
-                    color = [value] * 1000
+                    color = [value] * MAX_SCREEN_OFFSET
             elif op_code == self.OP_CLEAR_COLOR:
                 value = read_next_byte()
-                color = [value] * 1000
+                color = [value] * MAX_SCREEN_OFFSET
+            elif op_code in (
+                self.OP_SET_BACKGROUND,
+                self.OP_SET_BORDER,
+                self.OP_SET_CHARSET,
+            ):
+                offset += 1
+            elif op_code == self.OP_SET_COLOR_MODE:
+                writing_screen = False
+            elif op_code == self.OP_SET_SCREEN_MODE:
+                writing_screen = True
             else:
-                if op_code == self.OP_SET_BACKGROUND:
-                    offset += 1
-                elif op_code == self.OP_SET_BORDER:
-                    offset += 1
-                elif op_code == self.OP_SET_CHARSET:
-                    offset += 1
-                elif op_code == self.OP_SET_COLOR_MODE:
-                    writing_screen = False
-                elif op_code == self.OP_SET_SCREEN_MODE:
-                    writing_screen = True
-                else:
-                    op_name = "unknown"
-                    if op_code in self.OP_CODES:
-                        op_name = self.OP_CODES[op_code]
-                    raise ValueError(f"Unhandled op code {op_code}, {op_name}")
+                op_name = "unknown"
+                if op_code in self.OP_CODES:
+                    op_name = self.OP_CODES[op_code]
+                raise ValueError(f"Unhandled op code {op_code}, {op_name}")
 
             return False  # Continue the main loop
 
@@ -692,10 +684,10 @@ class Packer:
 
     def get_screen_offsets(self, screens, anim_stream):
         offset = 0
-        screen = [0] * 1000
-        color = [0] * 1000
+        screen = [0] * MAX_SCREEN_OFFSET
+        color = [0] * MAX_SCREEN_OFFSET
         offsets = []
-        for idx in range(0, len(screens)):
+        for _idx in range(len(screens)):
             offsets.append(offset)
             screen, color, offset = self.unpack(anim_stream, offset, screen, color)
 
@@ -776,7 +768,7 @@ class Packer:
                 last_used_op_code = k
 
         bit_mask = []
-        for i in range(0, 8):
+        for i in range(8):
             bit_mask.append(1 << i)
 
         offset_from_macro_all = {}
@@ -793,21 +785,23 @@ class Packer:
                     offsets_from_macro.append(offset - first_offset)
             offset_from_macro_all[len(blocks)] = offsets_from_macro
 
-        if "player_op_fill_rle_fullscreen" in self.OPS_USED:
-            if len(self.USED_RLE_COUNTS) > 0:
-                sorted_rle_counts = dict(
-                    sorted(
-                        self.USED_RLE_COUNTS.items(),
-                        key=lambda item: item[1],
-                        reverse=True,
-                    )
+        if (
+            "player_op_fill_rle_fullscreen" in self.OPS_USED
+            and len(self.USED_RLE_COUNTS) > 0
+        ):
+            sorted_rle_counts = dict(
+                sorted(
+                    self.USED_RLE_COUNTS.items(),
+                    key=lambda item: item[1],
+                    reverse=True,
                 )
-                top_10 = list(islice(sorted_rle_counts.items(), 10))
-                if top_10[0][0] == 1:
-                    print(
-                        Fore.YELLOW
-                        + "WARING: Using RLE to pack full screen but its going to perform poorly with this data"
-                    )
+            )
+            top_10 = list(islice(sorted_rle_counts.items(), 10))
+            if top_10[0][0] == 1:
+                print(
+                    Fore.YELLOW
+                    + "WARING: Using RLE to pack full screen but its going to perform poorly with this data"
+                )
 
         namespace = {
             "charset_files": charset_files,
@@ -837,7 +831,7 @@ class Packer:
             "used_blocks": self.USED_BLOCKS,
             "remove_unused_blocks": optimize_player,
             "FILL_RLE_TEMPLATE_HELPER": self.FILL_RLE_TEMPLATE_HELPER,
-            "PLAYER_RLE_END_MARKER": self.RLE_END_MARKER,
+            "PLAYER_RLE_END_MARKER": RLE_END_MARKER,
             "TEST_SLOWDOWN": anim_slowdown_frames,
             "test_music": test_music_filename,
             "test_music_address": test_music_address,

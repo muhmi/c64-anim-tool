@@ -1,14 +1,13 @@
+from io import StringIO
 import json
 import os
 import re
 import sys
-from io import StringIO
 from typing import List, Tuple
 
-from PIL import Image, ImageDraw, ImageSequence
 from bitarray import bitarray
 from colorama import Fore
-
+from PIL import Image, ImageDraw, ImageSequence
 from utils import (
     create_folder_if_not_exists,
     rgb_to_idx,
@@ -16,6 +15,14 @@ from utils import (
     vicPalette,
     write_bin,
 )
+
+MAX_BYTE_VALUE = 255
+MAX_CHARSET_SIZE = 256
+CHARSET_SEED_LIMIT = 31
+REDUCTION_RATIO_SMALL = 1.5
+REDUCTION_RATIO_MEDIUM = 3.0
+MAX_SCREEN_OFFSET = 1000
+MAX_SEED_CHARSET_SIZE = 31
 
 
 class CharUseLocation:
@@ -201,7 +208,7 @@ def read_charset(file_path, skipFirstBytes=False):
 
         while True:
             char_data = file.read(8)
-            if len(char_data) < 8:
+            if len(char_data) < 8:  # noqa: PLR2004
                 break
 
             byte_data = bitarray()
@@ -295,12 +302,12 @@ def reduce_charset(charset: List[PetsciiChar], target_size: int) -> List[Petscii
 
     reduction_ratio = len(charset) / target_size if target_size > 0 else 1
 
-    if reduction_ratio < 1.5:
+    if reduction_ratio < REDUCTION_RATIO_SMALL:
         # Small reduction - just use top usage chars (fastest and safest)
         sorted_chars = sorted(charset, key=lambda c: c.use_count(), reverse=True)
         result = sorted_chars[:target_size]
         return result
-    elif reduction_ratio < 3.0:
+    elif reduction_ratio < REDUCTION_RATIO_MEDIUM:
         # Medium reduction - use smart approach
         return reduce_charset_smart(charset, target_size)
     else:
@@ -323,8 +330,8 @@ def get_pixel_rgb(image, x, y):
 class PetsciiScreen:
     def __init__(self, screen_index, background_color=None, border_color=None):
         self.screen_index = screen_index
-        self.screen_codes = [0] * 1000
-        self.color_data = [0] * 1000
+        self.screen_codes = [0] * MAX_SCREEN_OFFSET
+        self.color_data = [0] * MAX_SCREEN_OFFSET
         self.background_color = background_color
         self.border_color = border_color
         self.charset = []
@@ -363,11 +370,10 @@ class PetsciiScreen:
                                 char_bits.append(0)
                             else:
                                 char_bits.append(1)
+                        elif inverse:
+                            char_bits.append(1)
                         else:
-                            if inverse:
-                                char_bits.append(1)
-                            else:
-                                char_bits.append(0)
+                            char_bits.append(0)
 
                 if num_pixels <= cleanup:
                     if inverse:
@@ -381,44 +387,40 @@ class PetsciiScreen:
                     char_index = self.charset.index(char)
                     char = self.charset[char_index]
                     char.add_usage(self.screen_index, row, col)
+                elif default_charset is not None:
+                    # Find closest char in default charset
+                    char, _ = find_closest_char(char, self.charset)
+                    char_index = self.charset.index(char)
+                    char.add_usage(self.screen_index, row, col)
                 else:
-                    if default_charset is not None:
-                        # Find closest char in default charset
-                        char, _ = find_closest_char(char, self.charset)
-                        char_index = self.charset.index(char)
-                        char.add_usage(self.screen_index, row, col)
-                    else:
-                        # Add new char
-                        char.add_usage(self.screen_index, row, col)
-                        char_index = len(self.charset)
-                        self.charset.append(char)
+                    # Add new char
+                    char.add_usage(self.screen_index, row, col)
+                    char_index = len(self.charset)
+                    self.charset.append(char)
 
                 # Store as integer
-                if offset < 1000:
+                if offset < MAX_SCREEN_OFFSET:
                     self.screen_codes[offset] = char_index
 
                     if self.background_color is None:
                         # Assume it's BW if no background color is given
                         self.color_data[offset] = 1 if char_index > 0 else 0
+                    # Background color specified, find any other color
+                    elif char.is_blank():
+                        self.color_data[offset] = 0
                     else:
-                        # Background color specified, find any other color
-                        if char.is_blank():
-                            self.color_data[offset] = 0
-                        else:
-                            foreground_color = None
-                            for cy in range(8):
-                                if foreground_color is not None:
+                        foreground_color = None
+                        for cy in range(8):
+                            if foreground_color is not None:
+                                break
+                            for cx in range(8):
+                                color = rgb_to_idx(get_pixel_rgb(image, x + cx, y + cy))
+                                if color != self.background_color:
+                                    foreground_color = color
                                     break
-                                for cx in range(8):
-                                    color = rgb_to_idx(
-                                        get_pixel_rgb(image, x + cx, y + cy)
-                                    )
-                                    if color != self.background_color:
-                                        foreground_color = color
-                                        break
-                            if foreground_color is None:
-                                foreground_color = self.background_color
-                            self.color_data[offset] = foreground_color
+                        if foreground_color is None:
+                            foreground_color = self.background_color
+                        self.color_data[offset] = foreground_color
 
     def to_petscii_editor_data(self) -> str:
         color_bg = self.background_color or 0
@@ -523,7 +525,7 @@ def save_debug_screens(screens, output_filename, duration=200, loop=0):
 
 
 def read_petscii(file_path: str, charset: List[PetsciiChar]) -> List[PetsciiScreen]:
-    with open(file_path, "r") as file:
+    with open(file_path) as file:
         content = file.read()
 
     # Regular expression to match frame data
@@ -550,8 +552,8 @@ def read_petscii(file_path: str, charset: List[PetsciiChar]) -> List[PetsciiScre
         screen.background_color = bg
 
         # Fill screen_codes and color_data
-        screen.screen_codes = data[:1000]
-        screen.color_data = data[1000:2000]
+        screen.screen_codes = data[:MAX_SCREEN_OFFSET]
+        screen.color_data = data[MAX_SCREEN_OFFSET : MAX_SCREEN_OFFSET * 2]
 
         if charset is not None:
             # Update petscii_char usage
@@ -568,17 +570,17 @@ def read_petscii(file_path: str, charset: List[PetsciiChar]) -> List[PetsciiScre
 
 
 def read_json(file_path: str):
-    with open(file_path, "r") as file:
+    with open(file_path) as file:
         return json.load(file)
 
 
 def ints_to_bitarray(ints: List[int]):
-    if len(ints) != 8:
+    if len(ints) != 8:  # noqa: PLR2004
         raise ValueError("The input list must contain exactly 8 integers")
 
     ba = bitarray(endian="big")
     for num in ints:
-        if not 0 <= num <= 255:
+        if not 0 <= num <= 255:  # noqa: PLR2004
             raise ValueError(f"Each integer must be between 0 and 255, got {num}")
         ba.extend(f"{num:08b}")
 
@@ -597,7 +599,7 @@ def read_charset_from_petmate(custom_font):
         char = PetsciiChar(byte_data)
         charset.append(char)
 
-    if len(charset) > 256:
+    if len(charset) > MAX_BYTE_VALUE:
         raise ValueError(f"Charset is too big {len(charset)}")
 
     print(f"Custom font {name}, has {len(charset)} characters")
@@ -631,7 +633,7 @@ def read_petmate(file_path: str) -> List[PetsciiScreen]:
             sys.exit(1)
 
         screen = PetsciiScreen(idx)
-        screen.charset = [] + charset
+        screen.charset = [*charset]
         screen.border_color = border
         screen.background_color = bg
 
@@ -679,7 +681,7 @@ def write_petmate(
                 custom_charsets[charset_name] = screen.charset
 
     # Second pass: create framebufs
-    for i, screen in enumerate(screens):
+    for _i, screen in enumerate(screens):
         # Determine charset name - either custom or built-in
         if use_custom_charset:
             charset_key = id(screen.charset)
@@ -781,7 +783,7 @@ def read_screens(
         return screens
 
 
-def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
+def merge_charsets(screens, debug_output_folder=None):
     """Optimized charset merging with better performance"""
     all_characters = []
 
@@ -809,27 +811,27 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
         f"  There are {len(chars_used_in_all)} characters that are shared in all screens"
     )
 
-    seed_charset = [] + chars_used_in_all
+    seed_charset = [*chars_used_in_all]
     sorted_chars = sorted(all_characters, key=lambda ch: len(ch.usage), reverse=True)
     for char in sorted_chars:
         if char not in seed_charset:
             seed_charset.append(char)
-        if len(seed_charset) > 31:
+        if len(seed_charset) > MAX_SEED_CHARSET_SIZE:
             break
 
-    charset = [] + seed_charset
+    charset = [*seed_charset]
     charsets = []
 
-    for idx, screen in enumerate(screens):
-        new_charset = [] + charset
+    for _idx, screen in enumerate(screens):
+        new_charset = [*charset]
 
         for char in screen.charset:
             if char not in charset:
                 new_charset.append(char)
 
-        if len(new_charset) > 255:
+        if len(new_charset) > MAX_BYTE_VALUE:
             charsets.append(charset)
-            charset = [] + seed_charset
+            charset = [*seed_charset]
             for char in screen.charset:
                 if char not in charset:
                     charset.append(char)
@@ -837,11 +839,12 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
             charset.clear()
             charset.extend(new_charset)
 
-        if len(charset) > 255:
+        if len(charset) > MAX_BYTE_VALUE:
             charset = [
                 PetsciiChar(PetsciiChar.BLANK_DATA),
                 PetsciiChar(PetsciiChar.FULL_DATA),
-            ] + reduce_charset(charset, 253)
+                *reduce_charset(charset, 253),
+            ]
 
         screen.remap_characters(charset, allow_error=True)
 
@@ -875,9 +878,7 @@ def compress_charsets(
         print(
             f"  Trying to compress_charsets, now at threshold={found_threshold}, charsets={len(new_charsets)}"
         )
-        new_screens, new_charsets = merge_charsets(
-            new_screens, debug_output_folder, "compressed_changes_"
-        )
+        new_screens, new_charsets = merge_charsets(new_screens, debug_output_folder)
         PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK += 1
         found_threshold += 1
 
@@ -885,7 +886,7 @@ def compress_charsets(
     return new_screens, new_charsets, found_threshold
 
 
-def merge_charsets_compress(screens, max_charsets=4, full_charsets=False):
+def merge_charsets_compress(screens, max_charsets=4):
     """Main entry point for charset compression"""
     if max_charsets == 1:
         all_chars = []
@@ -896,7 +897,8 @@ def merge_charsets_compress(screens, max_charsets=4, full_charsets=False):
         charset = [
             PetsciiChar(PetsciiChar.BLANK_DATA),
             PetsciiChar(PetsciiChar.FULL_DATA),
-        ] + reduce_charset(all_chars, 253)
+            *reduce_charset(all_chars, 253),
+        ]
 
         for screen in screens:
             screen.remap_characters(charset, True)

@@ -1,12 +1,13 @@
+from functools import lru_cache
+import math
 import os
+from pathlib import Path
 import shutil
 import sys
-from functools import lru_cache
-from pathlib import Path
 from typing import List, NamedTuple
-
-import math
 from PIL import Image
+
+MAX_SCREEN_OFFSET = 100
 
 vicPalette = (  # pepto old
     (0, 0, 0),  # 00 black
@@ -102,7 +103,7 @@ def read_palette_from_file(source: str) -> List[int]:
     cols = Image.open(source)
     palette = []
     (width, _) = cols.size
-    for x in range(0, width):
+    for x in range(width):
         palette.append(rgb_to_idx(cols.getpixel((x, 0))))
     return palette[:255]
 
@@ -160,9 +161,8 @@ class Block(NamedTuple):
     height: int
 
     def has_pixels_in_range(self):
-        if self.y * 40 + self.x >= 1000:
+        if self.y * 40 + self.x >= MAX_SCREEN_OFFSET:
             return False
-        # 24 comes from 1000 // 40 - 1
         max_y = min(self.y + self.height - 1, 24)
         max_x = min(self.x + self.width - 1, 39)
-        return max_y * 40 + max_x < 1000
+        return max_y * 40 + max_x < MAX_SCREEN_OFFSET

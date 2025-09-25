@@ -1,3 +1,6 @@
+RLE_MAX_RUN_LENGTH = 64
+
+
 class RLECodec:
     @staticmethod
     def encode(data):
@@ -9,7 +12,7 @@ class RLECodec:
         current = data[0]
 
         for value in data[1:]:
-            if value == current and count < 64:
+            if value == current and count < RLE_MAX_RUN_LENGTH:
                 count += 1
             else:
                 result.extend([count, current])

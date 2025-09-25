@@ -1,5 +1,8 @@
 import struct
 
+LZMA_MIN_MATCH_LEN = 3
+LZMA_MAX_MATCH_LEN = 255
+
 
 class LZMALikeCodec:
     def __init__(self, window_size=4096):
@@ -7,7 +10,7 @@ class LZMALikeCodec:
 
     def find_match(self, data, pos):
         start = max(0, pos - self.window_size)
-        end = min(pos + 255, len(data))
+        end = min(pos + LZMA_MAX_MATCH_LEN, len(data))
         longest_match = 0
         longest_match_distance = 0
 
@@ -22,10 +25,15 @@ class LZMALikeCodec:
             if match_length > longest_match:
                 longest_match = match_length
                 longest_match_distance = pos - i
-                if longest_match == 255:  # We've reached the maximum match length
+                if (
+                    longest_match == LZMA_MAX_MATCH_LEN
+                ):  # We've reached the maximum match length
                     break
 
-        if longest_match >= 3 and longest_match_distance < self.window_size:
+        if (
+            longest_match >= LZMA_MIN_MATCH_LEN
+            and longest_match_distance < self.window_size
+        ):
             return longest_match_distance, longest_match
         return None, 0
 
@@ -34,7 +42,7 @@ class LZMALikeCodec:
         pos = 0
         while pos < len(data):
             distance, length = self.find_match(data, pos)
-            if length >= 3 and distance < self.window_size:
+            if length >= LZMA_MIN_MATCH_LEN and distance < self.window_size:
                 compressed.append(length)
                 compressed.extend(struct.pack("<H", distance))
                 pos += length
@@ -44,7 +52,8 @@ class LZMALikeCodec:
                 pos += 1
         return compressed
 
-    def decompress(self, data, original_length):
+    @staticmethod
+    def decompress(data, original_length):
         decompressed = bytearray()
         pos = 0
         while len(decompressed) < original_length:

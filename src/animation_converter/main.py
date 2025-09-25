@@ -2,17 +2,16 @@ import multiprocessing
 import os
 import sys
 
-import colorama
-from colorama import Fore
-
-import color_data_utils
-import petscii
-import utils
 from anim_reorder import reorder_screens_by_similarity
 from build_utils import build, clean_build, get_build_path
 from cli_parser import parse_arguments
+import color_data_utils
+import colorama
+from colorama import Fore
 from packer import Packer
 from packer_config import set_packer_options
+import petscii
+import utils
 from utils import Size2D
 
 
@@ -88,7 +87,7 @@ def main():
         )
         for idx, screen in enumerate(screens):
             color_frame = idx % len(color_data_frames)
-            screen.color_data = [] + color_data_frames[color_frame].color_data
+            screen.color_data = [*color_data_frames[color_frame].color_data]
 
     if args.offset_color_frames:
         print(f"Offsetting color frames by {args.offset_color_frames}")
@@ -119,7 +118,7 @@ def main():
     if args.limit_charsets:
         if len(charsets) > args.limit_charsets:
             screens, charsets = petscii.merge_charsets_compress(
-                screens, args.limit_charsets, args.full_charsets
+                screens, args.limit_charsets
             )
         else:
             print(f"No need to limit charsets, already at {len(charsets)}")

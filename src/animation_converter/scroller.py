@@ -15,13 +15,9 @@ def find_areas_with_content(screens: List[petscii.PetsciiScreen]):
             for x in range(40):
                 offset = y * 40 + x
                 if screen.screen_codes[offset] != 0:
-                    if x > max_x:
-                        max_x = x
-                    if x < min_x:
-                        min_x = x
-                    if y > max_y:
-                        max_y = y
-                    if y < min_y:
-                        min_y = y
+                    max_x = max(max_x, x)
+                    min_x = min(min_x, x)
+                    max_y = max(max_y, y)
+                    min_y = min(min_y, y)
 
     return Block(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1)
