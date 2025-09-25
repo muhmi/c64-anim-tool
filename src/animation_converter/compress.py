@@ -1,6 +1,5 @@
 import argparse
 import os
-import sys
 
 from lzma_codec import LZMALikeCodec
 

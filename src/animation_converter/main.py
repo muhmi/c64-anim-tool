@@ -2,14 +2,15 @@ import multiprocessing
 import os
 import sys
 
-import color_data_utils
 import colorama
+from colorama import Fore
+
+import color_data_utils
 import petscii
 import utils
 from anim_reorder import reorder_screens_by_similarity
 from build_utils import build, clean_build, get_build_path
 from cli_parser import parse_arguments
-from colorama import Fore
 from packer import Packer
 from packer_config import set_packer_options
 from utils import Size2D
@@ -48,8 +49,8 @@ def main():
         print(
             Fore.BLUE
             + f"Processing {
-                input_file}, writing output to folder {
-                build_folder}"
+            input_file}, writing output to folder {
+            build_folder}"
         )
 
         if default_charset is None and (input_file.endswith(".c")):
@@ -178,7 +179,7 @@ def main():
         petscii.write_charset(
             charset,
             f"{
-                build_folder}/charset_{idx}.bin",
+            build_folder}/charset_{idx}.bin",
         )
 
     if args.output_sources:

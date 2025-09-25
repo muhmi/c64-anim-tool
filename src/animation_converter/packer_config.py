@@ -1,6 +1,6 @@
 import petscii
 import utils
-from utils import locations_with_same_color, parse_int_table
+from utils import locations_with_same_color
 
 
 def parse_address(address: str):

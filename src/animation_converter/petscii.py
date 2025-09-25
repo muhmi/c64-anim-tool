@@ -4,12 +4,12 @@ import re
 import sys
 from functools import lru_cache
 from io import StringIO
-from typing import Dict, List, Tuple
-import random
+from typing import List, Tuple
 
+from PIL import Image, ImageDraw, ImageSequence
 from bitarray import bitarray
 from colorama import Fore
-from PIL import Image, ImageDraw, ImageSequence
+
 from utils import (
     create_folder_if_not_exists,
     rgb_to_idx,
@@ -30,9 +30,9 @@ class CharUseLocation:
     def __eq__(self, other):
         if isinstance(other, CharUseLocation):
             return (
-                self.screen_index == other.screen_index
-                and self.row == other.row
-                and self.col == other.col
+                    self.screen_index == other.screen_index
+                    and self.row == other.row
+                    and self.col == other.col
             )
         return False
 
@@ -127,8 +127,8 @@ class PetsciiChar:
         else:
             if not equal:
                 equal = (
-                    self.distance(other)
-                    <= PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
+                        self.distance(other)
+                        <= PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK
                 )
             return equal
 
@@ -163,7 +163,7 @@ class PetsciiChar:
 
 
 def find_closest_char(
-    target_char: PetsciiChar, charset: List[PetsciiChar]
+        target_char: PetsciiChar, charset: List[PetsciiChar]
 ) -> Tuple[PetsciiChar, int]:
     if not charset:
         raise ValueError("charset cannot be empty")
@@ -212,7 +212,7 @@ def read_charset(file_path, skipFirstBytes=False):
 
 
 def reduce_charset_smart(
-    charset: List[PetsciiChar], target_size: int
+        charset: List[PetsciiChar], target_size: int
 ) -> List[PetsciiChar]:
     if len(charset) <= target_size:
         return charset.copy()
@@ -250,7 +250,7 @@ def reduce_charset_smart(
 
 
 def reduce_charset_aggressive_sampling(
-    charset: List[PetsciiChar], target_size: int
+        charset: List[PetsciiChar], target_size: int
 ) -> List[PetsciiChar]:
     """
     FASTEST: Aggressive sampling approach - avoids O(n²) entirely
@@ -309,7 +309,7 @@ def reduce_charset(charset: List[PetsciiChar], target_size: int) -> List[Petscii
 
 def get_rgb_from_palette(image, x, y):
     index = image.getpixel((x, y))
-    return image.palette.palette[index * 3 : index * 3 + 3]
+    return image.palette.palette[index * 3: index * 3 + 3]
 
 
 def get_pixel_rgb(image, x, y):
@@ -353,9 +353,9 @@ class PetsciiScreen:
                         px = x + j
                         py = y + i
                         if (
-                            px < width
-                            and py < height
-                            and bw_image.getpixel((px, py)) != 0
+                                px < width
+                                and py < height
+                                and bw_image.getpixel((px, py)) != 0
                         ):
                             num_pixels = num_pixels + 1
                             if inverse:
@@ -425,7 +425,7 @@ class PetsciiScreen:
 
         def write_ints_to_buffer(ints, target_buffer, group_size=40):
             for i in range(0, len(ints), group_size):
-                group = ints[i : i + group_size]
+                group = ints[i: i + group_size]
                 line = ",".join(str(num) for num in group)
                 target_buffer.write(line + ",\n")
 
@@ -591,7 +591,7 @@ def read_charset_from_petmate(custom_font):
 
     charset = []
     for i in range(0, len(bits), 8):
-        char_data = bits[i : i + 8]
+        char_data = bits[i: i + 8]
         byte_data = ints_to_bitarray(char_data)
         char = PetsciiChar(byte_data)
         charset.append(char)
@@ -647,7 +647,7 @@ def read_petmate(file_path: str) -> List[PetsciiScreen]:
 
 
 def write_petmate(
-    screens: List[PetsciiScreen], output_file: str, use_custom_charset: bool = False
+        screens: List[PetsciiScreen], output_file: str, use_custom_charset: bool = False
 ) -> None:
     """
     Write a list of PetsciiScreen objects to a petmate file.
@@ -693,7 +693,7 @@ def write_petmate(
             for col in range(40):
                 offset = row * 40 + col
                 if offset < len(screen.screen_codes) and offset < len(
-                    screen.color_data
+                        screen.color_data
                 ):
                     entry = {
                         "code": int(screen.screen_codes[offset]),
@@ -757,12 +757,12 @@ def write_petmate(
 
 
 def read_screens(
-    filename,
-    charset=None,
-    background_color=None,
-    border_color=None,
-    inverse=False,
-    cleanup=1,
+        filename,
+        charset=None,
+        background_color=None,
+        border_color=None,
+        inverse=False,
+        cleanup=1,
 ) -> List[PetsciiScreen]:
     if filename.endswith(".c"):
         return read_petscii(filename, charset)
@@ -838,9 +838,9 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
 
         if len(charset) > 255:
             charset = [
-                PetsciiChar(PetsciiChar.BLANK_DATA),
-                PetsciiChar(PetsciiChar.FULL_DATA),
-            ] + reduce_charset(charset, 253)
+                          PetsciiChar(PetsciiChar.BLANK_DATA),
+                          PetsciiChar(PetsciiChar.FULL_DATA),
+                      ] + reduce_charset(charset, 253)
 
         screen.remap_characters(charset, allow_error=True)
 
@@ -857,11 +857,11 @@ def merge_charsets(screens, debug_output_folder=None, debug_prefix="changes_"):
 
 
 def compress_charsets(
-    screens: List[PetsciiScreen],
-    charsets: List[List[PetsciiChar]],
-    max_charsets: int,
-    debug_output_folder=None,
-    start_threshold=1,
+        screens: List[PetsciiScreen],
+        charsets: List[List[PetsciiChar]],
+        max_charsets: int,
+        debug_output_folder=None,
+        start_threshold=1,
 ) -> Tuple[List[PetsciiScreen], List[List[PetsciiChar]], float]:
     """Simplified charset compression"""
     PetsciiChar.GLOBAL_CHAR_EQUALITY_THRESHOLD_HACK = start_threshold
@@ -893,9 +893,9 @@ def merge_charsets_compress(screens, max_charsets=4, full_charsets=False):
 
         print(Fore.GREEN + f"Crunching all {len(all_chars)} characters to one charset")
         charset = [
-            PetsciiChar(PetsciiChar.BLANK_DATA),
-            PetsciiChar(PetsciiChar.FULL_DATA),
-        ] + reduce_charset(all_chars, 253)
+                      PetsciiChar(PetsciiChar.BLANK_DATA),
+                      PetsciiChar(PetsciiChar.FULL_DATA),
+                  ] + reduce_charset(all_chars, 253)
 
         for screen in screens:
             screen.remap_characters(charset, True)

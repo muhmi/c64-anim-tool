@@ -32,7 +32,7 @@ def randomize_color_frames(screens: List[PetsciiScreen], seed: int):
 
 
 def generate_color_fill_code(
-    fill_blocks, min_sequence_length=10, max_sequence_length=120
+        fill_blocks, min_sequence_length=10, max_sequence_length=120
 ):
     def find_sequences(numbers):
         sequences = []

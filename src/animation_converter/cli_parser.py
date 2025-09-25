@@ -1,7 +1,6 @@
 import argparse
 import os
-from timeit import default_number
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import yaml
 from colorama import Fore
@@ -53,7 +52,8 @@ def resolve_file_paths(config_data: Dict[str, Any], config_dir: str, script_dir:
         if isinstance(value, str) and ("/" in value or "\\" in value):
             return resolve_single_path(value)
         elif isinstance(value, list):
-            return [resolve_single_path(item) if isinstance(item, str) and ("/" in item or "\\" in item) else item for item in value]
+            return [resolve_single_path(item) if isinstance(item, str) and ("/" in item or "\\" in item) else item for
+                    item in value]
         return value
 
     resolved_config = {}
@@ -293,7 +293,8 @@ def parse_arguments():
             raise ValueError("input_files in config must be a string or list of strings")
         print(Fore.GREEN + f"Using input files from config: {final_input_files}")
     else:
-        raise ValueError("No input files specified. Either provide them as command line arguments or define 'input_files' in your config file.")
+        raise ValueError(
+            "No input files specified. Either provide them as command line arguments or define 'input_files' in your config file.")
 
     # Convert config to dict and update with command line arguments
     args_dict = vars(args)
@@ -322,7 +323,7 @@ def parse_arguments():
 
 
 def validate_config_against_parser(
-    config_data: Dict[str, Any], parser: argparse.ArgumentParser
+        config_data: Dict[str, Any], parser: argparse.ArgumentParser
 ) -> None:
     """
     Validate that all config keys correspond to valid parser arguments.

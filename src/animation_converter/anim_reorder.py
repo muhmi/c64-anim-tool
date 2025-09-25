@@ -1,5 +1,4 @@
-from collections import defaultdict
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List, Set, Tuple
 
 from petscii import PetsciiScreen
 

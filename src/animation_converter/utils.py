@@ -1,4 +1,3 @@
-import math
 import os
 import shutil
 import sys
@@ -6,7 +5,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import List, NamedTuple
 
-from PIL import Image, ImageDraw, ImageSequence
+import math
+from PIL import Image
 
 vicPalette = (  # pepto old
     (0, 0, 0),  # 00 black
@@ -126,6 +126,7 @@ def locations_with_same_color(screen_for_color_data):
                 points[color] = [y * 40 + x]
     return points
 
+
 def parse_int_table(value):
     """
     Parse a list of values given from CLI or YAML.
@@ -145,6 +146,7 @@ def parse_int_table(value):
             return [int(str_value)]
 
     raise ValueError(f"Unsupported type for anim_slowdown_frames: {type(value)}")
+
 
 class Size2D(NamedTuple):
     x: int
