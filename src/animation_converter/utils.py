@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import sys
 from typing import List, NamedTuple
+
 from PIL import Image
 
 MAX_SCREEN_OFFSET = 100
