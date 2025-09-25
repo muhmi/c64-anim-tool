@@ -125,7 +125,7 @@ jobs:
           fi
           # Use GitHub run number for consistency across jobs
           TAG_NAME="release-$VERSION-$(date +'%Y%m%d')-${{ github.run_number }}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_number=$VERSION" >> $GITHUB_OUTPUT
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
 
       - name: Prepare release files
@@ -184,7 +184,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.tag_name }}
-          name: "Animation Tool ${{ steps.version.outputs.version }}"
+          name: "Animation Tool ${{ steps.version.outputs.version_number }}"
           body: |
             🎬 **C64 Animation Tool Release**
 
