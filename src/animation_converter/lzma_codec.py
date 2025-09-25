@@ -14,8 +14,8 @@ class LZMALikeCodec:
         for i in range(start, pos):
             match_length = 0
             while (
-                    pos + match_length < end
-                    and data[i + match_length] == data[pos + match_length]
+                pos + match_length < end
+                and data[i + match_length] == data[pos + match_length]
             ):
                 match_length += 1
 
@@ -55,7 +55,7 @@ class LZMALikeCodec:
                 pos += 1
             else:
                 length = control
-                distance = struct.unpack("<H", data[pos: pos + 2])[0]
+                distance = struct.unpack("<H", data[pos : pos + 2])[0]
                 pos += 2
                 start = len(decompressed) - distance
                 for i in range(length):

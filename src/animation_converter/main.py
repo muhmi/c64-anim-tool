@@ -55,7 +55,7 @@ def main():
 
         if default_charset is None and (input_file.endswith(".c")):
             script_dir = os.path.dirname(__file__)
-            print(f"No default charset provided, using c64_charset.bin")
+            print("No default charset provided, using c64_charset.bin")
             default_charset = petscii.read_charset(f"{script_dir}/data/c64_charset.bin")
 
         if not os.path.exists(input_file):
@@ -98,7 +98,9 @@ def main():
 
     if args.anim_slowdown_table:
         args.anim_slowdown_table = utils.parse_int_table(args.anim_slowdown_table)
-        print(f"Reading animation frame slowdown from table, {args.anim_slowdown_table}")
+        print(
+            f"Reading animation frame slowdown from table, {args.anim_slowdown_table}"
+        )
         args.anim_slowdown_frames = args.anim_slowdown_table[0]
 
     if args.randomize_color_frames:
@@ -108,7 +110,7 @@ def main():
         )
 
     if default_charset is None:
-        print(f"Remove duplicate characters")
+        print("Remove duplicate characters")
         screens, charsets = petscii.merge_charsets(screens, build_folder)
 
     for idx, screen in enumerate(screens):
@@ -190,10 +192,10 @@ def main():
             if os.path.isfile(file_path):
                 utils.copy_file(file_path, args.output_sources)
 
-    if args.skip_build == False:
+    if not args.skip_build:
         build(output_file_name, args.non_linear_prg)
 
-    if args.write_petmate == True:
+    if args.write_petmate:
         petscii.write_petmate(screens, f"{output_file_name}.petmate", True)
 
     return 0

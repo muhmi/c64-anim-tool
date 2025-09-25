@@ -23,7 +23,9 @@ def load_config_file(file_path: str) -> Dict[str, Any]:
         raise ValueError("Config file must be YAML (.yml/.yaml)")
 
 
-def resolve_file_paths(config_data: Dict[str, Any], config_dir: str, script_dir: str, cwd: str) -> Dict[str, Any]:
+def resolve_file_paths(
+    config_data: Dict[str, Any], config_dir: str, script_dir: str, cwd: str
+) -> Dict[str, Any]:
     """Resolve file paths in config data, trying multiple base directories."""
 
     def resolve_single_path(value: str) -> str:
@@ -52,8 +54,14 @@ def resolve_file_paths(config_data: Dict[str, Any], config_dir: str, script_dir:
         if isinstance(value, str) and ("/" in value or "\\" in value):
             return resolve_single_path(value)
         elif isinstance(value, list):
-            return [resolve_single_path(item) if isinstance(item, str) and ("/" in item or "\\" in item) else item for
-                    item in value]
+            return [
+                (
+                    resolve_single_path(item)
+                    if isinstance(item, str) and ("/" in item or "\\" in item)
+                    else item
+                )
+                for item in value
+            ]
         return value
 
     resolved_config = {}
@@ -82,7 +90,7 @@ def parse_arguments():
         type=str,
         nargs="*",  # Changed from "+" to "*" to make it optional
         help="Input .c, PNG or GIF files (optional if defined in config)",
-        default=[]
+        default=[],
     )
 
     # All other arguments remain the same
@@ -282,27 +290,32 @@ def parse_arguments():
         # CLI input files provided, use them (but still apply config for other settings)
         final_input_files = args.input_files
         print(Fore.YELLOW + f"Using input files from command line: {final_input_files}")
-    elif 'input_files' in config_data or 'input-files' in config_data:
+    elif "input_files" in config_data or "input-files" in config_data:
         # Input files defined in config
-        config_input_files = config_data.get('input_files') or config_data.get('input-files')
+        config_input_files = config_data.get("input_files") or config_data.get(
+            "input-files"
+        )
         if isinstance(config_input_files, str):
             final_input_files = [config_input_files]
         elif isinstance(config_input_files, list):
             final_input_files = config_input_files
         else:
-            raise ValueError("input_files in config must be a string or list of strings")
+            raise ValueError(
+                "input_files in config must be a string or list of strings"
+            )
         print(Fore.GREEN + f"Using input files from config: {final_input_files}")
     else:
         raise ValueError(
-            "No input files specified. Either provide them as command line arguments or define 'input_files' in your config file.")
+            "No input files specified. Either provide them as command line arguments or define 'input_files' in your config file."
+        )
 
     # Convert config to dict and update with command line arguments
     args_dict = vars(args)
-    args_dict['input_files'] = final_input_files
+    args_dict["input_files"] = final_input_files
 
     # Only update values that weren't explicitly set in command line
     for key, value in config_data.items():
-        if key in ['input_files', 'input-files']:
+        if key in ["input_files", "input-files"]:
             continue  # Already handled above
 
         # Convert snake_case config keys to dash-style argument names
@@ -323,7 +336,7 @@ def parse_arguments():
 
 
 def validate_config_against_parser(
-        config_data: Dict[str, Any], parser: argparse.ArgumentParser
+    config_data: Dict[str, Any], parser: argparse.ArgumentParser
 ) -> None:
     """
     Validate that all config keys correspond to valid parser arguments.

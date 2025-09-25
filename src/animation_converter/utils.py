@@ -140,8 +140,8 @@ def parse_int_table(value):
 
     if isinstance(value, (str, int)):
         str_value = str(value)
-        if ',' in str_value:
-            return [int(x.strip()) for x in str_value.split(',')]
+        if "," in str_value:
+            return [int(x.strip()) for x in str_value.split(",")]
         else:
             return [int(str_value)]
 
