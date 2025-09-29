@@ -11,11 +11,10 @@ Options:
 """
 
 import argparse
+from pathlib import Path
 import re
 import shutil
-from pathlib import Path
 from typing import List, Tuple
-
 
 # List of internal modules that should use relative imports
 INTERNAL_MODULES = [
@@ -52,7 +51,7 @@ def find_python_files(directory: Path) -> List[Path]:
     return sorted(python_files)
 
 
-def fix_imports_in_content(content: str, filename: str) -> Tuple[str, List[str]]:
+def fix_imports_in_content(content: str) -> Tuple[str, List[str]]:
     """
     Fix imports in file content.
     Returns (fixed_content, list_of_changes)
@@ -62,7 +61,6 @@ def fix_imports_in_content(content: str, filename: str) -> Tuple[str, List[str]]
     fixed_lines = []
 
     for line_num, line in enumerate(lines, 1):
-        original_line = line
         modified = False
 
         # Pattern 1: from module import ...
@@ -101,13 +99,13 @@ def process_file(file_path: Path, dry_run: bool = False, backup: bool = False) -
     Process a single file. Returns True if changes were made.
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             original_content = f.read()
     except Exception as e:
         print(f"❌ Error reading {file_path}: {e}")
         return False
 
-    fixed_content, changes = fix_imports_in_content(original_content, file_path.name)
+    fixed_content, changes = fix_imports_in_content(original_content)
 
     if not changes:
         return False
@@ -170,7 +168,7 @@ def main():
     if not args.directory.exists():
         print(f"❌ Directory not found: {args.directory}")
         print(f"   Current directory: {Path.cwd()}")
-        print(f"   Please run from project root or specify --directory")
+        print("   Please run from project root or specify --directory")
         return 1
 
     # Convert to absolute path to avoid issues
@@ -205,4 +203,6 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    import sys
+
+    sys.exit(main())

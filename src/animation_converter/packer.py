@@ -4,13 +4,13 @@ import os
 import sys
 from typing import List
 
-from . import color_data_utils
 from colorama import Fore
 from jinja2 import Environment, FileSystemLoader
+
+from . import color_data_utils, utils
 from .petscii import PetsciiChar, PetsciiScreen
 from .rle_codec import RLECodec
 from .scroller import find_areas_with_content
-from . import utils
 from .utils import Block, Size2D
 
 PACKER_MAX_OP_CODES = 255

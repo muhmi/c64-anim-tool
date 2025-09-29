@@ -1,5 +1,4 @@
-from . import petscii
-from . import utils
+from . import petscii, utils
 from .utils import locations_with_same_color
 
 

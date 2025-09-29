@@ -2,16 +2,15 @@ import multiprocessing
 import os
 import sys
 
+import colorama
+from colorama import Fore
+
+from . import color_data_utils, petscii, utils
 from .anim_reorder import reorder_screens_by_similarity
 from .build_utils import build, clean_build, get_build_path
 from .cli_parser import parse_arguments
-from . import color_data_utils
-import colorama
-from colorama import Fore
 from .packer import Packer
 from .packer_config import set_packer_options
-from . import petscii
-from . import utils
 from .utils import Size2D
 
 

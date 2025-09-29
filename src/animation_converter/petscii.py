@@ -8,6 +8,7 @@ from typing import List, Tuple
 from bitarray import bitarray
 from colorama import Fore
 from PIL import Image, ImageDraw, ImageSequence
+
 from .utils import (
     create_folder_if_not_exists,
     rgb_to_idx,

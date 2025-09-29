@@ -8,18 +8,31 @@ Usage:
 """
 
 import os
-import tkinter as tk
 from pathlib import Path
+import tkinter as tk
 from tkinter import filedialog, messagebox
-from typing import Optional, List
+from typing import List, Optional
 
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
 from PIL import Image, ImageTk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import (
+    BOTH,
+    BOTTOM,
+    CENTER,
+    HORIZONTAL,
+    LEFT,
+    RIGHT,
+    YES,
+    W,
+    X,
+    Y,
+)
+import yaml
+
+from animation_converter.cli_parser import load_config_file, resolve_file_paths
 
 # Import from parent package (animation_converter)
 from animation_converter.petscii import PetsciiScreen, read_screens, write_petmate
-from animation_converter import utils
 
 
 class AnimationProject:
@@ -37,7 +50,6 @@ class AnimationProject:
 
     def load(self):
         """Load project from YAML config"""
-        from animation_converter.cli_parser import load_config_file, resolve_file_paths
 
         self.config = load_config_file(str(self.project_path))
 
@@ -50,7 +62,6 @@ class AnimationProject:
 
     def save(self):
         """Save project config to YAML"""
-        import yaml
 
         with open(self.project_path, "w") as f:
             yaml.dump(self.config, f, default_flow_style=False)
@@ -274,7 +285,7 @@ class ProjectPanel(ttk.Frame):
             files = list(self.input_files_list.get(0, tk.END))
             self.app.project.config["input_files"] = files
 
-    def on_frame_select(self, event):
+    def on_frame_select(self, _event):
         """Handle frame selection in list"""
         selection = self.frames_listbox.curselection()
         if selection:
@@ -356,7 +367,7 @@ class PreviewPanel(ttk.Frame):
                 self.canvas.winfo_width() // 2,
                 self.canvas.winfo_height() // 2,
                 image=self.photo_image,
-                anchor=tk.CENTER,
+                anchor=CENTER,
             )
 
             # Update info
@@ -392,7 +403,7 @@ class C64AnimationToolGUI(ttk.Window):
         main_container.pack(fill=BOTH, expand=YES)
 
         # Create paned window for resizable panels
-        paned = ttk.PanedWindow(main_container, orient=tk.HORIZONTAL)
+        paned = ttk.PanedWindow(main_container, orient=HORIZONTAL)
         paned.pack(fill=BOTH, expand=YES)
 
         # Left panel (project settings)
@@ -494,7 +505,7 @@ class C64AnimationToolGUI(ttk.Window):
 
             self.update_status(f"Processed {len(self.project.screens)} frames")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to process frames: {str(e)}")
+            messagebox.showerror("Error", f"Failed to process frames: {e!s}")
             self.update_status("Error processing frames", error=True)
 
     def show_frame(self, idx: int):
@@ -529,7 +540,7 @@ class C64AnimationToolGUI(ttk.Window):
                 messagebox.showinfo("Success", f"Exported to {output_file}")
                 self.update_status(f"Exported Petmate: {output_file}")
             except Exception as e:
-                messagebox.showerror("Error", f"Export failed: {str(e)}")
+                messagebox.showerror("Error", f"Export failed: {e!s}")
 
     def show_about(self):
         """Show about dialog"""
