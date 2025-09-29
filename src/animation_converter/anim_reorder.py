@@ -1,6 +1,6 @@
 from typing import Dict, List, Set, Tuple
 
-from petscii import PetsciiScreen
+from .petscii import PetsciiScreen
 
 MIN_SCREENS_TO_REORDER = 2
 

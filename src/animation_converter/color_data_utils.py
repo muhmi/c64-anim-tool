@@ -1,7 +1,7 @@
 import random
 from typing import List
 
-from petscii import PetsciiScreen
+from .petscii import PetsciiScreen
 
 
 def offset_color_frames(screens: List[PetsciiScreen], offset: int):

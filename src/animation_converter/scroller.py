@@ -1,7 +1,7 @@
 from typing import List
 
-import petscii
-from utils import Block
+from . import petscii
+from .utils import Block
 
 
 def find_areas_with_content(screens: List[petscii.PetsciiScreen]):

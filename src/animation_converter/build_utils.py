@@ -2,7 +2,7 @@ import os
 import platform
 import subprocess
 
-import utils
+from . import utils
 
 
 def get_build_path():

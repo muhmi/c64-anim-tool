@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from lzma_codec import LZMALikeCodec
+from .lzma_codec import LZMALikeCodec
 
 
 def compare_files(file1, file2, max_diff=10):
