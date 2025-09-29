@@ -120,6 +120,7 @@ distribute: ## Create standalone exe with Nuitka (optimized)
 		--include-data-files=bins/linux/64tass=bins/linux/64tass \
 		--include-data-files=bins/macos/64tass=bins/macos/64tass \
 		--include-data-files=bins/windows/64tass.exe=bins/windows/64tass.exe \
+		--enable-plugin=tk-inter \
 		--follow-imports \
 		--lto=yes \
 		--show-progress \
