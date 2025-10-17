@@ -243,7 +243,7 @@ def parse_arguments():
     parser.add_argument(
         "--color-aberration-scroll",
         type=str,
-        default="4,0,2",
+        default="0,0,0",
         help="Horizontal scroll register values",
     )
     parser.add_argument(
