@@ -5,16 +5,29 @@ import sys
 import colorama
 from colorama import Fore
 
-from . import color_data_utils, petscii, utils
-from .anim_reorder import reorder_screens_by_similarity
-from .build_utils import build, clean_build, get_build_path
-from .cli_parser import parse_arguments
-from .packer import Packer
-from .packer_config import set_packer_options
-from .utils import Size2D
+from animation_converter import color_data_utils, petscii, utils
+from animation_converter.anim_reorder import reorder_screens_by_similarity
+from animation_converter.build_utils import build, clean_build, get_build_path
+from animation_converter.cli_parser import parse_arguments
+from animation_converter.packer import Packer
+from animation_converter.packer_config import set_packer_options
+from animation_converter.utils import Size2D
 
 
 def main():
+    # No arguments (just 'animation-tool') → Launch GUI
+    if len(sys.argv) == 1:
+        try:
+            from animation_converter.gui import run_gui
+
+            run_gui()
+            return 0
+        except ImportError as e:
+            print("Error: GUI dependencies not installed.")
+            print("Install with: pip install ttkbootstrap")
+            print(f"Details: {e}")
+            return 1
+
     # colorama
     colorama.init(autoreset=True)
 
