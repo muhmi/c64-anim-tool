@@ -194,6 +194,9 @@ start
 	#screen_off
 	#set_vic_bank 2
 
+	{% if color_aberration_mode %}
+	#clear_screen 0, $d800
+	{% else %}
 	{% if fill_color_with_effect %}
 	#clear_screen {{ fill_color_palette[0] }}, $d800
 	{% else %}
@@ -202,6 +205,7 @@ start
 	#clear_screen 1, $d800
 	{% endif %}
 
+	{% endif %}
 	{% endif %}
 
 
@@ -291,6 +295,10 @@ test_raster_irq .block
 	jsr $1003
 {% endif %}
 
+{% if color_aberration_mode %}
+	jsr test_color_aberration
+{% endif %}
+
 	{% if fill_color_with_effect %}
 	{% if color_anim_slowdown > 0 %}
 
@@ -377,6 +385,32 @@ exit
 	pla
 	rti
 .endblock
+
+{% if color_aberration_mode %}
+test_color_aberration .block
+	ldx color_tick
+	lda colors, x
+	sta $d021
+	lda scroll, x
+	sta $d016
+	inx
+	cpx #{{len(color_aberration_colors)}}
+	bne +
+	ldx #0
++	stx color_tick
+	rts
+color_tick
+	.byte 0
+scroll
+{% for val in color_aberration_scroll %}
+	.byte {{val}}
+{% endfor %}
+colors
+{% for col in color_aberration_colors %}
+	.byte {{col}}
+{% endfor %}
+.endblock
+{% endif %}
 
 test_swap_frame .block
 	lda test_current_buffer

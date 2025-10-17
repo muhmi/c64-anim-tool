@@ -131,6 +131,9 @@ class Packer:
         self.FILL_COLOR_MIN_SEQ_LEN = 10
         self.FILL_COLOR_MAX_SEQ_LEN = 127
         self.ANIM_SLOWDOWN_TABLE = []
+        self.COLOR_ABERRATION_MODE = False
+        self.COLOR_ABERRATION_COLORS = []
+        self.COLOR_ABERRATION_SCROLL = []
 
         self._initialize_player_ops()
 
@@ -846,6 +849,9 @@ class Packer:
             "scroll_disable_repeat": self.SCROLL_DISABLE_REPEAT,
             "used_area": find_areas_with_content(screens),
             "fill_color_palette": self.FILL_COLOR_PALETTE,
+            "color_aberration_mode": self.COLOR_ABERRATION_MODE,
+            "color_aberration_colors": self.COLOR_ABERRATION_COLORS,
+            "color_aberration_scroll": self.COLOR_ABERRATION_SCROLL,
         }
 
         env = Environment(

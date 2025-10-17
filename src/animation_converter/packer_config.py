@@ -54,3 +54,13 @@ def set_packer_options(anim_change_index, output_file_name, packer_to_setup, arg
         packer_to_setup.FILL_COLOR_MAX_SEQ_LEN = args.color_anim_max_seq_len
     if args.anim_slowdown_table:
         packer_to_setup.ANIM_SLOWDOWN_TABLE = args.anim_slowdown_table
+    if args.color_aberration_mode:
+        packer_to_setup.COLOR_ABERRATION_MODE = args.color_aberration_mode
+        if args.color_aberration_colors:
+            packer_to_setup.COLOR_ABERRATION_COLORS = utils.read_color_palette(
+                args.color_aberration_colors
+            )
+        if args.color_aberration_scroll:
+            packer_to_setup.COLOR_ABERRATION_SCROLL = utils.read_color_palette(
+                args.color_aberration_scroll
+            )

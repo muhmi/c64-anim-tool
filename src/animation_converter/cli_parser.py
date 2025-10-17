@@ -229,6 +229,24 @@ def parse_arguments():
         help="Include given file as music to test.prg, invalid file name leads to music being ignored.",
     )
     parser.add_argument(
+        "--color-aberration-mode",
+        type=bool,
+        default=True,
+        help="Animate background color and wiggle horizontal scroll register",
+    )
+    parser.add_argument(
+        "--color-aberration-colors",
+        type=str,
+        default="2,5,6",
+        help="List of colors to loop through",
+    )
+    parser.add_argument(
+        "--color-aberration-scroll",
+        type=str,
+        default="4,0,2",
+        help="Horizontal scroll register values",
+    )
+    parser.add_argument(
         "--template-dir",
         type=str,
         default=None,
