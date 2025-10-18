@@ -288,8 +288,30 @@ def parse_arguments():
         default=False,
         help="Write out a petmate file with petscii animation and charsets",
     )
+    parser.add_argument(
+        "--asm-test-runner-name",
+        type=str,
+        default="player_test_setup.asm",
+        help="Name of the asm file to use for building test .prg",
+    )
+    parser.add_argument(
+        "--fast-mode",
+        type=bool,
+        default=False,
+        help="Skip double buffering and try to run 50fps",
+    )
 
     args = parser.parse_args()
+
+    # Color aberration mode needs inverse charset
+    if args.color_aberration_mode:
+        args.inverse = True
+        args.disable_rle = True
+        args.per_row_mode = True
+        args.asm_test_runner_name = "player_50fps_test.asm"
+
+    if args.fast_mode:
+        args.asm_test_runner_name = "player_50fps_test.asm"
 
     # Load and merge config file
     config_data = load_config_file(args.config)
