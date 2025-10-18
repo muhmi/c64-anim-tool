@@ -27,6 +27,7 @@ class Packer:
     def __init__(
         self, block_size: Size2D = Size2D(3, 3), macro_block_size: Size2D = Size2D(2, 4)
     ):
+        self.PLAYER_TEST_HARNESS_TEMPLATE = "player_test_setup.asm"
         self.USED_MACRO_BLOCKS = None
         self.USED_BLOCKS = None
         self.BLOCK_SIZE = block_size
@@ -857,7 +858,7 @@ class Packer:
         env = Environment(
             loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True
         )
-        test_code_template = env.get_template("player_test_setup.asm")
+        test_code_template = env.get_template(self.PLAYER_TEST_HARNESS_TEMPLATE)
         player_template = env.get_template("player.asm")
 
         player_file = f"{output_folder}/player.asm"
