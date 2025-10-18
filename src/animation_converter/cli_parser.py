@@ -294,6 +294,12 @@ def parse_arguments():
         default="player_test_setup.asm",
         help="Name of the asm file to use for building test .prg",
     )
+    parser.add_argument(
+        "--fast-mode",
+        type=bool,
+        default=False,
+        help="Skip double buffering and try to run 50fps",
+    )
 
     args = parser.parse_args()
 
@@ -302,6 +308,9 @@ def parse_arguments():
         args.inverse = True
         args.disable_rle = True
         args.per_row_mode = True
+        args.asm_test_runner_name = "player_50fps_test.asm"
+
+    if args.fast_mode:
         args.asm_test_runner_name = "player_50fps_test.asm"
 
     # Load and merge config file
