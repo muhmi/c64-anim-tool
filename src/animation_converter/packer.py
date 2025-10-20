@@ -5,13 +5,15 @@ import sys
 from typing import List
 
 import color_data_utils
-from colorama import Fore
 from jinja2 import Environment, FileSystemLoader
+from logger import get_logger
 from petscii import PetsciiChar, PetsciiScreen
 from rle_codec import RLECodec
 from scroller import find_areas_with_content
 import utils
 from utils import Block, Size2D
+
+logger = get_logger()
 
 PACKER_MAX_OP_CODES = 255
 RLE_END_MARKER = 255
@@ -171,9 +173,8 @@ class Packer:
         self.USED_BLOCKS = set()
 
         if self.player_next_free_op >= PACKER_MAX_OP_CODES:
-            print(
-                f"Player op code count is too high! {
-                self.player_next_free_op}"
+            logger.error(
+                f"Player op code count is too high! {self.player_next_free_op}"
             )
             sys.exit(1)
 
@@ -451,7 +452,7 @@ class Packer:
                 current_charset = charsets.index(screen.charset)
                 if prev_charset != current_charset:
                     if allow_debug_output:
-                        print(
+                        logger.debug(
                             f"Screen {idx}, charset change from {prev_charset} -> {current_charset}"
                         )
                     anim_stream.append(self.OP_SET_CHARSET)
@@ -477,7 +478,9 @@ class Packer:
                 anim_stream.append(self.OP_SET_SCREEN_MODE)
             elif self.INIT_COLOR_MEM_BETWEEN_ANIMATIONS:
                 if idx in self.ANIM_CHANGE_SCREEN_INDEXES:
-                    print(f"frame {idx}, clear color memory to {screen.color_data[0]}")
+                    logger.debug(
+                        f"frame {idx}, clear color memory to {screen.color_data[0]}"
+                    )
                     anim_stream.append(self.OP_CLEAR_COLOR)
                     anim_stream.append(screen.color_data[0])
 
@@ -502,20 +505,20 @@ class Packer:
             screen, color, offset = self.unpack(anim_stream, offset, screen, color)
 
             if not self.USE_ONLY_COLOR and screen != screens[idx].screen_codes:
-                print(Fore.RED + "ERROR: Packer & unpacker dont work together!!!")
-                print(f"SCREEN DATA IS BROKEN AT FRAME {idx}")
-                print("unpacked:")
+                logger.error("ERROR: Packer & unpacker dont work together!!!")
+                logger.error(f"SCREEN DATA IS BROKEN AT FRAME {idx}")
+                logger.error("unpacked:")
                 self.print_list(screen)
-                print("expected:")
+                logger.error("expected:")
                 self.print_list(screens[idx].screen_codes)
                 sys.exit(1)
 
             if use_color and color != screens[idx].color_data:
-                print(Fore.RED + "ERROR: Packer & unpacker dont work together!!!")
-                print(f"COLOR DATA IS BROKEN AT FRAME {idx}")
-                print("unpacked:")
+                logger.error("ERROR: Packer & unpacker dont work together!!!")
+                logger.error(f"COLOR DATA IS BROKEN AT FRAME {idx}")
+                logger.error("unpacked:")
                 self.print_list(color)
-                print("expected:")
+                logger.error("expected:")
                 self.print_list(screens[idx].color_data)
                 sys.exit(1)
 
@@ -526,7 +529,7 @@ class Packer:
         for i in range(0, len(ints), group_size):
             group = ints[i : i + group_size]
             line = ",".join(f"{num:4d}" for num in group)
-            print(line)
+            logger.error(line)
 
     def unpack(
         self,
@@ -553,7 +556,9 @@ class Packer:
             op_code = read_next_byte()
             # if self.OP_CODES[op_code] not in self.OPS_USED:
             if allow_debug_output:
-                print(f"{offset:4d}: op_code {op_code}, {self.OP_CODES[op_code]}")
+                logger.debug(
+                    f"{offset:4d}: op_code {op_code}, {self.OP_CODES[op_code]}"
+                )
             self.OPS_USED.add(self.OP_CODES[op_code])
 
             if op_code == self.OP_FRAME_END:
@@ -724,7 +729,7 @@ class Packer:
         )
         if self.OVERRIDE_TEMPLATE_DIR:
             template_dir = os.path.abspath(self.OVERRIDE_TEMPLATE_DIR)
-            print(Fore.GREEN + f"Reading templates and data from {template_dir}")
+            logger.success(f"Reading templates and data from {template_dir}")
 
         macro_blocks = self.get_macro_blocks()
 
@@ -741,7 +746,7 @@ class Packer:
                 blank_char_index = idx
                 break
 
-        print(
+        logger.debug(
             f"Animation has {len(self.USED_BLOCKS)} used blocks out of {len(self.ALL_BLOCKS)}"
         )
 
@@ -752,9 +757,8 @@ class Packer:
         elif os.path.exists(self.MUSIC_FILE_NAME):
             test_music = self.MUSIC_FILE_NAME
         else:
-            print(
-                Fore.YELLOW
-                + f"WARNING: Unable to find music data file {self.MUSIC_FILE_NAME}"
+            logger.warning(
+                f"WARNING: Unable to find music data file {self.MUSIC_FILE_NAME}"
             )
 
         if test_music:
@@ -802,9 +806,8 @@ class Packer:
             )
             top_10 = list(islice(sorted_rle_counts.items(), 10))
             if top_10[0][0] == 1:
-                print(
-                    Fore.YELLOW
-                    + "WARING: Using RLE to pack full screen but its going to perform poorly with this data"
+                logger.warning(
+                    "WARNING: Using RLE to pack full screen but its going to perform poorly with this data"
                 )
 
         namespace = {

@@ -1,3 +1,7 @@
+from logger import get_logger
+
+logger = get_logger()
+
 RLE_MAX_RUN_LENGTH = 64
 
 
@@ -42,14 +46,14 @@ if __name__ == "__main__":
 
     # Encode
     encoded = RLECodec.encode(original)
-    print("Encoded:", encoded)
+    logger.info(f"Encoded: {encoded}")
 
     # Decode
     decoded = RLECodec.decode(encoded)
-    print("Decoded:", decoded)
+    logger.info(f"Decoded: {decoded}")
 
     # Verify
-    print("Original length:", len(original))
-    print("Encoded length:", len(encoded))
-    print("Decoded length:", len(decoded))
-    print("Decoded matches original:", decoded == original)
+    logger.info(f"Original length: {len(original)}")
+    logger.info(f"Encoded length: {len(encoded)}")
+    logger.info(f"Decoded length: {len(decoded)}")
+    logger.success(f"Decoded matches original: {decoded == original}")

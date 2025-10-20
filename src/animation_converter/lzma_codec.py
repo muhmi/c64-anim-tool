@@ -1,5 +1,9 @@
 import struct
 
+from logger import get_logger
+
+logger = get_logger()
+
 LZMA_MIN_MATCH_LEN = 3
 LZMA_MAX_MATCH_LEN = 255
 
@@ -84,7 +88,7 @@ class LZMALikeCodec:
             original_length = struct.unpack("<H", infile.read(2))[
                 0
             ]  # Read original length
-            print(f"original_length = {original_length}")
+            logger.debug(f"original_length = {original_length}")
             compressed_data = infile.read()
             decompressed = self.decompress(compressed_data, original_length)
             outfile.write(decompressed)

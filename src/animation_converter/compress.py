@@ -1,7 +1,10 @@
 import argparse
 import os
 
+from logger import get_logger
 from lzma_codec import LZMALikeCodec
+
+logger = get_logger()
 
 
 def compare_files(file1, file2, max_diff=10):
@@ -10,7 +13,7 @@ def compare_files(file1, file2, max_diff=10):
         data2 = f2.read()
 
     if len(data1) != len(data2):
-        print(
+        logger.warning(
             f"File sizes differ: {file1} is {len(data1)} bytes, {file2} is {len(data2)} bytes"
         )
 
@@ -18,58 +21,60 @@ def compare_files(file1, file2, max_diff=10):
     for i in range(max(len(data1), len(data2))):
         if i < len(data1) and i < len(data2):
             if data1[i] != data2[i]:
-                print(
+                logger.debug(
                     f"Difference at byte {i}: {file1} has {data1[i]:02X}, {file2} has {data2[i]:02X}"
                 )
                 differences += 1
         elif i < len(data1):
-            print(f"Extra byte in {file1} at position {i}: {data1[i]:02X}")
+            logger.debug(f"Extra byte in {file1} at position {i}: {data1[i]:02X}")
             differences += 1
         else:
-            print(f"Extra byte in {file2} at position {i}: {data2[i]:02X}")
+            logger.debug(f"Extra byte in {file2} at position {i}: {data2[i]:02X}")
             differences += 1
 
         if differences >= max_diff:
-            print(f"Reached maximum number of differences to display ({max_diff})")
+            logger.debug(
+                f"Reached maximum number of differences to display ({max_diff})"
+            )
             break
 
     if differences == 0:
-        print("Files are identical")
+        logger.success("Files are identical")
         return True
     else:
-        print(f"Total differences: {differences}")
+        logger.warning(f"Total differences: {differences}")
         return False
 
 
 def compress_file(input_file, output_file, window_size=4096):
     codec = LZMALikeCodec(window_size=window_size)
     codec.compress_to_file(input_file, output_file)
-    print(f"Compressed {input_file} to {output_file}")
-    print(f"Using window size: {codec.window_size} bytes")
+    logger.success(f"Compressed {input_file} to {output_file}")
+    logger.info(f"Using window size: {codec.window_size} bytes")
 
     original_size = os.path.getsize(input_file)
     compressed_size = os.path.getsize(output_file)
     ratio = (1 - compressed_size / original_size) * 100
 
-    print(f"Original size: {original_size} bytes")
-    print(f"Compressed size: {compressed_size} bytes")
-    print(f"Compression ratio: {ratio:.2f}%")
-    print(f"Space saved: {ratio:.2f}%")
+    logger.info(f"Original size: {original_size} bytes")
+    logger.info(f"Compressed size: {compressed_size} bytes")
+    logger.info(f"Compression ratio: {ratio:.2f}%")
+    logger.info(f"Space saved: {ratio:.2f}%")
 
 
 def decompress_file(input_file, output_file, window_size=4096):
     codec = LZMALikeCodec(window_size=window_size)
     codec.decompress_from_file(input_file, output_file)
-    print(f"Decompressed {input_file} to {output_file}")
-    print(f"Using window size: {codec.window_size} bytes")
+    logger.success(f"Decompressed {input_file} to {output_file}")
+    logger.info(f"Using window size: {codec.window_size} bytes")
 
 
 def test_compression(input_file, window_size=4096):
     compressed_file = input_file + ".compressed"
     decompressed_file = input_file + ".decompressed"
 
-    print("-" * 40)
-    print(f"Testing file {input_file}")
+    logger.info("-" * 40)
+    logger.info(f"Testing file {input_file}")
 
     compress_file(input_file, compressed_file, window_size)
     decompress_file(compressed_file, decompressed_file, window_size)
@@ -106,7 +111,7 @@ def main():
 
     if args.test:
         if args.output_file:
-            print("Warning: output_file is ignored when using --test")
+            logger.warning("output_file is ignored when using --test")
         test_compression(args.input_file, args.window_size)
     elif args.compress:
         if not args.output_file:

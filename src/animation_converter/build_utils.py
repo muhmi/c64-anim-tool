@@ -2,7 +2,10 @@ import os
 import platform
 import subprocess
 
+from logger import get_logger
 import utils
+
+logger = get_logger()
 
 
 def get_build_path():
@@ -25,7 +28,7 @@ def get_c64tass_path():
         binary_name = "64tass.exe"
     else:
         # Fallback to linux for unknown systems
-        print(f"Warning: Unknown platform '{system}', defaulting to linux binary")
+        logger.warning(f"Unknown platform '{system}', defaulting to linux binary")
         platform_dir = "linux"
         binary_name = "64tass"
 
@@ -42,9 +45,9 @@ def get_c64tass_path():
         try:
             os.chmod(binary_path, 0o755)
         except PermissionError:
-            print(f"Warning: Could not make {binary_path} executable")
+            logger.warning(f"Could not make {binary_path} executable")
 
-    print(f"Using 64tass binary: {binary_path}")
+    logger.debug(f"Using 64tass binary: {binary_path}")
     return binary_path
 
 
@@ -79,6 +82,11 @@ def build(output_file_name, non_linear_prg=False):
         capture_output=True,
         text=True,
     )
-    print(f"Return code: {result.returncode}")
-    print(f"Output: {result.stdout}")
-    print(f"Errors: {result.stderr}")
+
+    if result.returncode == 0:
+        logger.success(f"Build successful: {output_file_name}.prg")
+        logger.debug(f"Output: {result.stdout}")
+    else:
+        logger.error(f"Build failed with return code: {result.returncode}")
+        logger.error(f"Output: {result.stdout}")
+        logger.error(f"Errors: {result.stderr}")

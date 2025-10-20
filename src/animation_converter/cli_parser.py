@@ -2,8 +2,11 @@ import argparse
 import os
 from typing import Any, Dict
 
-from colorama import Fore
+# Import logger - will use default INFO level until setup_logging is called
+from logger import get_logger
 import yaml
+
+logger = get_logger()
 
 
 def convert_arg_name(name: str, to_snake: bool = True) -> str:
@@ -15,7 +18,7 @@ def convert_arg_name(name: str, to_snake: bool = True) -> str:
 
 
 def load_config_file(file_path: str) -> Dict[str, Any]:
-    print(Fore.GREEN + f"Reading config from {file_path}")
+    logger.success(f"Reading config from {file_path}")
     if file_path.endswith((".yml", ".yaml")):
         with open(file_path) as f:
             return yaml.safe_load(f)
@@ -300,6 +303,26 @@ def parse_arguments():
         default=False,
         help="Skip double buffering and try to run 50fps",
     )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        default=False,
+        help="Enable verbose (DEBUG level) output",
+    )
+    parser.add_argument(
+        "--quiet",
+        "-q",
+        action="store_true",
+        default=False,
+        help="Suppress all output except errors",
+    )
+    parser.add_argument(
+        "--log-file",
+        type=str,
+        default=None,
+        help="Write detailed logs to file",
+    )
 
     args = parser.parse_args()
 
@@ -329,7 +352,7 @@ def parse_arguments():
     if args.input_files:
         # CLI input files provided, use them (but still apply config for other settings)
         final_input_files = args.input_files
-        print(Fore.YELLOW + f"Using input files from command line: {final_input_files}")
+        logger.warning(f"Using input files from command line: {final_input_files}")
     elif "input_files" in config_data or "input-files" in config_data:
         # Input files defined in config
         config_input_files = config_data.get("input_files") or config_data.get(
@@ -343,7 +366,7 @@ def parse_arguments():
             raise ValueError(
                 "input_files in config must be a string or list of strings"
             )
-        print(Fore.GREEN + f"Using input files from config: {final_input_files}")
+        logger.success(f"Using input files from config: {final_input_files}")
     else:
         raise ValueError(
             "No input files specified. Either provide them as command line arguments or define 'input_files' in your config file."

@@ -6,7 +6,7 @@ import sys
 from typing import List, Tuple
 
 from bitarray import bitarray
-from colorama import Fore
+from logger import get_logger
 from PIL import Image, ImageDraw, ImageSequence
 from utils import (
     create_folder_if_not_exists,
@@ -15,6 +15,8 @@ from utils import (
     vicPalette,
     write_bin,
 )
+
+logger = get_logger()
 
 MAX_BYTE_VALUE = 255
 MAX_CHARSET_SIZE = 256
@@ -55,7 +57,7 @@ def init_hamming_lookup():
     """Initialize lookup table for byte hamming distances - much faster"""
     global _HAMMING_LOOKUP
     global _HAMMING_LOOKUP_INITIALIZED
-    print("Precalculating hamming lookup...")
+    logger.debug("Precalculating hamming lookup...")
     if _HAMMING_LOOKUP_INITIALIZED is False:
         _HAMMING_LOOKUP = {}
         for i in range(256):
@@ -67,7 +69,7 @@ def init_hamming_lookup():
                     count += temp & 1
                     temp >>= 1
                 _HAMMING_LOOKUP[(i, j)] = count
-        print("🚀 Initialized hamming distance lookup table")
+        logger.debug("Initialized hamming distance lookup table")
         _HAMMING_LOOKUP_INITIALIZED = True
 
 
@@ -155,7 +157,7 @@ class PetsciiChar:
     def display(self):
         for i in range(8):
             line = "".join("#" if self.data[i * 8 + j] else "." for j in range(8))
-            print(line)
+            logger.debug(line)
 
     def render(self, size=8):
         img = Image.new("1", (size, size), 0)
@@ -266,7 +268,7 @@ def reduce_charset_aggressive_sampling(
     if len(charset) <= target_size:
         return charset.copy()
 
-    print(f"⚡ Aggressive sampling: {len(charset)} -> {target_size}")
+    logger.info(f"Aggressive sampling: {len(charset)} -> {target_size}")
 
     # Always keep blank and full characters
     essential_chars = [
@@ -289,7 +291,7 @@ def reduce_charset_aggressive_sampling(
         all_sorted = sorted(charset, key=lambda c: c.use_count(), reverse=True)
         result = all_sorted[:target_size]
 
-    print(f"⚡ Aggressive sampling complete: {len(result)} chars")
+    logger.info(f"Aggressive sampling complete: {len(result)} chars")
     return result
 
 
@@ -590,7 +592,7 @@ def ints_to_bitarray(ints: List[int]):
 def read_charset_from_petmate(custom_font):
     name = custom_font["name"]
     bits = custom_font["font"]["bits"]
-    print(f"Reading custom font {name}, bits = {len(bits)}")
+    logger.debug(f"Reading custom font {name}, bits = {len(bits)}")
 
     charset = []
     for i in range(0, len(bits), 8):
@@ -602,7 +604,7 @@ def read_charset_from_petmate(custom_font):
     if len(charset) > MAX_BYTE_VALUE:
         raise ValueError(f"Charset is too big {len(charset)}")
 
-    print(f"Custom font {name}, has {len(charset)} characters")
+    logger.debug(f"Custom font {name}, has {len(charset)} characters")
     return charset
 
 
@@ -622,14 +624,14 @@ def read_petmate(file_path: str) -> List[PetsciiScreen]:
         border = int(frame["borderColor"])
         bg = int(frame["backgroundColor"])
 
-        print(
+        logger.debug(
             f"Frame {idx}, charset {charset_name}, backgroundColor {bg}, borderColor {border}"
         )
 
         if charset_name in charsets:
             charset = charsets[charset_name]
         else:
-            print(f"Cannot find custom charset with name {charset_name}")
+            logger.error(f"Cannot find custom charset with name {charset_name}")
             sys.exit(1)
 
         screen = PetsciiScreen(idx)
@@ -756,7 +758,9 @@ def write_petmate(
         json.dump(output, f, separators=(",", ":"))
 
     charset_type = "custom" if use_custom_charset else "built-in 'upper'"
-    print(f"Wrote {len(screens)} screens to {output_file} using {charset_type} charset")
+    logger.success(
+        f"Wrote {len(screens)} screens to {output_file} using {charset_type} charset"
+    )
 
 
 def read_screens(
@@ -804,10 +808,10 @@ def merge_charsets(screens, debug_output_folder=None):
         char for char in all_characters if len(char.used_in_screen) == len(screens)
     ]
 
-    print(
+    logger.info(
         f"  {len(screens)} screens contain {len(all_characters)} unique characters of total {total_chars}"
     )
-    print(
+    logger.info(
         f"  There are {len(chars_used_in_all)} characters that are shared in all screens"
     )
 
@@ -849,7 +853,7 @@ def merge_charsets(screens, debug_output_folder=None):
         screen.remap_characters(charset, allow_error=True)
 
     charsets.append(charset)
-    print(Fore.GREEN + f"Merged the screens to {len(charsets)} charsets")
+    logger.success(f"Merged the screens to {len(charsets)} charsets")
 
     if debug_output_folder is not None:
         create_folder_if_not_exists(f"{debug_output_folder}/debug")
@@ -875,7 +879,7 @@ def compress_charsets(
     new_charsets = charsets[:]
 
     while len(new_charsets) > max_charsets:
-        print(
+        logger.info(
             f"  Trying to compress_charsets, now at threshold={found_threshold}, charsets={len(new_charsets)}"
         )
         new_screens, new_charsets = merge_charsets(new_screens, debug_output_folder)
@@ -893,7 +897,7 @@ def merge_charsets_compress(screens, max_charsets=4):
         for screen in screens:
             all_chars.extend(screen.charset)
 
-        print(Fore.GREEN + f"Crunching all {len(all_chars)} characters to one charset")
+        logger.success(f"Crunching all {len(all_chars)} characters to one charset")
         charset = [
             PetsciiChar(PetsciiChar.BLANK_DATA),
             PetsciiChar(PetsciiChar.FULL_DATA),

@@ -7,7 +7,7 @@ from build_utils import build, clean_build, get_build_path
 from cli_parser import parse_arguments
 import color_data_utils
 import colorama
-from colorama import Fore
+from logger import get_logger, setup_logging
 from packer import Packer
 from packer_config import set_packer_options
 import petscii
@@ -16,10 +16,19 @@ from utils import Size2D
 
 
 def main():
-    # colorama
+    # Initialize colorama for cross-platform colored output
     colorama.init(autoreset=True)
 
+    # Parse command-line arguments
     args = parse_arguments()
+
+    # Setup logging based on verbosity flags
+    setup_logging(
+        verbose=getattr(args, "verbose", False),
+        quiet=getattr(args, "quiet", False),
+        log_file=getattr(args, "log_file", None),
+    )
+    logger = get_logger()
 
     default_charset = None
 
@@ -27,14 +36,14 @@ def main():
 
     if args.charset:
         if not os.path.exists(args.charset):
-            print(Fore.RED + f"File {args.charset} does not exist")
+            logger.error(f"File {args.charset} does not exist")
             return 1
 
         skip_first_bytes = args.charset.endswith(".64c")
 
-        print(f"Reading charset from file {args.charset}")
+        logger.info(f"Reading charset from file {args.charset}")
         default_charset = petscii.read_charset(args.charset, skip_first_bytes)
-        print(f"{len(default_charset)} characters found.")
+        logger.info(f"{len(default_charset)} characters found.")
 
     utils.create_folder_if_not_exists(build_folder)
     clean_build()
@@ -45,20 +54,15 @@ def main():
 
     screens = []
     for input_file in args.input_files:
-        print(
-            Fore.BLUE
-            + f"Processing {
-            input_file}, writing output to folder {
-            build_folder}"
-        )
+        logger.info(f"Processing {input_file}, writing output to folder {build_folder}")
 
         if default_charset is None and (input_file.endswith(".c")):
             script_dir = os.path.dirname(__file__)
-            print("No default charset provided, using c64_charset.bin")
+            logger.info("No default charset provided, using c64_charset.bin")
             default_charset = petscii.read_charset(f"{script_dir}/data/c64_charset.bin")
 
         if not os.path.exists(input_file):
-            print(Fore.RED + f"File {input_file} does not exist")
+            logger.error(f"File {input_file} does not exist")
             return 1
         screens_in_file = petscii.read_screens(
             input_file,
@@ -69,7 +73,7 @@ def main():
             args.cleanup,
         )
         anim_change_index.append(len(screens))
-        print(f"Found {len(screens_in_file)} screens in file")
+        logger.info(f"Found {len(screens_in_file)} screens in file")
         screens.extend(screens_in_file)
 
         if output_file_name is None:
@@ -81,7 +85,7 @@ def main():
         screens = reorder_screens_by_similarity(screens)
 
     if args.color_data:
-        print(f"Reading color data from {args.color_data}")
+        logger.info(f"Reading color data from {args.color_data}")
         color_data_frames = petscii.read_screens(
             args.color_data, default_charset, args.background_color, args.border_color
         )
@@ -90,30 +94,30 @@ def main():
             screen.color_data = [*color_data_frames[color_frame].color_data]
 
     if args.offset_color_frames:
-        print(f"Offsetting color frames by {args.offset_color_frames}")
+        logger.info(f"Offsetting color frames by {args.offset_color_frames}")
         screens = color_data_utils.offset_color_frames(
             screens, args.offset_color_frames
         )
 
     if args.anim_slowdown_table:
         args.anim_slowdown_table = utils.parse_int_table(args.anim_slowdown_table)
-        print(
+        logger.info(
             f"Reading animation frame slowdown from table, {args.anim_slowdown_table}"
         )
         args.anim_slowdown_frames = args.anim_slowdown_table[0]
 
     if args.randomize_color_frames:
-        print(f"Randomizing color frames with seed {args.randomize_color_frames}")
+        logger.info(f"Randomizing color frames with seed {args.randomize_color_frames}")
         screens = color_data_utils.randomize_color_frames(
             screens, args.randomize_color_frames
         )
 
     if default_charset is None:
-        print("Remove duplicate characters")
+        logger.info("Remove duplicate characters")
         screens, charsets = petscii.merge_charsets(screens, build_folder)
 
     for idx, screen in enumerate(screens):
-        print(f"  screen {idx}: characters={screen.charset_size()}")
+        logger.debug(f"  screen {idx}: characters={screen.charset_size()}")
 
     if args.limit_charsets:
         if len(charsets) > args.limit_charsets:
@@ -121,9 +125,9 @@ def main():
                 screens, args.limit_charsets
             )
         else:
-            print(f"No need to limit charsets, already at {len(charsets)}")
+            logger.info(f"No need to limit charsets, already at {len(charsets)}")
 
-    print(f"Packing, use_color = {args.use_color}")
+    logger.info(f"Packing, use_color = {args.use_color}")
 
     smallest_size = None
     selected_block_size = None
@@ -160,8 +164,10 @@ def main():
         screens, charsets, args.use_color, allow_debug_output=False
     )
 
-    print(
-        f"Selected block size {selected_block_size}, blocks: {len(packer.ALL_BLOCKS)}, used blocks: {len(packer.USED_BLOCKS)}, anim: {build_folder}, generated {len(anim_stream)} bytes of animation data"
+    logger.info(
+        f"Selected block size {selected_block_size}, blocks: {len(packer.ALL_BLOCKS)}, "
+        f"used blocks: {len(packer.USED_BLOCKS)}, anim: {build_folder}, "
+        f"generated {len(anim_stream)} bytes of animation data"
     )
 
     utils.write_bin(f"{build_folder}/anim.bin", anim_stream)
@@ -174,17 +180,16 @@ def main():
         args.use_color,
     )
 
-    print("Writing charsets")
+    logger.info("Writing charsets")
     for idx, charset in enumerate(charsets):
-        print(f"{build_folder}/charset_{idx}.bin")
+        logger.debug(f"{build_folder}/charset_{idx}.bin")
         petscii.write_charset(
             charset,
-            f"{
-            build_folder}/charset_{idx}.bin",
+            f"{build_folder}/charset_{idx}.bin",
         )
 
     if args.output_sources:
-        print(Fore.GREEN + f"Output sources to {args.output_sources}")
+        logger.success(f"Output sources to {args.output_sources}")
         utils.create_folder_if_not_exists(args.output_sources)
         for filename in os.listdir(build_folder):
             file_path = os.path.join(build_folder, filename)

@@ -6,7 +6,10 @@ import shutil
 import sys
 from typing import List, NamedTuple
 
+from logger import get_logger
 from PIL import Image
+
+logger = get_logger()
 
 MAX_SCREEN_OFFSET = 100
 
@@ -54,9 +57,9 @@ def write_bin(file_name, byte_list):
 def create_folder_if_not_exists(folder_path):
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
-        print(f"Folder '{folder_path}' created.")
+        logger.debug(f"Folder '{folder_path}' created.")
     else:
-        print(f"Folder '{folder_path}' already exists.")
+        logger.debug(f"Folder '{folder_path}' already exists.")
 
 
 def save_images_as_gif(images, output_filename, duration=500, loop=0):
@@ -78,7 +81,7 @@ def copy_file(source_path, destination_folder):
     file_name = os.path.basename(source_path)
     destination_path = os.path.join(destination_folder, file_name)
     shutil.copy2(source_path, destination_path)
-    print(f"File copied successfully from {source_path} to {destination_path}")
+    logger.debug(f"File copied successfully from {source_path} to {destination_path}")
 
 
 def get_resource_path(relative_path):
@@ -93,9 +96,9 @@ def get_resource_path(relative_path):
         base_path = Path(__file__).parent.parent.parent
 
     test_path = base_path / relative_path
-    print(f"Path: {test_path}")
-    print(f"Path exists: {test_path.exists()}")
-    print(f"Contents: {list(test_path.glob('*'))}")
+    logger.debug(f"Path: {test_path}")
+    logger.debug(f"Path exists: {test_path.exists()}")
+    logger.debug(f"Contents: {list(test_path.glob('*'))}")
 
     return base_path / relative_path
 
