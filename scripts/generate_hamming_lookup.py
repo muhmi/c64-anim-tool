@@ -91,7 +91,7 @@ def verify_lookup_table(data: bytes) -> bool:
             )
             return False
 
-    print("  All spot checks passed ✓")
+    print("  All spot checks passed")
 
     # Verify symmetry: distance(a, b) == distance(b, a)
     print("  Checking symmetry...")
@@ -103,7 +103,7 @@ def verify_lookup_table(data: bytes) -> bool:
                 print(f"  ERROR: Asymmetry at ({i}, {j}): {dist_ij} != {dist_ji}")
                 return False
 
-    print("  Symmetry verified ✓")
+    print("  Symmetry verified")
 
     # Verify range: all distances should be 0-8
     print("  Checking value range...")
@@ -114,9 +114,9 @@ def verify_lookup_table(data: bytes) -> bool:
             )
             return False
 
-    print(f"  All values in valid range [0-{MAX_HAMMING_DISTANCE}] ✓")
+    print(f"  All values in valid range [0-{MAX_HAMMING_DISTANCE}]")
 
-    print("\nVerification complete: Lookup table is valid ✓")
+    print("\nVerification complete: Lookup table is valid")
     return True
 
 
@@ -155,7 +155,7 @@ def main():
         )
         return 1
 
-    print("\n✅ Successfully generated hamming_lookup.bin")
+    print("\n[OK] Successfully generated hamming_lookup.bin")
     print(f"   Location: {output_file}")
     print(f"   Size: {file_size:,} bytes")
 
