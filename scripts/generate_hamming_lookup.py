@@ -11,8 +11,11 @@ Format: 256x256 array of uint8 values (Hamming distances 0-8)
 """
 
 import os
-import struct
 import sys
+
+# Constants
+MAX_HAMMING_DISTANCE = 8  # Maximum Hamming distance for a byte (8 bits)
+LOOKUP_TABLE_SIZE = 65536  # 256 * 256 bytes
 
 
 def calculate_hamming_distance(byte1: int, byte2: int) -> int:
@@ -105,11 +108,13 @@ def verify_lookup_table(data: bytes) -> bool:
     # Verify range: all distances should be 0-8
     print("  Checking value range...")
     for value in data:
-        if value > 8:
-            print(f"  ERROR: Invalid distance value {value} (max is 8)")
+        if value > MAX_HAMMING_DISTANCE:
+            print(
+                f"  ERROR: Invalid distance value {value} (max is {MAX_HAMMING_DISTANCE})"
+            )
             return False
 
-    print("  All values in valid range [0-8] ✓")
+    print(f"  All values in valid range [0-{MAX_HAMMING_DISTANCE}] ✓")
 
     print("\nVerification complete: Lookup table is valid ✓")
     return True
@@ -144,8 +149,10 @@ def main():
     file_size = os.path.getsize(output_file)
     print(f"  Wrote {file_size} bytes")
 
-    if file_size != 65536:
-        print(f"  ERROR: Unexpected file size {file_size}")
+    if file_size != LOOKUP_TABLE_SIZE:
+        print(
+            f"  ERROR: Unexpected file size {file_size}, expected {LOOKUP_TABLE_SIZE}"
+        )
         return 1
 
     print("\n✅ Successfully generated hamming_lookup.bin")

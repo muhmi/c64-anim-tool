@@ -12,14 +12,22 @@ help:
 
 check-python: ## Check if Python is compatible with Nuitka
 	@echo "$(COLOR_YELLOW)Checking Python compatibility...$(COLOR_RESET)"
-	@python -c "import sys; print(f'Python: {sys.executable}'); print(f'Version: {sys.version}')"
-	@if python -c "import sys; sys.exit(0 if '/usr/bin/python' not in sys.executable else 1)"; then \
-		echo "$(COLOR_GREEN)Python is compatible with Nuitka$(COLOR_RESET)"; \
+	@if [ -f .venv/bin/python ]; then \
+		.venv/bin/python -c "import sys; print(f'Python: {sys.executable}'); print(f'Version: {sys.version}')"; \
+		if .venv/bin/python -c "import sys; sys.exit(0 if '/usr/bin/python' not in sys.executable else 1)"; then \
+			echo "$(COLOR_GREEN)Python is compatible with Nuitka$(COLOR_RESET)"; \
+		else \
+			echo "$(COLOR_YELLOW)WARNING: You're using Apple's system Python. Install Python from:$(COLOR_RESET)"; \
+			echo "  - Homebrew: brew install python"; \
+			echo "  - python.org: https://www.python.org/downloads/macos/"; \
+			echo "  - pyenv: pyenv install 3.11.7"; \
+		fi; \
+	elif command -v python3 >/dev/null 2>&1; then \
+		python3 -c "import sys; print(f'Python: {sys.executable}'); print(f'Version: {sys.version}')"; \
+		echo "$(COLOR_GREEN)Python found$(COLOR_RESET)"; \
 	else \
-		echo "$(COLOR_YELLOW)WARNING: You're using Apple's system Python. Install Python from:$(COLOR_RESET)"; \
-		echo "  - Homebrew: brew install python"; \
-		echo "  - python.org: https://www.python.org/downloads/macos/"; \
-		echo "  - pyenv: pyenv install 3.11.7"; \
+		echo "$(COLOR_RED)Python not found!$(COLOR_RESET)"; \
+		exit 1; \
 	fi
 
 check-bins: ## Check bins directory structure
@@ -38,7 +46,15 @@ update-requirements: ## Update requirements.txt with installed packages
 
 lint-python: ## Lint Python code with Ruff
 	@echo "$(COLOR_YELLOW)Linting Python files with Ruff...$(COLOR_RESET)"
-	@if command -v ruff >/dev/null 2>&1; then \
+	@if [ -f .venv/bin/ruff ]; then \
+		.venv/bin/ruff check .; \
+		if [ $$? -eq 0 ]; then \
+			echo "$(COLOR_GREEN)✓ All linting checks passed!$(COLOR_RESET)"; \
+		else \
+			echo "$(COLOR_RED)✗ Linting issues found$(COLOR_RESET)"; \
+			exit 1; \
+		fi; \
+	elif command -v ruff >/dev/null 2>&1; then \
 		ruff check .; \
 		if [ $$? -eq 0 ]; then \
 			echo "$(COLOR_GREEN)✓ All linting checks passed!$(COLOR_RESET)"; \
@@ -47,34 +63,43 @@ lint-python: ## Lint Python code with Ruff
 			exit 1; \
 		fi; \
 	else \
-		echo "$(COLOR_RED)Ruff not installed. Installing...$(COLOR_RESET)"; \
-		pip install ruff; \
-		ruff check .; \
+		echo "$(COLOR_RED)Ruff not installed. Run: make install-dev-tools$(COLOR_RESET)"; \
+		exit 1; \
 	fi
 
 format-python: ## Format Python code with Black and fix with Ruff
 	@echo "$(COLOR_YELLOW)Formatting Python files...$(COLOR_RESET)"
-	@if command -v black >/dev/null 2>&1; then \
+	@if [ -f .venv/bin/black ]; then \
+		echo "$(COLOR_YELLOW)Running Black formatter...$(COLOR_RESET)"; \
+		.venv/bin/black .; \
+	elif command -v black >/dev/null 2>&1; then \
 		echo "$(COLOR_YELLOW)Running Black formatter...$(COLOR_RESET)"; \
 		black .; \
 	else \
-		echo "$(COLOR_RED)Black not installed. Installing...$(COLOR_RESET)"; \
-		pip install black; \
-		black .; \
+		echo "$(COLOR_RED)Black not installed. Run: make install-dev-tools$(COLOR_RESET)"; \
+		exit 1; \
 	fi
-	@if command -v ruff >/dev/null 2>&1; then \
+	@if [ -f .venv/bin/ruff ]; then \
+		echo "$(COLOR_YELLOW)Running Ruff auto-fixes...$(COLOR_RESET)"; \
+		.venv/bin/ruff check --fix .; \
+	elif command -v ruff >/dev/null 2>&1; then \
 		echo "$(COLOR_YELLOW)Running Ruff auto-fixes...$(COLOR_RESET)"; \
 		ruff check --fix .; \
 	else \
-		echo "$(COLOR_RED)Ruff not installed. Installing...$(COLOR_RESET)"; \
-		pip install ruff; \
-		ruff check --fix .; \
+		echo "$(COLOR_RED)Ruff not installed. Run: make install-dev-tools$(COLOR_RESET)"; \
+		exit 1; \
 	fi
 	@echo "$(COLOR_GREEN)✓ Code formatting complete!$(COLOR_RESET)"
 
 check-format: ## Check if code is properly formatted (CI-friendly)
 	@echo "$(COLOR_YELLOW)Checking code formatting...$(COLOR_RESET)"
-	@if command -v black >/dev/null 2>&1; then \
+	@if [ -f .venv/bin/black ]; then \
+		.venv/bin/black --check --diff .; \
+		if [ $$? -ne 0 ]; then \
+			echo "$(COLOR_RED)✗ Code is not formatted with Black$(COLOR_RESET)"; \
+			exit 1; \
+		fi; \
+	elif command -v black >/dev/null 2>&1; then \
 		black --check --diff .; \
 		if [ $$? -ne 0 ]; then \
 			echo "$(COLOR_RED)✗ Code is not formatted with Black$(COLOR_RESET)"; \
@@ -84,7 +109,13 @@ check-format: ## Check if code is properly formatted (CI-friendly)
 		echo "$(COLOR_RED)Black not installed!$(COLOR_RESET)"; \
 		exit 1; \
 	fi
-	@if command -v ruff >/dev/null 2>&1; then \
+	@if [ -f .venv/bin/ruff ]; then \
+		.venv/bin/ruff check .; \
+		if [ $$? -ne 0 ]; then \
+			echo "$(COLOR_RED)✗ Ruff checks failed$(COLOR_RESET)"; \
+			exit 1; \
+		fi; \
+	elif command -v ruff >/dev/null 2>&1; then \
 		ruff check .; \
 		if [ $$? -ne 0 ]; then \
 			echo "$(COLOR_RED)✗ Ruff checks failed$(COLOR_RESET)"; \
@@ -131,7 +162,7 @@ distribute: generate-hamming-lookup ## Create standalone exe with Nuitka (optimi
 	@$(MAKE) check-bins
 	@$(MAKE) verify-hamming-lookup
 	@mkdir -p dist
-	@PYTHONPATH=src:src/animation_converter python -m nuitka \
+	@PYTHONPATH=src:src/animation_converter .venv/bin/python -m nuitka \
 		--onefile \
 		--standalone \
 		--output-filename=animation-tool \
@@ -158,13 +189,13 @@ distribute-fast: ## Create standalone exe with Nuitka (fast build)
 	@mkdir -p dist
 	@echo "$(COLOR_YELLOW)Explicitly checking files before build:$(COLOR_RESET)"
 	@ls -la bins/linux/64tass bins/macos/64tass bins/windows/64tass.exe
-	@PYTHONPATH=src:src/animation_converter python -m nuitka \
+	@PYTHONPATH=src:src/animation_converter .venv/bin/python -m nuitka \
 		--onefile \
 		--standalone \
 		--output-filename=animation-tool \
 		--output-dir=dist \
 		--include-data-dir=src/resources/test-program=src/resources/test-program \
-		--include-data-dir=src/animation_converter/data=src/animation_converter/data \
+		--include-data-files=src/resources/data/hamming_lookup.bin=src/resources/data/hamming_lookup.bin \
 		--include-data-files=bins/linux/64tass=bins/linux/64tass \
 		--include-data-files=bins/macos/64tass=bins/macos/64tass \
 		--include-data-files=bins/windows/64tass.exe=bins/windows/64tass.exe \
@@ -182,13 +213,13 @@ distribute-debug: ## Create debug build with Nuitka
 	@$(MAKE) check-bins
 	@$(MAKE) verify-hamming-lookup
 	@mkdir -p dist
-	@PYTHONPATH=src:src/animation_converter python -m nuitka \
+	@PYTHONPATH=src:src/animation_converter .venv/bin/python -m nuitka \
 		--onefile \
 		--standalone \
 		--output-filename=animation-tool-debug \
 		--output-dir=dist \
 		--include-data-dir=src/resources/test-program=src/resources/test-program \
-		--include-data-dir=src/animation_converter/data=src/animation_converter/data \
+		--include-data-files=src/resources/data/hamming_lookup.bin=src/resources/data/hamming_lookup.bin \
 		--include-data-files=bins/linux/64tass=bins/linux/64tass \
 		--include-data-files=bins/macos/64tass=bins/macos/64tass \
 		--include-data-files=bins/windows/64tass.exe=bins/windows/64tass.exe \

@@ -3,7 +3,6 @@ import math
 import os
 from pathlib import Path
 import shutil
-import sys
 from typing import List, NamedTuple
 
 from logger import get_logger

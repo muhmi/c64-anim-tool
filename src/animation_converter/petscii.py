@@ -1,14 +1,13 @@
+from io import StringIO
 import json
 import os
 import re
 import sys
-from io import StringIO
 from typing import List, Tuple
 
-from PIL import Image, ImageDraw, ImageSequence
 from bitarray import bitarray
-
 from logger import get_logger
+from PIL import Image, ImageDraw, ImageSequence
 from utils import (
     create_folder_if_not_exists,
     get_resource_path,
