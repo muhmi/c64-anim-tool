@@ -162,7 +162,12 @@ distribute: generate-hamming-lookup ## Create standalone exe with Nuitka (optimi
 	@$(MAKE) check-bins
 	@$(MAKE) verify-hamming-lookup
 	@mkdir -p dist
-	@PYTHONPATH=src:src/animation_converter .venv/bin/python -m nuitka \
+	@if [ -f .venv/bin/python ]; then \
+		PYTHON_CMD=.venv/bin/python; \
+	else \
+		PYTHON_CMD=python3; \
+	fi; \
+	PYTHONPATH=src:src/animation_converter $$PYTHON_CMD -m nuitka \
 		--onefile \
 		--standalone \
 		--output-filename=animation-tool \
@@ -189,7 +194,12 @@ distribute-fast: ## Create standalone exe with Nuitka (fast build)
 	@mkdir -p dist
 	@echo "$(COLOR_YELLOW)Explicitly checking files before build:$(COLOR_RESET)"
 	@ls -la bins/linux/64tass bins/macos/64tass bins/windows/64tass.exe
-	@PYTHONPATH=src:src/animation_converter .venv/bin/python -m nuitka \
+	@if [ -f .venv/bin/python ]; then \
+		PYTHON_CMD=.venv/bin/python; \
+	else \
+		PYTHON_CMD=python3; \
+	fi; \
+	PYTHONPATH=src:src/animation_converter $$PYTHON_CMD -m nuitka \
 		--onefile \
 		--standalone \
 		--output-filename=animation-tool \
@@ -213,7 +223,12 @@ distribute-debug: ## Create debug build with Nuitka
 	@$(MAKE) check-bins
 	@$(MAKE) verify-hamming-lookup
 	@mkdir -p dist
-	@PYTHONPATH=src:src/animation_converter .venv/bin/python -m nuitka \
+	@if [ -f .venv/bin/python ]; then \
+		PYTHON_CMD=.venv/bin/python; \
+	else \
+		PYTHON_CMD=python3; \
+	fi; \
+	PYTHONPATH=src:src/animation_converter $$PYTHON_CMD -m nuitka \
 		--onefile \
 		--standalone \
 		--output-filename=animation-tool-debug \
