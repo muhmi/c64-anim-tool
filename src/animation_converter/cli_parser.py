@@ -330,7 +330,8 @@ def parse_arguments():
     if args.color_aberration_mode:
         args.inverse = True
         args.disable_rle = True
-        args.per_row_mode = True
+        args.use_color = False
+        args.per_row_mode = False
         args.asm_test_runner_name = "player_50fps_test.asm"
 
     if args.fast_mode:

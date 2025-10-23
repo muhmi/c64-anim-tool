@@ -196,7 +196,7 @@ start
 	sta test_charset_index
 	jsr test_setcharset
 
-	#setup_raster_irq test_raster_irq, 0
+	#setup_raster_irq test_raster_irq, 240
 
 {% if test_music %}
 	lda #1

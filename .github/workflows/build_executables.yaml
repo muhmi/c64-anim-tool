@@ -36,6 +36,20 @@ jobs:
       run: |
         ruff check .
 
+    - name: Verify Hamming lookup table
+      run: |
+        if [ ! -f "src/resources/data/hamming_lookup.bin" ]; then
+          echo "❌ Hamming lookup table not found!"
+          echo "Run 'make generate-hamming-lookup' to create it"
+          exit 1
+        fi
+        SIZE=$(stat -c%s "src/resources/data/hamming_lookup.bin" 2>/dev/null || stat -f%z "src/resources/data/hamming_lookup.bin")
+        if [ "$SIZE" != "65536" ]; then
+          echo "❌ Invalid lookup table size: $SIZE bytes (expected 65536)"
+          exit 1
+        fi
+        echo "✅ Hamming lookup table is valid (65,536 bytes)"
+
   build:
     needs: code-quality  # Only build if code quality passes
     runs-on: ${{ matrix.os }}

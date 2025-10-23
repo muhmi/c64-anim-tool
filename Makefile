@@ -4,7 +4,7 @@ COLOR_YELLOW=\033[33m
 COLOR_RED=\033[31m
 MAKEFILE_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
-.PHONY: help update-requirements format-python lint-python check-python distribute distribute-fast distribute-debug distribute-pyinstaller clean test-nuitka check-python check-bins
+.PHONY: help update-requirements format-python lint-python check-python distribute distribute-fast distribute-debug clean test-nuitka check-bins generate-hamming-lookup verify-hamming-lookup
 
 help:
 	@echo "$(COLOR_YELLOW)Available targets:$(COLOR_RESET)"
@@ -101,15 +101,35 @@ install-dev-tools: ## Install development tools (Black, Ruff)
 	@pip install black ruff
 	@echo "$(COLOR_GREEN)Development tools installed!$(COLOR_RESET)"
 
+generate-hamming-lookup: ## Generate Hamming distance lookup table
+	@echo "$(COLOR_YELLOW)Generating Hamming lookup table...$(COLOR_RESET)"
+	@python3 scripts/generate_hamming_lookup.py
+	@echo "$(COLOR_GREEN)✓ Hamming lookup table generated!$(COLOR_RESET)"
+
+verify-hamming-lookup: ## Verify Hamming lookup table exists and is valid
+	@echo "$(COLOR_YELLOW)Verifying Hamming lookup table...$(COLOR_RESET)"
+	@if [ ! -f "src/resources/data/hamming_lookup.bin" ]; then \
+		echo "$(COLOR_RED)✗ Hamming lookup table not found!$(COLOR_RESET)"; \
+		echo "$(COLOR_YELLOW)  Run 'make generate-hamming-lookup' to create it$(COLOR_RESET)"; \
+		exit 1; \
+	fi
+	@SIZE=$$(wc -c < src/resources/data/hamming_lookup.bin | tr -d ' '); \
+	if [ "$$SIZE" != "65536" ]; then \
+		echo "$(COLOR_RED)✗ Invalid lookup table size: $$SIZE bytes (expected 65536)$(COLOR_RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(COLOR_GREEN)✓ Hamming lookup table is valid (65,536 bytes)$(COLOR_RESET)"
+
 test-nuitka: ## Test if Nuitka is working
 	@echo "$(COLOR_YELLOW)Testing Nuitka installation...$(COLOR_RESET)"
 	@python -m nuitka --version || { echo "$(COLOR_YELLOW)Installing Nuitka...$(COLOR_RESET)"; pip install nuitka; }
 	@echo "$(COLOR_GREEN)Nuitka is ready!$(COLOR_RESET)"
 
-distribute: ## Create standalone exe with Nuitka (optimized)
+distribute: generate-hamming-lookup ## Create standalone exe with Nuitka (optimized)
 	@echo "$(COLOR_YELLOW)Building animation-tool with Nuitka...$(COLOR_RESET)"
 	@$(MAKE) check-python
 	@$(MAKE) check-bins
+	@$(MAKE) verify-hamming-lookup
 	@mkdir -p dist
 	@PYTHONPATH=src:src/animation_converter python -m nuitka \
 		--onefile \
@@ -117,6 +137,7 @@ distribute: ## Create standalone exe with Nuitka (optimized)
 		--output-filename=animation-tool \
 		--output-dir=dist \
 		--include-data-dir=src/resources/test-program=src/resources/test-program \
+		--include-data-files=src/resources/data/hamming_lookup.bin=src/resources/data/hamming_lookup.bin \
 		--include-data-files=bins/linux/64tass=bins/linux/64tass \
 		--include-data-files=bins/macos/64tass=bins/macos/64tass \
 		--include-data-files=bins/windows/64tass.exe=bins/windows/64tass.exe \
@@ -133,6 +154,7 @@ distribute-fast: ## Create standalone exe with Nuitka (fast build)
 	@echo "$(COLOR_YELLOW)Building animation-tool with Nuitka (fast build)...$(COLOR_RESET)"
 	@$(MAKE) check-python
 	@$(MAKE) check-bins
+	@$(MAKE) verify-hamming-lookup
 	@mkdir -p dist
 	@echo "$(COLOR_YELLOW)Explicitly checking files before build:$(COLOR_RESET)"
 	@ls -la bins/linux/64tass bins/macos/64tass bins/windows/64tass.exe
@@ -142,6 +164,7 @@ distribute-fast: ## Create standalone exe with Nuitka (fast build)
 		--output-filename=animation-tool \
 		--output-dir=dist \
 		--include-data-dir=src/resources/test-program=src/resources/test-program \
+		--include-data-dir=src/animation_converter/data=src/animation_converter/data \
 		--include-data-files=bins/linux/64tass=bins/linux/64tass \
 		--include-data-files=bins/macos/64tass=bins/macos/64tass \
 		--include-data-files=bins/windows/64tass.exe=bins/windows/64tass.exe \
@@ -157,6 +180,7 @@ distribute-debug: ## Create debug build with Nuitka
 	@echo "$(COLOR_YELLOW)Building animation-tool with Nuitka (debug)...$(COLOR_RESET)"
 	@$(MAKE) check-python
 	@$(MAKE) check-bins
+	@$(MAKE) verify-hamming-lookup
 	@mkdir -p dist
 	@PYTHONPATH=src:src/animation_converter python -m nuitka \
 		--onefile \
@@ -164,6 +188,7 @@ distribute-debug: ## Create debug build with Nuitka
 		--output-filename=animation-tool-debug \
 		--output-dir=dist \
 		--include-data-dir=src/resources/test-program=src/resources/test-program \
+		--include-data-dir=src/animation_converter/data=src/animation_converter/data \
 		--include-data-files=bins/linux/64tass=bins/linux/64tass \
 		--include-data-files=bins/macos/64tass=bins/macos/64tass \
 		--include-data-files=bins/windows/64tass.exe=bins/windows/64tass.exe \
@@ -175,20 +200,6 @@ distribute-debug: ## Create debug build with Nuitka
 		--assume-yes-for-downloads \
 		src/animation_converter/main.py
 	@echo "$(COLOR_GREEN)Debug build complete: dist/animation-tool-debug$(COLOR_RESET)"
-
-distribute-pyinstaller: ## Fallback: Create exe with PyInstaller (your original)
-	@echo "$(COLOR_YELLOW)Building with PyInstaller (fallback)...$(COLOR_RESET)"
-	@pyinstaller --onefile \
-		--name animation-tool \
-		--add-data "src/resources/test-program:src/resources/test-program" \
-		--add-data "bins:bins" \
-		--paths src \
-		--paths src/animation_converter \
-		--hidden-import=numba \
-		--bootloader-ignore-signals \
-		--noupx \
-		src/animation_converter/main.py
-	@echo "$(COLOR_GREEN)PyInstaller build complete$(COLOR_RESET)"
 
 clean: ## Clean build artifacts
 	@echo "$(COLOR_YELLOW)Cleaning build artifacts...$(COLOR_RESET)"

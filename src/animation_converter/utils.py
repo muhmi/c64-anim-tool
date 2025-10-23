@@ -77,7 +77,7 @@ def save_images_as_gif(images, output_filename, duration=500, loop=0):
     )
 
 
-def copy_file(source_path, destination_folder):
+def copy_file(source_path: str, destination_folder: str):
     file_name = os.path.basename(source_path)
     destination_path = os.path.join(destination_folder, file_name)
     shutil.copy2(source_path, destination_path)
@@ -85,22 +85,38 @@ def copy_file(source_path, destination_folder):
 
 
 def get_resource_path(relative_path):
+    """
+    Get the absolute path to a resource file.
+
+    Works in three modes:
+    - Normal Python: Returns path relative to project root
+    - Nuitka onefile: Returns path in extracted temp directory
+    - PyInstaller: Returns path in _MEIPASS temp directory
+
+    Args:
+        relative_path: Path relative to project root (e.g., "src/animation_converter/data/file.bin")
+
+    Returns:
+        Absolute Path object to the resource
+    """
     if "__compiled__" in globals():
-        # Running inside nuitka
-        base_path = Path(os.path.dirname(__file__))
-    elif getattr(sys, "frozen", False):
-        # Running in PyInstaller bundle
-        base_path = Path(sys._MEIPASS)
+        # Running inside Nuitka onefile/standalone
+        # Nuitka extracts to temp dir and __file__ points to extracted location
+        # We need to go up to the extraction root and then navigate to the resource
+        base_path = Path(__file__).parent
+        logger.debug(f"Nuitka detected, base_path from __file__: {base_path}")
     else:
         # Running in normal Python environment
+        # Go up from utils.py (src/animation_converter/) to project root
         base_path = Path(__file__).parent.parent.parent
+        logger.debug(f"Normal Python, project root: {base_path}")
 
-    test_path = base_path / relative_path
-    logger.debug(f"Path: {test_path}")
-    logger.debug(f"Path exists: {test_path.exists()}")
-    logger.debug(f"Contents: {list(test_path.glob('*'))}")
+    # Construct full path
+    resource_path = base_path / relative_path
+    logger.debug(f"Resource path: {resource_path}")
+    logger.debug(f"Resource exists: {resource_path.exists()}")
 
-    return base_path / relative_path
+    return resource_path
 
 
 def read_palette_from_file(source: str) -> List[int]:
