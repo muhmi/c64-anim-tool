@@ -333,6 +333,7 @@ def parse_arguments():
         args.use_color = False
         args.per_row_mode = False
         args.asm_test_runner_name = "player_50fps_test.asm"
+        args.limit_charsets = 1
 
     if args.fast_mode:
         args.asm_test_runner_name = "player_50fps_test.asm"

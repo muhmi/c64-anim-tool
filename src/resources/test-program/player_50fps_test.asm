@@ -291,6 +291,7 @@ test_setcharset_index
 
 ; Called by player
 test_anim_restarted
+    #clear_screen 1, UNPACK_BUFFER_LOCATION
 	rts
 
 ; A = Charset index
